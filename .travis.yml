@@ -5,8 +5,15 @@ language: ruby
 services:
   - docker
 
-before_install:
-  - env
-
 script:
-  - docker build -t lpouzac/cdp:$TRAVIS_BRANCH .
+  - docker build -t $DOCKER_REPO .
+
+after_success:
+  - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker tag $DOCKER_REPO:latest
+    docker push $DOCKER_REPO:latest;
+    else
+    docker tag $DOCKER_REPO:$TRAVIS_BRANCH
+    docker push $DOCKER_REPO:$TRAVIS_BRANCH;
+    fi
