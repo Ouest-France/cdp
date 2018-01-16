@@ -83,7 +83,7 @@ def __docker():
     __runCommand(login)
 
     # Build docker image from Dockerfile
-    __runCommand("docker build -t %s" % image_name)
+    __runCommand("docker build -t %s ." % image_name)
 
     # Tag docker image
     if not (opt['--image-tag-branch-name'] or opt['--image-tag-latest'] or opt['--image-tag-sha1']) or opt['--image-tag-branch-name']:
