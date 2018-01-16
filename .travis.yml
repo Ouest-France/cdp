@@ -1,0 +1,12 @@
+sudo: required
+
+language: ruby
+
+services:
+  - docker
+
+before_install:
+  - env
+
+script:
+  - docker build -t lpouzac/cdp:$TRAVIS_BRANCH .
