@@ -7,7 +7,7 @@ Usage:
         (--use-gitlab-registry | --use-aws-ecr)
         [--simulate-merge-on=<branch_name>]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr)
         (--namespace-project-branch-name | --namespace-project-name)
         [--deploy-spec-dir=<dir>]
@@ -67,17 +67,8 @@ def __docker():
     else:
         logger.notice("Build docker image with the current branch : %s", os.environ['CI_COMMIT_REF_NAME'])
 
-    # Configure docker registry
-    if opt['--use-aws-ecr']:
-        # Use AWS ECR from k8s configuration on gitlab-runner deployment
-        login = __runCommand("aws ecr get-login --no-include-email --region eu-central-1", False).strip()
-        image_name = "%s/%s" % ((login.split("https://")[1]).strip(), os.environ['CI_PROJECT_PATH'].lower())
-    else:
-        # Use gitlab registry
-        login="docker login -u %s -p %s %s" % (os.environ['CI_REGISTRY_USER'], os.environ['CI_JOB_TOKEN'], os.environ['CI_REGISTRY'])
-        image_name = os.environ['CI_REGISTRY_IMAGE']
-
-    logger.verbose("Image name : %s", image_name)
+    login = __getLoginCmd()
+    image_name = __getImageName(login)
 
     # Login to the docker registry
     __runCommand(login)
@@ -85,28 +76,51 @@ def __docker():
     # Build docker image from Dockerfile
     __runCommand("docker build -t %s ." % image_name)
 
-    # Tag docker image
+    # Tag and push docker image
     if not (opt['--image-tag-branch-name'] or opt['--image-tag-latest'] or opt['--image-tag-sha1']) or opt['--image-tag-branch-name']:
         # Default if none option selected
-        __tagAndPushOnDockerRegistry(image_name, os.environ['CI_COMMIT_REF_NAME'])
+        __tagAndPushOnDockerRegistry(image_name, __getImageTagBranchName(image_name))
     if opt['--image-tag-latest']:
-        __tagAndPushOnDockerRegistry(image_name, "latest")
+        __tagAndPushOnDockerRegistry(image_name, __getImageTagLatest(image_name))
     if opt['--image-tag-sha1']:
-        __tagAndPushOnDockerRegistry(image_name, os.environ['CI_COMMIT_SHA'])
+        __tagAndPushOnDockerRegistry(image_name, __getImageTagSha1(image_name))
+
+
 
     # Clean git repository
     if opt['--simulate-merge-on']:
         __runCommand("git checkout .")
 
 def __k8s():
-    print('k8s - need to be implemented')
+    # Get k8s namespace
+    if opt['--namespace-project-name']:
+        namespace = os.environ['CI_PROJECT_NAME']
+    else:
+        namespace = "%s-%s" % (os.environ['CI_PROJECT_NAME'], os.environ['CI_COMMIT_REF_NAME'])
+
+    # Get deployment host
+    host = "%s.ingress.%s" % (os.environ['CI_PROJECT_NAME'], "example.com") # TODO
+
+    # Get image tag name
+    image_name = __getImageName(__getLoginCmd())
+    if opt['--image-tag-latest']:
+        image_tag = __getImageTagLatest(image_name)
+    elif opt['--image-tag-sha1']:
+        image_tag = __getImageTagSha1(image_name)
+    else :
+        image_tag = __getImageTagBranchName(image_name)
+
+    __runCommand("helm upgrade %s %s --set namespace=%s --set ingress.host=%s --set image.registry=%s --set image.commit.sha=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s"
+        % (namespace, opt['--deploy-spec-dir'], namespace, host, os.environ['CI_REGISTRY'], os.environ['CI_COMMIT_SHA'][:8], image_tag, os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'], namespace))
+
+    __runCommand("kubectl rollout status deployment/%s -n %s" % (os.environ['CI_PROJECT_NAME'], namespace))
 
 
-def __tagAndPushOnDockerRegistry(image_name, tag):
+def __tagAndPushOnDockerRegistry(image_name, image_tag):
     # Tag docker image
-    __runCommand("docker tag %s %s:%s" % (image_name, image_name, tag))
+    __runCommand("docker tag %s %s" % (image_name, image_tag))
     # Push docker image
-    __runCommand("docker push %s:%s" % (image_name, tag))
+    __runCommand("docker push %s" % (image_tag))
 
 def __runCommand(command, dry_run = opt['--dry-run']):
     output = None
@@ -120,3 +134,35 @@ def __runCommand(command, dry_run = opt['--dry-run']):
 
     logger.info("")
     return output
+
+def __getLoginCmd():
+    # Configure docker registry
+    if opt['--use-aws-ecr']:
+        # Use AWS ECR from k8s configuration on gitlab-runner deployment
+        login = __runCommand("aws ecr get-login --no-include-email --region eu-central-1", False).strip()
+    else:
+        # Use gitlab registry
+        login = "docker login -u %s -p %s %s" % (os.environ['CI_REGISTRY_USER'], os.environ['CI_JOB_TOKEN'], os.environ['CI_REGISTRY'])
+
+    return login
+
+def __getImageName(login):
+    # Configure docker registry
+    if opt['--use-aws-ecr']:
+        # Use AWS ECR from k8s configuration on gitlab-runner deployment
+        image_name = "%s/%s" % ((login.split("https://")[1]).strip(), os.environ['CI_PROJECT_PATH'].lower())
+    else:
+        # Use gitlab registry
+        image_name = os.environ['CI_REGISTRY_IMAGE']
+
+    logger.verbose("Image name : %s", image_name)
+    return image_name
+
+def __getImageTagBranchName(image_name):
+    return "%s:%s" %  (image_name, os.environ['CI_COMMIT_REF_NAME'])
+
+def __getImagetTagLatest(image_name):
+    return "%s:latest" % image_name
+
+def __getImageTagSha1(image_name):
+    return "%s:%s" %  (image_name, os.environ['CI_COMMIT_SHA'])
