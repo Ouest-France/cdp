@@ -160,7 +160,7 @@ def __getImageName(login):
 def __getImageTagBranchName(image_name):
     return "%s:%s" %  (image_name, os.environ['CI_COMMIT_REF_NAME'])
 
-def __getImagetTagLatest(image_name):
+def __getImageTagLatest(image_name):
     return "%s:latest" % image_name
 
 def __getImageTagSha1(image_name):
