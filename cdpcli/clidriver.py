@@ -112,7 +112,7 @@ def __k8s():
         image_tag = __getImageTagBranchName(image_name)
 
     __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.registry=%s --set image.commit.sha=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s"
-        % (namespace, opt['--deploy-spec-dir'], namespace, opt['--timeout'], namespace, host, os.environ['CI_REGISTRY'], os.environ['CI_COMMIT_SHA'][:8], image_tag, os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'], namespace))
+        % (namespace, opt['--deploy-spec-dir'], opt['--timeout'], namespace, namespace, host, os.environ['CI_REGISTRY'], os.environ['CI_COMMIT_SHA'][:8], image_tag, os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'], namespace))
 
     __runCommand("kubectl rollout status deployment/%s -n %s --request-timeout=%ss" % (os.environ['CI_PROJECT_NAME'], namespace, opt['--timeout']))
 
