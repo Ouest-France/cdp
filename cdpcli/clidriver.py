@@ -95,11 +95,10 @@ def __k8s():
     # Get k8s namespace
     if opt['--namespace-project-name']:
         namespace = os.environ['CI_PROJECT_NAME']
+        host = "%s.%s" % (os.environ['CI_PROJECT_NAME'], os.getenv('DNS_SUBDOMAIN', 'example.com'))
     else:
-        namespace = "%s-%s" % (os.environ['CI_PROJECT_NAME'], os.environ['CI_COMMIT_REF_NAME'])
-
-    # Get deployment host
-    host = "%s.ingress.%s" % (os.environ['CI_PROJECT_NAME'], "example.com") # TODO
+        namespace = "%s-%s" % (os.environ['CI_PROJECT_NAME'], os.environ['CI_COMMIT_REF_NAME'])    # Get deployment host
+        host = "%s.%s.%s" % (os.environ['CI_ENVIRONMENT_SLUG'], os.environ['CI_PROJECT_NAME'], os.getenv('DNS_SUBDOMAIN', 'example.com'))
 
     # Get image tag name
     image_name = __getImageName(__getLoginCmd())
