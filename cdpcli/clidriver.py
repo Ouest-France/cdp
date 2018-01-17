@@ -128,9 +128,16 @@ def __runCommand(command, dry_run = opt['--dry-run']):
     logger.info(command)
     # If dry-run option, no execute command
     if not dry_run:
-        output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
-        logger.info("---------- Output ----------")
-        logger.info(output)
+        p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        p.wait()
+        output = p.stdout.read()
+        if p.returncode != 0:
+            logger.warning("---------- Output ----------")
+            logger.warning(output)
+            raise ValueError(output)
+        else:
+            logger.info("---------- Output ----------")
+            logger.info(output)
 
     logger.info("")
     return output
