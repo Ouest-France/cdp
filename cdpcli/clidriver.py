@@ -11,6 +11,7 @@ Usage:
         (--use-gitlab-registry | --use-aws-ecr)
         (--namespace-project-branch-name | --namespace-project-name)
         [--deploy-spec-dir=<dir>]
+        [--timeout=<timeout>]
     cdp (-h | --help | --version)
 Options:
     -h, --help                          Show this screen and exit.
@@ -26,6 +27,7 @@ Options:
     --namespace-project-branch-name     Use project and branch name to create k8s namespace [default].
     --namespace-project-name            Use project name to create k8s namespace.
     --deploy-spec-dir=<dir>             k8s deployment files [default: charts/].
+    --timeout=<timeout>                 Time in seconds to wait for any individual kubernetes operation [default: 300]
 """
 
 import sys, os, subprocess
@@ -109,10 +111,10 @@ def __k8s():
     else :
         image_tag = __getImageTagBranchName(image_name)
 
-    __runCommand("helm upgrade %s %s --set namespace=%s --set ingress.host=%s --set image.registry=%s --set image.commit.sha=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s"
-        % (namespace, opt['--deploy-spec-dir'], namespace, host, os.environ['CI_REGISTRY'], os.environ['CI_COMMIT_SHA'][:8], image_tag, os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'], namespace))
+    __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.registry=%s --set image.commit.sha=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s"
+        % (namespace, opt['--deploy-spec-dir'], namespace, opt['--timeout'], namespace, host, os.environ['CI_REGISTRY'], os.environ['CI_COMMIT_SHA'][:8], image_tag, os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'], namespace))
 
-    __runCommand("kubectl rollout status deployment/%s -n %s" % (os.environ['CI_PROJECT_NAME'], namespace))
+    __runCommand("kubectl rollout status deployment/%s -n %s --request-timeout=%ss" % (os.environ['CI_PROJECT_NAME'], namespace, opt['--timeout']))
 
 
 def __tagAndPushOnDockerRegistry(image_name, image_tag):
