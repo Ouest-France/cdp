@@ -26,8 +26,8 @@ Options:
     --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
     --namespace-project-branch-name     Use project and branch name to create k8s namespace [default].
     --namespace-project-name            Use project name to create k8s namespace.
-    --deploy-spec-dir=<dir>             k8s deployment files [default: charts/].
-    --timeout=<timeout>                 Time in seconds to wait for any individual kubernetes operation [default: 300]
+    --deploy-spec-dir=<dir>             k8s deployment files [default: charts].
+    --timeout=<timeout>                 Time in seconds to wait for any individual kubernetes operation [default: 180]
 """
 
 import sys, os, subprocess
@@ -112,10 +112,13 @@ def __k8s():
     else :
         image_tag = __getImageTagBranchName(image_name)
 
+    # Copy secret file on k8s deploy dir
+    __runCommand("cp /cdp/charts/templates/*.yaml %s/templates/" % opt['--deploy-spec-dir'])
+
     __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.registry=%s --set image.commit.sha=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s"
         % (namespace, opt['--deploy-spec-dir'], opt['--timeout'], namespace, host, os.environ['CI_REGISTRY'], os.environ['CI_COMMIT_SHA'][:8], image_tag, os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'], namespace))
 
-    # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952 
+    # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
     __runCommand("timeout -t %s kubectl rollout status deployment/%s -n %s" % (opt['--timeout'], os.environ['CI_PROJECT_NAME'], namespace))
 
 
