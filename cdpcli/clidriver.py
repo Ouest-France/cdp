@@ -113,7 +113,7 @@ def __k8s():
         image_tag = __getImageTagBranchName(image_name)
 
     # Copy secret file on k8s deploy dir
-    __runCommand("cp /cdp/charts/templates/*.yaml %s/templates/")
+    __runCommand("cp /cdp/charts/templates/*.yaml %s/templates/" % opt['--deploy-spec-dir'])
 
     # Instal or Upgrade environnement
     __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.registry=%s --set image.commit.sha=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s"
