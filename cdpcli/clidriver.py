@@ -137,9 +137,13 @@ def __runCommand(command, dry_run = opt['--dry-run']):
     if not dry_run:
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
         output, error = p.communicate()
+        
         if p.returncode != 0:
             logger.warning("---------- ERROR ----------")
-            raise ValueError(output)
+            if p.returncode == 143:
+                raise ValueError("Timeout %ss" % opt['--timeout'])
+            else:
+                raise ValueError(output)
         else:
             logger.info("---------- Output ----------")
             logger.info(output)
