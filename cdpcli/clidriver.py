@@ -113,10 +113,16 @@ def __k8s():
         image_tag = __getImageTagBranchName(image_name)
 
     # Copy secret file on k8s deploy dir
-    __runCommand("cp /cdp/charts/templates/*.yaml %s/templates/" % opt['--deploy-spec-dir'])
+    __runCommand("cp /cdp/charts/templates/*.yaml %s/templates/")
 
+    # Instal or Upgrade environnement
     __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.registry=%s --set image.commit.sha=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s"
         % (namespace, opt['--deploy-spec-dir'], opt['--timeout'], namespace, host, os.environ['CI_REGISTRY'], os.environ['CI_COMMIT_SHA'][:8], image_tag, os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'], namespace))
+
+    # Patch secret on deployment
+    deployment_names = __runCommand("kubectl get deployment -n %s -o name" % (namespace)).strip().split("\n")
+    for deployment_name in deployment_names:
+        __runCommand("kubectl patch deployment %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %n" % (deployment_name, os.environ['CI_REGISTRY'], namespace))
 
     # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
     __runCommand("timeout -t %s kubectl rollout status deployment/%s -n %s" % (opt['--timeout'], os.environ['CI_PROJECT_NAME'], namespace))
@@ -137,7 +143,7 @@ def __runCommand(command, dry_run = opt['--dry-run']):
     if not dry_run:
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
         output, error = p.communicate()
-        
+
         if p.returncode != 0:
             logger.warning("---------- ERROR ----------")
             if p.returncode == 143:
