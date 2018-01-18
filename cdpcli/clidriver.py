@@ -122,7 +122,8 @@ def __k8s():
     # Patch secret on deployment
     deployment_names = __runCommand("kubectl get deployment -n %s -o name" % (namespace)).strip().split("\n")
     for deployment_name in deployment_names:
-        __runCommand("kubectl patch deployment %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %n" % (deployment_name, os.environ['CI_REGISTRY'], namespace))
+        __runCommand("kubectl patch deployment %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %s"
+            % (deployment_name, os.environ['CI_REGISTRY'], namespace))
 
     # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
     __runCommand("timeout -t %s kubectl rollout status deployment/%s -n %s" % (opt['--timeout'], os.environ['CI_PROJECT_NAME'], namespace))
