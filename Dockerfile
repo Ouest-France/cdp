@@ -21,6 +21,7 @@ RUN apk add --update ca-certificates \
  && apk add openrc --no-cache \
  && apk add docker \
  && rc-update add docker boot \
+ && pip install docker-compose \
  && apk add --update git openssh-client \
  && cd cdp \
  && python setup.py install \
