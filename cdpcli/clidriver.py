@@ -137,7 +137,7 @@ def __k8s():
 def __buildTagAndPushOnDockerRegistry(login, tag):
     if opt['--use-docker-compose']:
         os.environ["CDP_TAG"] = tag
-        os.environ["CDP_REGISTRY"] = "%s/%s" % (__getRegistry(login),  os.environ[' CI_PROJECT_NAMESPACE'].lower())
+        os.environ["CDP_REGISTRY"] = "%s/%s" % (__getRegistry(login),  os.environ['CI_PROJECT_NAMESPACE'].lower())
         __runCommand("docker-compose build")
         __runCommand("docker-compose push")
     else:
