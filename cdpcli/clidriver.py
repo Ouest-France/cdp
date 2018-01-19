@@ -112,18 +112,26 @@ def __k8s():
     else :
         image_tag = __getImageTagBranchName(image_name)
 
-    # Copy secret file on k8s deploy dir
-    __runCommand("cp /cdp/charts/templates/*.yaml %s/templates/" % opt['--deploy-spec-dir'])
+    # Need to add secret file for docker registry
+    addSecretFile = opt['--use-gitlab-registry']
+
+    if addSecretFile:
+        # Copy secret file on k8s deploy dir
+        __runCommand("cp /cdp/charts/templates/*.yaml %s/templates/" % opt['--deploy-spec-dir'])
+        secretParams = "--set image.registry=%s --set image.credentials.username=%s --set image.credentials.password=%s" % (os.environ['CI_REGISTRY'], os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'])
+    else:
+        secretParams = ""
 
     # Instal or Upgrade environnement
-    __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.registry=%s --set image.commit.sha=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s"
-        % (namespace, opt['--deploy-spec-dir'], opt['--timeout'], namespace, host, os.environ['CI_REGISTRY'], os.environ['CI_COMMIT_SHA'][:8], image_tag, os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'], namespace))
+    __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=%s --set image.tag=%s %s --debug -i --namespace=%s"
+        % (namespace, opt['--deploy-spec-dir'], opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], image_tag, secretParams, namespace))
 
-    # Patch secret on deployment
-    deployment_names = __runCommand("kubectl get deployment -n %s -o name" % (namespace)).strip().split("\n")
-    for deployment_name in deployment_names:
-        __runCommand("kubectl patch %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %s"
-            % (deployment_name.replace("/", " "), os.environ['CI_REGISTRY'], namespace))
+    if addSecretFile:
+        # Patch secret on deployment
+        deployment_names = __runCommand("kubectl get deployment -n %s -o name" % (namespace)).strip().split("\n")
+        for deployment_name in deployment_names:
+            __runCommand("kubectl patch %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %s"
+                % (deployment_name.replace("/", " "), os.environ['CI_REGISTRY'], namespace))
 
     # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
     __runCommand("timeout -t %s kubectl rollout status deployment/%s -n %s" % (opt['--timeout'], os.environ['CI_PROJECT_NAME'], namespace))
