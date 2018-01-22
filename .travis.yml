@@ -10,7 +10,7 @@ script:
 
 after_success:
   - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-  - if [ "$TRAVIS_BRANCH" == "master" ] || [ "DOCKER_TAG_LATEST" == 1]; then
+  - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$DOCKER_TAG_LATEST" == 1 ]; then
     docker tag $DOCKER_REPO $DOCKER_REPO:latest;
     docker push $DOCKER_REPO:latest;
     else
