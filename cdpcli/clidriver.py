@@ -104,7 +104,7 @@ def __k8s(context):
         host = "%s.%s" % (os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
     else:
         namespace = "%s-%s" % (os.environ['CI_PROJECT_NAME'], os.environ['CI_COMMIT_REF_NAME'])    # Get deployment host
-        host = "%s.%s.%s" % (os.environ['CI_ENVIRONMENT_SLUG'], os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
+        host = "%s.%s.%s" % (os.getenv('CI_ENVIRONMENT_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
 
     if opt['--image-tag-latest']:
         tag =  __getTagLatest()
