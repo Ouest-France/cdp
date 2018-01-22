@@ -14,6 +14,6 @@ after_success:
     docker tag $DOCKER_REPO $DOCKER_REPO:latest;
     docker push $DOCKER_REPO:latest;
     else
-    docker tag $DOCKER_REPO $DOCKER_REPO:$TRAVIS_BRANCH;
+    docker tag $DOCKER_REPO $DOCKER_REPO/$TRAVIS_BRANCH:latest;
     docker push $DOCKER_REPO/$TRAVIS_BRANCH:latest;
     fi
