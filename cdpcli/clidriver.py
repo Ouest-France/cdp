@@ -36,6 +36,7 @@ Options:
 import sys, os, subprocess
 import logging, verboselogs
 import time
+from Context import Context
 from cdpcli import __version__
 from docopt import docopt, DocoptExit
 
@@ -52,13 +53,20 @@ elif opt['--quiet']:
 def main():
     logger.verbose(opt)
 
+    # Init context
+    context = Context()
+    context.login = __getLoginCmd()
+    context.registry = __getRegistry(context.login)
+    context.repository = os.environ['CI_PROJECT_PATH'].lower()
+    logger.notice("Context : %s", context.__dict__)
+
     if opt['docker']:
-        __docker()
+        __docker(context)
 
     if opt['k8s']:
-        __k8s()
+        __k8s(context)
 
-def __docker():
+def __docker(context):
     if opt['--simulate-merge-on']:
         logger.notice("Build docker image with the merge current branch on %s branch", opt['--simulate-merge-on'])
 
@@ -73,25 +81,23 @@ def __docker():
     else:
         logger.notice("Build docker image with the current branch : %s", os.environ['CI_COMMIT_REF_NAME'])
 
-    login = __getLoginCmd()
-
     # Login to the docker registry
-    __runCommand(login)
+    __runCommand(context.login)
 
     # Tag and push docker image
     if not (opt['--image-tag-branch-name'] or opt['--image-tag-latest'] or opt['--image-tag-sha1']) or opt['--image-tag-branch-name']:
         # Default if none option selected
-        __buildTagAndPushOnDockerRegistry(login, __getTagBranchName())
+        __buildTagAndPushOnDockerRegistry(context, __getTagBranchName())
     if opt['--image-tag-latest']:
-        __buildTagAndPushOnDockerRegistry(login, __getTagLatest())
+        __buildTagAndPushOnDockerRegistry(context, __getTagLatest())
     if opt['--image-tag-sha1']:
-        __buildTagAndPushOnDockerRegistry(login, __getTagSha1())
+        __buildTagAndPushOnDockerRegistry(context, __getTagSha1())
 
     # Clean git repository
     if opt['--simulate-merge-on']:
         __runCommand("git checkout .")
 
-def __k8s():
+def __k8s(context):
     # Get k8s namespace
     if opt['--namespace-project-name']:
         namespace = os.environ['CI_PROJECT_NAME']
@@ -107,41 +113,41 @@ def __k8s():
     else :
         tag = __getTagBranchName()
 
-    image_tag = __getImageTag(__getImageName(__getLoginCmd()), tag)
-
     # Need to add secret file for docker registry
     addSecretFile = opt['--use-gitlab-registry']
 
     if addSecretFile:
         # Copy secret file on k8s deploy dir
         __runCommand("cp /cdp/charts/templates/*.yaml %s/templates/" % opt['--deploy-spec-dir'])
-        secretParams = "--set image.registry=%s --set image.credentials.username=%s --set image.credentials.password=%s" % (os.environ['CI_REGISTRY'], os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'])
+        secretParams = "--set image.credentials.username=%s --set image.credentials.password=%s" % (os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'])
     else:
         secretParams = ""
 
     # Instal or Upgrade environnement
-    __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=%s --set image.tag=%s %s --debug -i --namespace=%s"
-        % (namespace, opt['--deploy-spec-dir'], opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], image_tag, secretParams, namespace))
+    __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s %s --debug -i --namespace=%s"
+        % (namespace, opt['--deploy-spec-dir'], opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], context.registry, context.repository, tag, secretParams, namespace))
 
     if addSecretFile:
         # Patch secret on deployment
-        deployment_names = __runCommand("kubectl get deployment -n %s -o name" % (namespace)).strip().split("\n")
-        for deployment_name in deployment_names:
-            __runCommand("kubectl patch %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %s"
-                % (deployment_name.replace("/", " "), os.environ['CI_REGISTRY'], namespace))
+        deployment_names = __runCommand("kubectl get deployment -n %s -o name" % (namespace))
+        if deployment_names is not None:
+            deployment_names = deployment_names.strip().split("\n")
+            for deployment_name in deployment_names:
+                __runCommand("kubectl patch %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %s"
+                    % (deployment_name.replace("/", " "), os.environ['CI_REGISTRY'], namespace))
 
     # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
     __runCommand("timeout -t %s kubectl rollout status deployment/%s -n %s" % (opt['--timeout'], os.environ['CI_PROJECT_NAME'], namespace))
 
 
-def __buildTagAndPushOnDockerRegistry(login, tag):
+def __buildTagAndPushOnDockerRegistry(context, tag):
     if opt['--use-docker-compose']:
         os.environ["CDP_TAG"] = tag
-        os.environ["CDP_REGISTRY"] = "%s/%s" % (__getRegistry(login),  os.environ['CI_PROJECT_PATH'].lower())
+        os.environ["CDP_REGISTRY"] = __getImageName(context)
         __runCommand("docker-compose build")
         __runCommand("docker-compose push")
     else:
-        image_tag = __getImageTag(__getImageName(login), tag)
+        image_tag = __getImageTag(__getImageName(context), tag)
         # Tag docker image
         __runCommand("docker build -t %s ." % (image_tag))
         # Push docker image
@@ -181,15 +187,9 @@ def __getLoginCmd():
 
     return login
 
-def __getImageName(login):
+def __getImageName(context):
     # Configure docker registry
-    if opt['--use-aws-ecr']:
-        # Use AWS ECR from k8s configuration on gitlab-runner deployment
-        image_name = "%s/%s" % (__getRegistry(login), os.environ['CI_PROJECT_PATH'].lower())
-    else:
-        # Use gitlab registry
-        image_name = os.environ['CI_REGISTRY_IMAGE']
-
+    image_name = "%s/%s" % (context.registry, context.repository)
     logger.verbose("Image name : %s", image_name)
     return image_name
 
