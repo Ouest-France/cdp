@@ -125,10 +125,7 @@ def __k8s(context):
     __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s %s --debug -i --namespace=%s"
         % (namespace, opt['--deploy-spec-dir'], opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], context.registry, context.repository, tag, secretParams, namespace))
 
-    ressource_types = ["pod", "deployment"]
-    for ressource_type in ressource_types:
-        __patchWithSecret(ressource_type, namespace)
-
+    __patchWithSecret(namespace)
 
     # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
     __runCommand("timeout -t %s kubectl rollout status deployment/%s -n %s" % (opt['--timeout'], os.environ['CI_PROJECT_NAME'], namespace))
@@ -169,18 +166,16 @@ def __runCommand(command, dry_run = opt['--dry-run']):
     logger.info("")
     return output
 
-def __patchWithSecret(ressource_type, namespace):
+def __patchWithSecret(namespace):
     if opt['--use-gitlab-registry']:
-        # Patch secret on deployment
-        ressources = __runCommand("kubectl get %s -n %s -o name" % (ressource_type, namespace))
+        # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
+        # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
+        ressources = __runCommand("kubectl get deployment -n %s -o name" % (namespace))
         if ressources is not None:
             ressources = ressources.strip().split("\n")
             for ressource in ressources:
-                spec = "{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}" %  os.environ['CI_REGISTRY']
-                if ressource_type == "deployment":
-                    spec = "{\"spec\":{\"template\":%s}}" % spec
-                    
-                __runCommand("kubectl patch %s -p '%s' -n %s" % (ressource.replace("/", " "), spec, namespace))
+                __runCommand("kubectl patch %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %s"
+                    % (ressource.replace("/", " "),  os.environ['CI_REGISTRY'], namespace))
 
 def __getLoginCmd():
     # Configure docker registry
