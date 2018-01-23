@@ -114,9 +114,7 @@ def __k8s(context):
         tag = __getTagBranchName()
 
     # Need to add secret file for docker registry
-    addSecretFile = opt['--use-gitlab-registry']
-
-    if addSecretFile:
+    if opt['--use-gitlab-registry']:
         # Copy secret file on k8s deploy dir
         __runCommand("cp /cdp/charts/templates/*.yaml %s/templates/" % opt['--deploy-spec-dir'])
         secretParams = "--set image.credentials.username=%s --set image.credentials.password=%s" % (os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'])
@@ -127,18 +125,13 @@ def __k8s(context):
     __runCommand("helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s %s --debug -i --namespace=%s"
         % (namespace, opt['--deploy-spec-dir'], opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], context.registry, context.repository, tag, secretParams, namespace))
 
-    if addSecretFile:
-        # Patch secret on deployment
-        deployment_names = __runCommand("kubectl get deployment -n %s -o name" % (namespace))
-        if deployment_names is not None:
-            deployment_names = deployment_names.strip().split("\n")
-            for deployment_name in deployment_names:
-                __runCommand("kubectl patch %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %s"
-                    % (deployment_name.replace("/", " "), os.environ['CI_REGISTRY'], namespace))
+    ressource_types = ["pod", "deployment"]
+    for ressource_type in ressource_types:
+        __patchWithSecret(ressource_type, namespace)
+
 
     # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
     __runCommand("timeout -t %s kubectl rollout status deployment/%s -n %s" % (opt['--timeout'], os.environ['CI_PROJECT_NAME'], namespace))
-
 
 def __buildTagAndPushOnDockerRegistry(context, tag):
     if opt['--use-docker-compose']:
@@ -175,6 +168,16 @@ def __runCommand(command, dry_run = opt['--dry-run']):
 
     logger.info("")
     return output
+
+def __patchWithSecret(ressource_type, namespace):
+    if opt['--use-gitlab-registry']:
+        # Patch secret on deployment
+        ressources = __runCommand("kubectl get %s -n %s -o name" % (ressource_type, namespace))
+        if ressources is not None:
+            ressources = ressources.strip().split("\n")
+            for ressource in ressources:
+                __runCommand("kubectl patch %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %s"
+                    % (ressource.replace("/", " "), os.environ['CI_REGISTRY'], namespace))
 
 def __getLoginCmd():
     # Configure docker registry
