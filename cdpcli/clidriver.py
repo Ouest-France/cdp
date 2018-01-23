@@ -176,8 +176,11 @@ def __patchWithSecret(ressource_type, namespace):
         if ressources is not None:
             ressources = ressources.strip().split("\n")
             for ressource in ressources:
-                __runCommand("kubectl patch %s -p '{\"spec\":{\"template\":{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}}}' -n %s"
-                    % (ressource.replace("/", " "), os.environ['CI_REGISTRY'], namespace))
+                spec = "{\"spec\":{\"imagePullSecrets\": [{\"name\": \"cdp-%s\"}]}}" %  os.environ['CI_REGISTRY']
+                if ressource_type == "deployment":
+                    spec = "{\"spec\":{\"template\":%s}}" % spec
+                    
+                __runCommand("kubectl patch %s -p '%s' -n %s" % (ressource.replace("/", " "), spec, namespace))
 
 def __getLoginCmd():
     # Configure docker registry
