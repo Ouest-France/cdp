@@ -20,7 +20,7 @@ def find_version(*file_paths):
                               version_file, re.M)
     if version_match:
         return version_match.group(1)
-    raise RuntimeError("Unable to find version string.")
+    raise RuntimeError('Unable to find version string.')
 
 
 requires = ['docopt==0.6.2',
@@ -35,7 +35,7 @@ if sys.version_info[:2] == (2, 6):
 
 setup_options = dict(
     name='cdpcli',
-    version=find_version("cdpcli", "__init__.py"),
+    version=find_version('cdpcli', '__init__.py'),
     description='Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.',
     long_description=open('README.md').read(),
     author='Ouest-France SIPA',
@@ -51,7 +51,9 @@ setup_options = dict(
             'argparse>=1.1',
         ]
     },
-    license="Apache License 2.0",
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
+    license='Apache License 2.0',
     classifiers=(
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
