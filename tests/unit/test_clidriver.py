@@ -105,11 +105,11 @@ class TestCliDriver(unittest.TestCase):
     def test_k8s_usegitlabregistry_namespaceprojectbranchname(self):
         # Create FakeCommand
         namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_name)
+        namespace = namespace.replace('_', '-')
         verif_cmd = [
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'helm upgrade %s-%s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s'
-                % (TestCliDriver.ci_project_name,
-                    TestCliDriver.ci_commit_ref_name,
+            {'cmd': 'helm upgrade %s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s'
+                % (namespace,
                     namespace,
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.ci_project_name,

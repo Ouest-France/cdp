@@ -115,9 +115,9 @@ class CLIDriver(object):
         if self._context.opt['--create-default-helm']:
             # Check that the chart dir no exists
             if os.path.isdir(self._context.opt['--deploy-spec-dir']):
-                raise ValueError("Directory %s already exists, while --deploy-spec-dir has been selected." % self._context.opt['--deploy-spec-dir'])
+                raise ValueError('Directory %s already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
             else:
-                os.makedirs("%s/templates" % self._context.opt['--deploy-spec-dir'])
+                os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'])
                 self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
                 with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], 'w') as outfile:
                     data = dict(
@@ -135,6 +135,8 @@ class CLIDriver(object):
         else:
             namespace = '%s-%s' % (os.environ['CI_PROJECT_NAME'], os.environ['CI_COMMIT_REF_NAME'])    # Get deployment host
             host = '%s.%s.%s' % (os.getenv('CI_ENVIRONMENT_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
+
+        namespace = namespace.replace('_', '-')
 
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
