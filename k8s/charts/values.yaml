@@ -1,0 +1,35 @@
+# Default values for cms-block-provider-dummy1.
+replicaCount: 2
+minReadySeconds: 60
+revisionHistoryLimit: 2
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 2
+image:
+  pullPolicy: Always
+service:
+  type: ClusterIP
+  externalPort: 80
+  internalPort: 8080
+  liveness:
+    initialDelaySeconds: 60
+  readiness:
+    initialDelaySeconds: 20
+ingress:
+  annotations:
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  tls:
+    # Secrets must be manually created in the namespace.
+    # - secretName: chart-example-tls
+    #   hosts:
+    #     - chart-example.local
+resources:
+  limits:
+    cpu: 2
+    memory: 2Gi
+  requests:
+    cpu: 1
+    memory: 1Gi

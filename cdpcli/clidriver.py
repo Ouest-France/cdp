@@ -11,7 +11,7 @@ Usage:
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr)
         (--namespace-project-branch-name | --namespace-project-name)
-        [--deploy-spec-dir=<dir>]
+        [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
     cdp (-h | --help | --version)
 Options:
@@ -29,6 +29,7 @@ Options:
     --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
     --namespace-project-branch-name     Use project and branch name to create k8s namespace [default].
     --namespace-project-name            Use project name to create k8s namespace.
+    --create-default-helm               Create default helm for simple project (One docker image).
     --deploy-spec-dir=<dir>             k8s deployment files [default: charts].
     --timeout=<timeout>                 Time in seconds to wait for any individual kubernetes operation [default: 300].
 """
@@ -36,6 +37,7 @@ Options:
 import sys, os
 import logging, verboselogs
 import time
+import yaml
 from Context import Context
 from clicommand import CLICommand
 from cdpcli import __version__
@@ -109,6 +111,23 @@ class CLIDriver(object):
             self._cmd.run_command('git checkout .')
 
     def __k8s(self):
+        # Need to create default helm charts
+        if self._context.opt['--create-default-helm']:
+            # Check that the chart dir no exists
+            if os.path.isdir(self._context.opt['--deploy-spec-dir']):
+                raise ValueError("Directory %s already exists, while --deploy-spec-dir has been selected." % self._context.opt['--deploy-spec-dir'])
+            else:
+                os.makedirs("%s/templates" % self._context.opt['--deploy-spec-dir'])
+                self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
+                with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], 'w') as outfile:
+                    data = dict(
+                        apiVersion = 'v1',
+                        description = 'A Helm chart for Kubernetes',
+                        name = os.environ['CI_PROJECT_NAME'],
+                        version = '0.1.0'
+                    )
+                    yaml.dump(data, outfile, default_flow_style=False)
+
         # Get k8s namespace
         if self._context.opt['--namespace-project-name']:
             namespace = os.environ['CI_PROJECT_NAME']
@@ -127,7 +146,7 @@ class CLIDriver(object):
         # Need to add secret file for docker registry
         if self._context.opt['--use-gitlab-registry']:
             # Copy secret file on k8s deploy dir
-            self._cmd.run_command('cp /cdp/charts/templates/*.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+            self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             secretParams = '--set image.credentials.username=%s --set image.credentials.password=%s' % (os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'])
         else:
             secretParams = ''

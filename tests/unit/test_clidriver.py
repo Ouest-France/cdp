@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import unittest
 import os, sys
+import mock
+
 from cdpcli.clicommand import CLICommand
 from cdpcli.clidriver import CLIDriver, __doc__
 from docopt import docopt, DocoptExit
@@ -104,7 +106,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_name)
         verif_cmd = [
-            {'cmd': 'cp /cdp/charts/templates/*.yaml charts/templates/', 'output': 'unnecessary'},
+            {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s-%s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     TestCliDriver.ci_commit_ref_name,
@@ -153,6 +155,47 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'timeout -t %s kubectl rollout status deployments/package1 -n %s' % (timeout, namespace), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout}, verif_cmd)
+
+    @mock.patch('cdpcli.clidriver.os.path.isdir', return_value=False)
+    @mock.patch('cdpcli.clidriver.os.makedirs')
+    @mock.patch("__builtin__.open")
+    @mock.patch("cdpcli.clidriver.yaml.dump")
+    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname(self, mock_dump, mock_open, mock_makedirs, mock_isdir):
+        # Create FakeCommand
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+        namespace = TestCliDriver.ci_project_name
+        deploy_spec_dir = 'chart'
+
+        verif_cmd = [
+            {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
+            {'cmd': 'helm upgrade %s %s --timeout 300 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --debug -i --namespace=%s'
+                % (TestCliDriver.ci_project_name,
+                    deploy_spec_dir,
+                    namespace,
+                    TestCliDriver.ci_project_name,
+                    TestCliDriver.dns_subdomain,
+                    TestCliDriver.ci_commit_sha[:8],
+                    aws_host,
+                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_commit_sha,
+                    namespace), 'output': 'unnecessary'},
+            {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1'},
+            {'cmd': 'timeout -t 300 kubectl rollout status deployments/package1 -n %s' % (namespace), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir }, verif_cmd)
+
+        mock_isdir.assert_called_with(deploy_spec_dir)
+        mock_makedirs.assert_called_with('%s/templates' % deploy_spec_dir)
+        mock_open.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, 'w')
+        data = dict(
+            apiVersion = 'v1',
+            description = 'A Helm chart for Kubernetes',
+            name = TestCliDriver.ci_project_name,
+            version = '0.1.0'
+        )
+        mock_dump.assert_called_with(data, mock_open.return_value.__enter__.return_value, default_flow_style=False)
 
     def __run_CLIDriver(self, args, verif_cmd, return_code = None):
         cmd = FakeCommand(verif_cmd = verif_cmd)
