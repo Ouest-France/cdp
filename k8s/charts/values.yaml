@@ -6,7 +6,7 @@ strategy:
   type: RollingUpdate
   rollingUpdate:
     maxSurge: 0
-    maxUnavailable: 2
+    maxUnavailable: 1
 image:
   pullPolicy: Always
 service:
