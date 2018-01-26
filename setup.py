@@ -24,7 +24,8 @@ def find_version(*file_paths):
 
 
 requires = ['docopt==0.6.2',
-            'verboselogs==1.7']
+            'verboselogs==1.7',
+            'pyyaml==3.12']
 
 
 if sys.version_info[:2] == (2, 6):
