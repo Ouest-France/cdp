@@ -64,7 +64,7 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
         os.environ['CI_REGISTRY_USER'] = TestCliDriver.ci_registry_user
         os.environ['CI_REGISTRY'] = TestCliDriver.ci_registry
-        os.environ['CI_COMMIT_REF_NAME'] =TestCliDriver. ci_commit_ref_name
+        os.environ['CI_COMMIT_REF_NAME'] = TestCliDriver. ci_commit_ref_name
         os.environ['CI_REGISTRY_IMAGE'] = TestCliDriver.ci_registry_image
         os.environ['CI_PROJECT_NAME'] = TestCliDriver.ci_project_name
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
@@ -196,6 +196,26 @@ class TestCliDriver(unittest.TestCase):
             version = '0.1.0'
         )
         mock_dump.assert_called_with(data, mock_open.return_value.__enter__.return_value, default_flow_style=False)
+
+    def test_validator(self):
+        verif_cmd = [
+            {'cmd': 'validator-cli --url http://%s.%s.%s/configuration --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'validator' }, verif_cmd)
+
+    def test_validator_namespaceprojectname_block(self):
+        verif_cmd = [
+            {'cmd': 'validator-cli --url http://%s.%s/configuration --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'validator', '--namespace-project-name', '--block' }, verif_cmd)
+
+    def test_validator_url_blockjson(self):
+        url = 'http://test.com/configuration2'
+        verif_cmd = [
+            {'cmd': 'validator-cli --url %s --schema BlockJSON' % (url), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'validator', '--url=%s' % url, '--block-json' }, verif_cmd)
+
 
     def __run_CLIDriver(self, args, verif_cmd, return_code = None):
         cmd = FakeCommand(verif_cmd = verif_cmd)

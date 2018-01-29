@@ -5,14 +5,17 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
-        (--use-gitlab-registry | --use-aws-ecr)
+        [--use-gitlab-registry | --use-aws-ecr]
         [--simulate-merge-on=<branch_name>]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr)
-        (--namespace-project-branch-name | --namespace-project-name)
+        [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
+    cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
+        [--block-provider | --block | --block-json]
+        [--namespace-project-branch-name | --namespace-project-name | --url=<url>]
     cdp (-h | --help | --version)
 Options:
     -h, --help                          Show this screen and exit.
@@ -27,11 +30,15 @@ Options:
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
     --use-aws-ecr                       Use AWS ECR from k8s configuraiton for pull/push docker image.
     --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
-    --namespace-project-branch-name     Use project and branch name to create k8s namespace [default].
-    --namespace-project-name            Use project name to create k8s namespace.
+    --namespace-project-branch-name     Use project and branch name to create k8s namespace or choice environment host [default].
+    --namespace-project-name            Use project name to create k8s namespace or choice environment host.
     --create-default-helm               Create default helm for simple project (One docker image).
     --deploy-spec-dir=<dir>             k8s deployment files [default: charts].
     --timeout=<timeout>                 Time in seconds to wait for any individual kubernetes operation [default: 300].
+    --block-provider                    Valid BlockProviderConfig interface [default].
+    --block                             Valid BlockConfig interface.
+    --block-json                        Valid BlockJSON interface.
+    --url=<url>                         Test.
 """
 
 import sys, os
@@ -78,6 +85,9 @@ class CLIDriver(object):
 
         if self._context.opt['k8s']:
             self.__k8s()
+
+        if self._context.opt['validator']:
+            self.__validator()
 
     def __docker(self):
         if self._context.opt['--simulate-merge-on']:
@@ -128,15 +138,8 @@ class CLIDriver(object):
                     )
                     yaml.dump(data, outfile, default_flow_style=False)
 
-        # Get k8s namespace
-        if self._context.opt['--namespace-project-name']:
-            namespace = os.environ['CI_PROJECT_NAME']
-            host = '%s.%s' % (os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
-        else:
-            namespace = '%s-%s' % (os.environ['CI_PROJECT_NAME'], os.environ['CI_COMMIT_REF_NAME'])    # Get deployment host
-            host = '%s.%s.%s' % (os.getenv('CI_ENVIRONMENT_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
-
-        namespace = namespace.replace('_', '-')
+        namespace = self.__getNamespace()
+        host = self.__getHost()
 
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
@@ -204,3 +207,35 @@ class CLIDriver(object):
 
     def __getTagSha1(self):
         return os.environ['CI_COMMIT_SHA']
+
+    def __getNamespace(self):
+        # Get k8s namespace
+        if self._context.opt['--namespace-project-name']:
+            namespace = os.environ['CI_PROJECT_NAME']
+        else:
+            namespace = '%s-%s' % (os.environ['CI_PROJECT_NAME'], os.environ['CI_COMMIT_REF_NAME'])    # Get deployment host
+
+        return namespace.replace('_', '-')
+
+    def __getHost(self):
+        # Get k8s namespace
+        if self._context.opt['--namespace-project-name']:
+            return '%s.%s' % (os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
+        else:
+            return '%s.%s.%s' % (os.getenv('CI_ENVIRONMENT_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
+
+
+    def __validator(self):
+        if self._context.opt['--block']:
+            schema =  'BlockConfig'
+        elif self._context.opt['--block-json']:
+            schema = 'BlockJSON'
+        else :
+            schema = 'BlockProviderConfig'
+
+        if self._context.opt['--url']:
+            url = self._context.opt['--url']
+        else:
+            url = 'http://%s/configuration' % self.__getHost()
+
+        self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))
