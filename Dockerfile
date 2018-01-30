@@ -9,7 +9,7 @@ ENV VALIDATOR_CLI_VERSION="1.0.44"
 ADD . cdp/
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl python python-pip docker git openssh-client apt-transport-https ca-certificates software-properties-common  python-setuptools groff \
+ && apt-get install -y --no-install-recommends curl python python-pip docker git openssh-client apt-transport-https ca-certificates software-properties-common python-setuptools groff \
  && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
  && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
  && apt-get update \
@@ -28,7 +28,7 @@ RUN apt-get update \
  && pip install docker-compose \
  && cd cdp \
  && python setup.py install \
- && apt-get purge -y python-pip curl python-setuptools python3 python3.5-minimal libpython3.5-minimal \
+ && apt-get purge -y python-pip curl python3 python3.5-minimal libpython3.5-minimal \
  && apt -y autoremove \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
