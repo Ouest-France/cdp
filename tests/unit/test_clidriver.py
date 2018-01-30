@@ -124,8 +124,8 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1\ndeployments/package2'},
             {'cmd': 'kubectl patch deployments package1 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.ci_registry, namespace), 'output': 'unnecessary'},
             {'cmd': 'kubectl patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.ci_registry, namespace), 'output': 'unnecessary'},
-            {'cmd': 'timeout -t 300 kubectl rollout status deployments/package1 -n %s' % namespace, 'output': 'unnecessary'},
-            {'cmd': 'timeout -t 300 kubectl rollout status deployments/package2 -n %s' % namespace, 'output': 'unnecessary'}
+            {'cmd': 'timeout 300 kubectl rollout status deployments/package1 -n %s' % namespace, 'output': 'unnecessary'},
+            {'cmd': 'timeout 300 kubectl rollout status deployments/package2 -n %s' % namespace, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name' }, verif_cmd)
 
@@ -152,7 +152,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     namespace), 'output': 'unnecessary'},
             {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1'},
-            {'cmd': 'timeout -t %s kubectl rollout status deployments/package1 -n %s' % (timeout, namespace), 'output': 'unnecessary'}
+            {'cmd': 'timeout %s kubectl rollout status deployments/package1 -n %s' % (timeout, namespace), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout}, verif_cmd)
 
@@ -182,7 +182,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     namespace), 'output': 'unnecessary'},
             {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1'},
-            {'cmd': 'timeout -t 300 kubectl rollout status deployments/package1 -n %s' % (namespace), 'output': 'unnecessary'}
+            {'cmd': 'timeout 300 kubectl rollout status deployments/package1 -n %s' % (namespace), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir }, verif_cmd)
 
