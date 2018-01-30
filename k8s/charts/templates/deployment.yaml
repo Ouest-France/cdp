@@ -23,6 +23,9 @@ spec:
         - name: {{ template "project.name" . }}-{{ .Values.image.commit.sha }}
           image: {{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: "APP_DOMAIN"
+              value: "{{ .Values.ingress.host }}"
           ports:
             - containerPort: {{ .Values.service.internalPort }}
           livenessProbe:
