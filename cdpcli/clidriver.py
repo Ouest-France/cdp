@@ -236,6 +236,6 @@ class CLIDriver(object):
         if self._context.opt['--url']:
             url = self._context.opt['--url']
         else:
-            url = 'http://%s/configuration' % self.__getHost()
+            url = 'http://%s/configurations' % self.__getHost()
 
         self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))

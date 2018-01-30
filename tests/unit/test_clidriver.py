@@ -199,13 +199,13 @@ class TestCliDriver(unittest.TestCase):
 
     def test_validator(self):
         verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s.%s.%s/configuration --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
+            {'cmd': 'validator-cli --url http://%s.%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator' }, verif_cmd)
 
     def test_validator_namespaceprojectname_block(self):
         verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s.%s/configuration --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
+            {'cmd': 'validator-cli --url http://%s.%s/configurations --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator', '--namespace-project-name', '--block' }, verif_cmd)
 
