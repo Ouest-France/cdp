@@ -175,7 +175,7 @@ class CLIDriver(object):
             # Rollout
             for ressource in ressources:
                 # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
-                self._cmd.run_command('timeout -t %s kubectl rollout status %s -n %s' % (self._context.opt['--timeout'], ressource, namespace))
+                self._cmd.run_command('timeout %s kubectl rollout status %s -n %s' % (self._context.opt['--timeout'], ressource, namespace))
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
         if self._context.opt['--use-docker-compose']:
