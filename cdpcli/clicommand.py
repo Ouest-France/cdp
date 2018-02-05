@@ -9,7 +9,7 @@ class CLICommand(object):
 
     def __init__(self, dry_run = 1):
         self._dry_run = dry_run
-        LOG.info('Dry-run init %s' % self._dry_run)
+        LOG.verbose('Dry-run init %s' % self._dry_run)
 
     def run_command(self, command, dry_run = None):
         if dry_run is None:

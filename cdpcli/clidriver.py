@@ -16,6 +16,8 @@ Usage:
     cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
         [--block-provider | --block | --block-json]
         [--namespace-project-branch-name | --namespace-project-name | --url=<url>]
+    cdp sleep [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
+        [--seconds=<seconds>]
     cdp (-h | --help | --version)
 Options:
     -h, --help                          Show this screen and exit.
@@ -38,6 +40,7 @@ Options:
     --block-provider                    Valid BlockProviderConfig interface [default].
     --block                             Valid BlockConfig interface.
     --block-json                        Valid BlockJSON interface.
+    --seconds=<seconds>                 Time to sleep in seconds [default: 600].
     --url=<url>                         Test.
 """
 
@@ -88,6 +91,9 @@ class CLIDriver(object):
 
         if self._context.opt['validator']:
             self.__validator()
+
+        if self._context.opt['sleep']:
+            self.__sleep()
 
     def __docker(self):
         if self._context.opt['--simulate-merge-on']:
@@ -224,7 +230,6 @@ class CLIDriver(object):
         else:
             return '%s.%s.%s' % (os.getenv('CI_ENVIRONMENT_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
 
-
     def __validator(self):
         if self._context.opt['--block']:
             schema =  'BlockConfig'
@@ -239,3 +244,6 @@ class CLIDriver(object):
             url = 'http://%s/configurations' % self.__getHost()
 
         self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))
+
+    def __sleep(self):
+        self._cmd.run_command('sleep %s' % self._context.opt['--sleep'])
