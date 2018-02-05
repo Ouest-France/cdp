@@ -246,4 +246,4 @@ class CLIDriver(object):
         self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))
 
     def __sleep(self):
-        self._cmd.run_command('sleep %s' % self._context.opt['--sleep'])
+        self._cmd.run_command('sleep %s' % self._context.opt['--seconds'])
