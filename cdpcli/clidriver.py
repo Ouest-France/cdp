@@ -2,32 +2,31 @@
 """
 Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
-    cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
+    cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
         (--command=<build_cmd>)
         [--dind]
         [--simulate-merge-on=<branch_name>]
-    cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
+    cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--use-gitlab-registry | --use-aws-ecr]
-    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
+    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr)
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
-    cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
+    cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--block-provider | --block | --block-json]
         [--namespace-project-branch-name | --namespace-project-name | --url=<url>]
-    cdp sleep [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
-        [--seconds=<seconds>]
     cdp (-h | --help | --version)
 Options:
     -h, --help                          Show this screen and exit.
     -v, --verbose                       Make more noise.
     -q, --quiet                         Make less noise.
     -d, --dry-run                       Simulate execution.
+    --sleep=<seconds>                   Time to sleep in seconds [default: 0].
     --docker-image=<image_name>         Specify docker image name for build project.
     --command=<build_cmd>               Command to run in the docker image.
     --dind                              Activate 'Docker in Docker' inside this container.
@@ -47,7 +46,6 @@ Options:
     --block-provider                    Valid BlockProviderConfig interface [default].
     --block                             Valid BlockConfig interface.
     --block-json                        Valid BlockJSON interface.
-    --seconds=<seconds>                 Time to sleep in seconds [default: 600].
     --url=<url>                         Test.
 """
 
@@ -102,9 +100,9 @@ class CLIDriver(object):
 
         if self._context.opt['validator']:
             self.__validator()
-
-        if self._context.opt['sleep']:
-            self.__sleep()
+            
+        if self._context.opt['--sleep'] != "0":
+            self._cmd.run_command('sleep %s' % self._context.opt['--sleep'])
 
 
     def __build(self):
@@ -236,10 +234,6 @@ class CLIDriver(object):
             url = 'http://%s/configurations' % self.__getHost()
 
         self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))
-
-
-    def __sleep(self):
-        self._cmd.run_command('sleep %s' % self._context.opt['--seconds'])
 
 
     def __getImageName(self):

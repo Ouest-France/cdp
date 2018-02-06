@@ -84,11 +84,12 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--dind' }, verif_cmd)
 
-    def test_build_simulatemergeon(self):
+    def test_build_simulatemergeon_sleep(self):
         # Create FakeCommand
         branch_name = 'master'
         image_name = 'maven:3.5-jdk-8'
         command_name = 'mvn clean install'
+        sleep = 10
         verif_cmd = [
             {'cmd': 'git config --global user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'output': 'unnecessary'},
             {'cmd': 'git config --global user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'output': 'unnecessary'},
@@ -97,18 +98,21 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
             {'cmd': 'docker run --rm  -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'},
-            {'cmd': 'git checkout .', 'output': 'unnecessary'}
+            {'cmd': 'git checkout .', 'output': 'unnecessary'},
+            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name }, verif_cmd)
+        self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
 
-    def test_docker_usedocker_imagetagbranchname_usegitlabregistry(self):
+    def test_docker_usedocker_imagetagbranchname_usegitlabregistry_sleep(self):
         # Create FakeCommand
+        sleep = 10
         verif_cmd = [
             {'cmd': 'docker login -u %s -p %s %s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'}
+            {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
+            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry' }, verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--sleep=%s' % sleep }, verif_cmd)
 
     def test_docker_usedockercompose_imagetaglatest_imagetagsha1_useawsecr(self):
         # Create FakeCommand
@@ -182,13 +186,13 @@ class TestCliDriver(unittest.TestCase):
     @mock.patch('cdpcli.clidriver.os.makedirs')
     @mock.patch("__builtin__.open")
     @mock.patch("cdpcli.clidriver.yaml.dump")
-    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname(self, mock_dump, mock_open, mock_makedirs, mock_isdir):
+    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isdir):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
         deploy_spec_dir = 'chart'
-
+        sleep = 10
         verif_cmd = [
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
@@ -204,9 +208,10 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     namespace), 'output': 'unnecessary'},
             {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1'},
-            {'cmd': 'timeout 300 kubectl rollout status deployments/package1 -n %s' % (namespace), 'output': 'unnecessary'}
+            {'cmd': 'timeout 300 kubectl rollout status deployments/package1 -n %s' % (namespace), 'output': 'unnecessary'},
+            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir }, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep }, verif_cmd)
 
         mock_isdir.assert_called_with(deploy_spec_dir)
         mock_makedirs.assert_called_with('%s/templates' % deploy_spec_dir)
@@ -231,29 +236,14 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'validator', '--namespace-project-name', '--block' }, verif_cmd)
 
-    def test_validator_url_blockjson(self):
+    def test_validator_url_blockjson_sleep(self):
         url = 'http://test.com/configuration2'
+        sleep = 10
         verif_cmd = [
-            {'cmd': 'validator-cli --url %s --schema BlockJSON' % (url), 'output': 'unnecessary'}
+            {'cmd': 'validator-cli --url %s --schema BlockJSON' % (url), 'output': 'unnecessary'},
+            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'validator', '--url=%s' % url, '--block-json' }, verif_cmd)
-
-
-    def test_sleep(self):
-        # Create FakeCommand
-        verif_cmd = [
-            {'cmd': 'sleep 600', 'output': 'unnecessary'}
-        ]
-        self.__run_CLIDriver({ 'sleep' }, verif_cmd)
-
-    def test_sleep_seconds(self):
-        # Create FakeCommand
-        seconds = 300
-        verif_cmd = [
-            {'cmd': 'sleep %s' % seconds, 'output': 'unnecessary'}
-        ]
-        self.__run_CLIDriver({ 'sleep', '--seconds=%s' % seconds }, verif_cmd)
-
+        self.__run_CLIDriver({ 'validator', '--url=%s' % url, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
 
     def __run_CLIDriver(self, args, verif_cmd, return_code = None):
         cmd = FakeCommand(verif_cmd = verif_cmd)
