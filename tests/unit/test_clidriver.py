@@ -72,6 +72,31 @@ class TestCliDriver(unittest.TestCase):
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
         os.environ['GITLAB_USER_ID'] = TestCliDriver.gitlab_user_id
 
+    def test_build(self):
+        # Create FakeCommand
+        image_name = 'maven:3.5-jdk-8'
+        command_name = 'mvn clean install'
+        verif_cmd = [
+            {'cmd': 'docker run -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name }, verif_cmd)
+
+    def test_build_simulatemergeon(self):
+        # Create FakeCommand
+        branch_name = 'master'
+        image_name = 'maven:3.5-jdk-8'
+        command_name = 'mvn clean install'
+        verif_cmd = [
+            {'cmd': 'git config --global user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'output': 'unnecessary'},
+            {'cmd': 'git config --global user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'output': 'unnecessary'},
+            {'cmd': 'git checkout %s' % branch_name, 'output': 'unnecessary'},
+            {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
+            {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
+            {'cmd': 'docker run -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'},
+            {'cmd': 'git checkout .', 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name }, verif_cmd)
+
     def test_docker_usedocker_imagetagbranchname_usegitlabregistry(self):
         # Create FakeCommand
         verif_cmd = [
@@ -81,26 +106,19 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry' }, verif_cmd)
 
-    def test_docker_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_simulatemergeon(self):
+    def test_docker_usedockercompose_imagetaglatest_imagetagsha1_useawsecr(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
-        branch_name = 'master'
         verif_cmd = [
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
-            {'cmd': 'git config --global user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'output': 'unnecessary'},
-            {'cmd': 'git config --global user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'output': 'unnecessary'},
-            {'cmd': 'git checkout %s' % branch_name, 'output': 'unnecessary'},
-            {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
-            {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
-            {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
-            {'cmd': 'git checkout .', 'output': 'unnecessary'}
+            {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}}
         ]
-        self.__run_CLIDriver({ 'docker', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr', '--simulate-merge-on=%s' % branch_name }, verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr' }, verif_cmd)
 
     def test_k8s_usegitlabregistry_namespaceprojectbranchname(self):
         # Create FakeCommand
@@ -215,6 +233,22 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'validator-cli --url %s --schema BlockJSON' % (url), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator', '--url=%s' % url, '--block-json' }, verif_cmd)
+
+
+    def test_sleep(self):
+        # Create FakeCommand
+        verif_cmd = [
+            {'cmd': 'sleep 600', 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'sleep' }, verif_cmd)
+
+    def test_sleep_seconds(self):
+        # Create FakeCommand
+        seconds = 300
+        verif_cmd = [
+            {'cmd': 'sleep %s' % seconds, 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'sleep', '--seconds=%s' % seconds }, verif_cmd)
 
 
     def __run_CLIDriver(self, args, verif_cmd, return_code = None):

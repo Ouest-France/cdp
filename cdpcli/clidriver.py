@@ -2,11 +2,14 @@
 """
 Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
+    cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
+        (--docker-image=<image_name>)
+        (--command=<build_cmd>)
+        [--simulate-merge-on=<branch_name>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--use-gitlab-registry | --use-aws-ecr]
-        [--simulate-merge-on=<branch_name>]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr)
@@ -24,6 +27,9 @@ Options:
     -v, --verbose                       Make more noise.
     -q, --quiet                         Make less noise.
     -d, --dry-run                       Simulate execution.
+    --docker-image=<image_name>         Specify docker image name for build project.
+    --command=<build_cmd>               Command to run in the docker image.
+    --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
     --use-docker                        Use docker to build / push image [default].
     --use-docker-compose                Use docker-compose to build / push image.
     --image-tag-branch-name             Tag docker image with branch name or use it [default].
@@ -31,7 +37,6 @@ Options:
     --image-tag-sha1                    Tag docker image with commit sha1  or use it.
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
     --use-aws-ecr                       Use AWS ECR from k8s configuraiton for pull/push docker image.
-    --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
     --namespace-project-branch-name     Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name            Use project name to create k8s namespace or choice environment host.
     --create-default-helm               Create default helm for simple project (One docker image).
@@ -70,6 +75,7 @@ def main():
 class CLIDriver(object):
 
     def __init__(self, cmd=None, opt=None):
+        LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
         if cmd is None:
             raise ValueError('TODO')
         else:
@@ -83,6 +89,9 @@ class CLIDriver(object):
 
 
     def main(self, args=None):
+        if self._context.opt['build']:
+            self.__build()
+
         if self._context.opt['docker']:
             self.__docker()
 
@@ -95,7 +104,8 @@ class CLIDriver(object):
         if self._context.opt['sleep']:
             self.__sleep()
 
-    def __docker(self):
+
+    def __build(self):
         if self._context.opt['--simulate-merge-on']:
             LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
 
@@ -110,6 +120,14 @@ class CLIDriver(object):
         else:
             LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
 
+        self._cmd.run_command('docker run -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (self._context.opt['--docker-image'], self._context.opt['--command']))
+
+        # Clean git repository
+        if self._context.opt['--simulate-merge-on']:
+            self._cmd.run_command('git checkout .')
+
+
+    def __docker(self):
         # Login to the docker registry
         self._cmd.run_command(self._context.login)
 
@@ -122,9 +140,6 @@ class CLIDriver(object):
         if self._context.opt['--image-tag-sha1']:
             self.__buildTagAndPushOnDockerRegistry(self.__getTagSha1())
 
-        # Clean git repository
-        if self._context.opt['--simulate-merge-on']:
-            self._cmd.run_command('git checkout .')
 
     def __k8s(self):
         # Need to create default helm charts
@@ -183,6 +198,7 @@ class CLIDriver(object):
                 # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
                 self._cmd.run_command('timeout %s kubectl rollout status %s -n %s' % (self._context.opt['--timeout'], ressource, namespace))
 
+
     def __buildTagAndPushOnDockerRegistry(self, tag):
         if self._context.opt['--use-docker-compose']:
             os.environ['CDP_TAG'] = tag
@@ -195,6 +211,27 @@ class CLIDriver(object):
             self._cmd.run_command('docker build -t %s .' % (image_tag))
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
+
+
+    def __validator(self):
+        if self._context.opt['--block']:
+            schema =  'BlockConfig'
+        elif self._context.opt['--block-json']:
+            schema = 'BlockJSON'
+        else :
+            schema = 'BlockProviderConfig'
+
+        if self._context.opt['--url']:
+            url = self._context.opt['--url']
+        else:
+            url = 'http://%s/configurations' % self.__getHost()
+
+        self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))
+
+
+    def __sleep(self):
+        self._cmd.run_command('sleep %s' % self._context.opt['--seconds'])
+
 
     def __getImageName(self):
         # Configure docker registry
@@ -229,21 +266,3 @@ class CLIDriver(object):
             return '%s.%s' % (os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
         else:
             return '%s.%s.%s' % (os.getenv('CI_ENVIRONMENT_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
-
-    def __validator(self):
-        if self._context.opt['--block']:
-            schema =  'BlockConfig'
-        elif self._context.opt['--block-json']:
-            schema = 'BlockJSON'
-        else :
-            schema = 'BlockProviderConfig'
-
-        if self._context.opt['--url']:
-            url = self._context.opt['--url']
-        else:
-            url = 'http://%s/configurations' % self.__getHost()
-
-        self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))
-
-    def __sleep(self):
-        self._cmd.run_command('sleep %s' % self._context.opt['--seconds'])
