@@ -72,15 +72,17 @@ class TestCliDriver(unittest.TestCase):
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
         os.environ['GITLAB_USER_ID'] = TestCliDriver.gitlab_user_id
 
-    def test_build(self):
+    def test_build_dind(self):
         # Create FakeCommand
         image_name = 'maven:3.5-jdk-8'
         command_name = 'mvn clean install'
         verif_cmd = [
+            {'cmd': 'docker pull docker:dind', 'output': 'unnecessary'},
+            {'cmd': 'docker run --rm --privileged --name docker-dind -d docker:dind', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
-            {'cmd': 'docker run -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'}
+            {'cmd': 'docker run --rm --link docker-dind:docker -e DOCKER_HOST=tcp://docker:2375 -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name }, verif_cmd)
+        self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--dind' }, verif_cmd)
 
     def test_build_simulatemergeon(self):
         # Create FakeCommand
@@ -94,7 +96,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
             {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
-            {'cmd': 'docker run -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'},
+            {'cmd': 'docker run --rm  -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'},
             {'cmd': 'git checkout .', 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name }, verif_cmd)

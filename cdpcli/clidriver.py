@@ -5,6 +5,7 @@ Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
         (--docker-image=<image_name>)
         (--command=<build_cmd>)
+        [--dind]
         [--simulate-merge-on=<branch_name>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)]
         [--use-docker | --use-docker-compose]
@@ -29,6 +30,7 @@ Options:
     -d, --dry-run                       Simulate execution.
     --docker-image=<image_name>         Specify docker image name for build project.
     --command=<build_cmd>               Command to run in the docker image.
+    --dind                              Activate 'Docker in Docker' inside this container.
     --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
     --use-docker                        Use docker to build / push image [default].
     --use-docker-compose                Use docker-compose to build / push image.
@@ -120,8 +122,14 @@ class CLIDriver(object):
         else:
             LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
 
+        dind = ''
+        if self._context.opt['--dind']:
+            self._cmd.run_command('docker pull docker:dind')
+            self._cmd.run_command('docker run --rm --privileged --name docker-dind -d docker:dind')
+            dind = '--link docker-dind:docker -e DOCKER_HOST=tcp://docker:2375'
+
         self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
-        self._cmd.run_command('docker run -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (self._context.opt['--docker-image'], self._context.opt['--command']))
+        self._cmd.run_command('docker run --rm %s -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (dind, self._context.opt['--docker-image'], self._context.opt['--command']))
 
         # Clean git repository
         if self._context.opt['--simulate-merge-on']:
