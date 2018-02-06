@@ -120,6 +120,7 @@ class CLIDriver(object):
         else:
             LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
 
+        self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
         self._cmd.run_command('docker run -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (self._context.opt['--docker-image'], self._context.opt['--command']))
 
         # Clean git repository

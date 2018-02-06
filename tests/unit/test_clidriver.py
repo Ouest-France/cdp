@@ -77,6 +77,7 @@ class TestCliDriver(unittest.TestCase):
         image_name = 'maven:3.5-jdk-8'
         command_name = 'mvn clean install'
         verif_cmd = [
+            {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
             {'cmd': 'docker run -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name }, verif_cmd)
@@ -92,6 +93,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git checkout %s' % branch_name, 'output': 'unnecessary'},
             {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
             {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
             {'cmd': 'docker run -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'},
             {'cmd': 'git checkout .', 'output': 'unnecessary'}
         ]
