@@ -89,20 +89,22 @@ class CLIDriver(object):
 
 
     def main(self, args=None):
-        if self._context.opt['build']:
-            self.__build()
+        try:
+            if self._context.opt['build']:
+                self.__build()
 
-        if self._context.opt['docker']:
-            self.__docker()
+            if self._context.opt['docker']:
+                self.__docker()
 
-        if self._context.opt['k8s']:
-            self.__k8s()
+            if self._context.opt['k8s']:
+                self.__k8s()
 
-        if self._context.opt['validator']:
-            self.__validator()
-            
-        if self._context.opt['--sleep'] != "0":
-            self._cmd.run_command('sleep %s' % self._context.opt['--sleep'])
+            if self._context.opt['validator']:
+                self.__validator()
+
+        finally:
+            if self._context.opt['--sleep'] != "0":
+                self._cmd.run_command('sleep %s' % self._context.opt['--sleep'])
 
 
     def __build(self):
