@@ -77,6 +77,7 @@ class TestCliDriver(unittest.TestCase):
         image_name = 'maven:3.5-jdk-8'
         command_name = 'mvn clean install'
         verif_cmd = [
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull docker:dind', 'output': 'unnecessary'},
             {'cmd': 'docker run --rm --privileged --name docker-dind -d docker:dind', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
@@ -91,6 +92,7 @@ class TestCliDriver(unittest.TestCase):
         command_name = 'mvn clean install'
         sleep = 10
         verif_cmd = [
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'git config --global user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'output': 'unnecessary'},
             {'cmd': 'git config --global user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'output': 'unnecessary'},
             {'cmd': 'git checkout %s' % branch_name, 'output': 'unnecessary'},
@@ -107,6 +109,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         sleep = 10
         verif_cmd = [
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s %s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
@@ -120,6 +123,7 @@ class TestCliDriver(unittest.TestCase):
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
@@ -133,6 +137,7 @@ class TestCliDriver(unittest.TestCase):
         namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_name)
         namespace = namespace.replace('_', '-')
         verif_cmd = [
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s'
                 % (namespace,
@@ -165,6 +170,7 @@ class TestCliDriver(unittest.TestCase):
 
         verif_cmd = [
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
@@ -195,6 +201,7 @@ class TestCliDriver(unittest.TestCase):
         sleep = 10
         verif_cmd = [
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s %s --timeout 300 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
@@ -226,12 +233,14 @@ class TestCliDriver(unittest.TestCase):
 
     def test_validator(self):
         verif_cmd = [
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'validator-cli --url http://%s.%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator' }, verif_cmd)
 
     def test_validator_namespaceprojectname_block(self):
         verif_cmd = [
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'validator-cli --url http://%s.%s/configurations --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator', '--namespace-project-name', '--block' }, verif_cmd)
@@ -240,6 +249,7 @@ class TestCliDriver(unittest.TestCase):
         url = 'http://test.com/configuration2'
         sleep = 10
         verif_cmd = [
+            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'validator-cli --url %s --schema BlockJSON' % (url), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
