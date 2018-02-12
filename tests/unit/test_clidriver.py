@@ -139,7 +139,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'helm upgrade %s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --debug -i --namespace=%s'
+            {'cmd': 'helm upgrade %s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s  --debug -i --namespace=%s'
                 % (namespace,
                     namespace,
                     TestCliDriver.ci_commit_ref_name,
@@ -160,18 +160,19 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name' }, verif_cmd)
 
-    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout(self):
+    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_replicas(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
         timeout = 180
         deploy_spec_dir = 'deploy'
+        replicaCount = 10
 
         verif_cmd = [
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
             {'cmd': 'env', 'output': 'unnecessary'},
-            {'cmd': 'helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --debug -i --namespace=%s'
+            {'cmd': 'helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --set replicaCount=%s --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     timeout,
@@ -182,11 +183,12 @@ class TestCliDriver(unittest.TestCase):
                     aws_host,
                     TestCliDriver.ci_project_path.lower(),
                     TestCliDriver.ci_commit_sha,
+                    replicaCount,
                     namespace), 'output': 'unnecessary'},
             {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1'},
             {'cmd': 'timeout %s kubectl rollout status deployments/package1 -n %s' % (timeout, namespace), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout}, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--replicas=%s' % replicaCount}, verif_cmd)
 
     @mock.patch('cdpcli.clidriver.os.path.isdir', return_value=False)
     @mock.patch('cdpcli.clidriver.os.makedirs')
@@ -203,7 +205,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
-            {'cmd': 'helm upgrade %s %s --timeout 300 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --debug -i --namespace=%s'
+            {'cmd': 'helm upgrade %s %s --timeout 300 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s   --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     namespace,
