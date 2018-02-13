@@ -19,8 +19,9 @@ Usage:
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
     cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        [--path=<path>]
         [--block-provider | --block | --block-json]
-        [--namespace-project-branch-name | --namespace-project-name | --url=<url>]
+        [--namespace-project-branch-name | --namespace-project-name]
     cdp (-h | --help | --version)
 Options:
     -h, --help                          Show this screen and exit.
@@ -45,10 +46,10 @@ Options:
     --create-default-helm               Create default helm for simple project (One docker image).
     --deploy-spec-dir=<dir>             k8s deployment files [default: charts].
     --timeout=<timeout>                 Time in seconds to wait for any individual kubernetes operation [default: 300].
+    --path=<path>                       Path to validate [default: configurations].
     --block-provider                    Valid BlockProviderConfig interface [default].
     --block                             Valid BlockConfig interface.
     --block-json                        Valid BlockJSON interface.
-    --url=<url>                         Test.
 """
 
 import sys, os
@@ -239,10 +240,7 @@ class CLIDriver(object):
         else :
             schema = 'BlockProviderConfig'
 
-        if self._context.opt['--url']:
-            url = self._context.opt['--url']
-        else:
-            url = 'http://%s/configurations' % self.__getHost()
+        url = 'http://%s/%s' % (self.__getHost(), self._context.opt['--path'])
 
         self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))
 

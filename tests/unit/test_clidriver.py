@@ -240,7 +240,7 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'validator' }, verif_cmd)
 
-    def test_validator_namespaceprojectname_block(self):
+    def test_validator_path_namespaceprojectname_block(self):
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'validator-cli --url http://%s.%s/configurations --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
@@ -249,13 +249,15 @@ class TestCliDriver(unittest.TestCase):
 
     def test_validator_url_blockjson_sleep(self):
         url = 'http://test.com/configuration2'
+        path = 'blockconfigurations'
         sleep = 10
+
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
-            {'cmd': 'validator-cli --url %s --schema BlockJSON' % (url), 'output': 'unnecessary'},
+            {'cmd': 'validator-cli --url http://%s.%s.%s/%s --schema BlockJSON' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain, path), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'validator', '--url=%s' % url, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'validator', '--path=%s' % path, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
 
     def __run_CLIDriver(self, args, verif_cmd, return_code = None):
         cmd = FakeCommand(verif_cmd = verif_cmd)
