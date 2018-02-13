@@ -77,7 +77,6 @@ class TestCliDriver(unittest.TestCase):
         image_name = 'maven:3.5-jdk-8'
         command_name = 'mvn clean install'
         verif_cmd = [
-            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull docker:dind', 'output': 'unnecessary'},
             {'cmd': 'docker run --rm --privileged --name docker-dind -d docker:dind', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
@@ -85,7 +84,7 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--dind' }, verif_cmd)
 
-    def test_build_simulatemergeon_sleep(self):
+    def test_build_verbose_simulatemergeon_sleep(self):
         # Create FakeCommand
         branch_name = 'master'
         image_name = 'maven:3.5-jdk-8'
@@ -103,13 +102,12 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git checkout .', 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'build', '--verbose', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
 
     def test_docker_usedocker_imagetagbranchname_usegitlabregistry_sleep(self):
         # Create FakeCommand
         sleep = 10
         verif_cmd = [
-            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s %s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
@@ -117,7 +115,7 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--sleep=%s' % sleep }, verif_cmd)
 
-    def test_docker_usedockercompose_imagetaglatest_imagetagsha1_useawsecr(self):
+    def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
@@ -130,14 +128,13 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}}
         ]
-        self.__run_CLIDriver({ 'docker', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr' }, verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--verbose', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr' }, verif_cmd)
 
     def test_k8s_usegitlabregistry_namespaceprojectbranchname(self):
         # Create FakeCommand
         namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_name)
         namespace = namespace.replace('_', '-')
         verif_cmd = [
-            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s  --debug -i --namespace=%s'
                 % (namespace,
@@ -160,7 +157,7 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name' }, verif_cmd)
 
-    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_replicas(self):
+    def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_replicas(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
@@ -188,7 +185,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1'},
             {'cmd': 'timeout %s kubectl rollout status deployments/package1 -n %s' % (timeout, namespace), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--replicas=%s' % replicaCount}, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--replicas=%s' % replicaCount}, verif_cmd)
 
     @mock.patch('cdpcli.clidriver.os.path.isdir', return_value=False)
     @mock.patch('cdpcli.clidriver.os.makedirs')
@@ -203,7 +200,6 @@ class TestCliDriver(unittest.TestCase):
         sleep = 10
         verif_cmd = [
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
-            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s %s --timeout 300 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s   --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
@@ -235,17 +231,16 @@ class TestCliDriver(unittest.TestCase):
 
     def test_validator(self):
         verif_cmd = [
-            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'validator-cli --url http://%s.%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator' }, verif_cmd)
 
-    def test_validator_path_namespaceprojectname_block(self):
+    def test_validator_verbose_path_namespaceprojectname_block(self):
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'validator-cli --url http://%s.%s/configurations --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'validator', '--namespace-project-name', '--block' }, verif_cmd)
+        self.__run_CLIDriver({ 'validator', '--verbose', '--namespace-project-name', '--block' }, verif_cmd)
 
     def test_validator_url_blockjson_sleep(self):
         url = 'http://test.com/configuration2'
@@ -253,7 +248,6 @@ class TestCliDriver(unittest.TestCase):
         sleep = 10
 
         verif_cmd = [
-            {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'validator-cli --url http://%s.%s.%s/%s --schema BlockJSON' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain, path), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]

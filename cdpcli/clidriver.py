@@ -93,7 +93,8 @@ class CLIDriver(object):
 
     def main(self, args=None):
         try:
-            self._cmd.run_command('env')
+            if self._context.opt['--verbose']:
+                self._cmd.run_command('env')
 
             if self._context.opt['build']:
                 self.__build()
