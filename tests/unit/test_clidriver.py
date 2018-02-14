@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 import unittest
 import os, sys
-import mock
 import datetime
 
 from cdpcli.clicommand import CLICommand
 from cdpcli.clidriver import CLIDriver, __doc__
 from docopt import docopt, DocoptExit
 from freezegun import freeze_time
+from mock import call, patch
 
 class FakeCommand(object):
     def __init__(self, verif_cmd):
@@ -202,11 +202,12 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes}, verif_cmd)
 
-    @mock.patch('cdpcli.clidriver.os.path.isdir', return_value=False)
-    @mock.patch('cdpcli.clidriver.os.makedirs')
-    @mock.patch("__builtin__.open")
-    @mock.patch("cdpcli.clidriver.yaml.dump")
-    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isdir):
+    @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
+    @patch('cdpcli.clidriver.os.makedirs')
+    @patch("__builtin__.open")
+    @patch("cdpcli.clidriver.yaml.dump")
+    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
@@ -233,7 +234,8 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep }, verif_cmd)
 
-        mock_isdir.assert_called_with(deploy_spec_dir)
+        mock_isdir.assert_called_with('%s/templates' % deploy_spec_dir)
+        mock_isfile.assert_has_calls([call.isfile('%s/values.yaml' % deploy_spec_dir), call.isfile('%s/Chart.yaml' % deploy_spec_dir)])
         mock_makedirs.assert_called_with('%s/templates' % deploy_spec_dir)
         mock_open.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, 'w')
         data = dict(

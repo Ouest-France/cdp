@@ -8,9 +8,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  replicas: {{ .Values.replicaCount }}
-  strategy:
-{{ toYaml .Values.strategy | indent 4 }}
+{{ toYaml .Values.replicas_strategy | indent 2 }}
   minReadySeconds: {{ .Values.minReadySeconds }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   template:
@@ -38,7 +36,3 @@ spec:
             initialDelaySeconds: {{ .Values.service.readiness.initialDelaySeconds }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
-    {{- if .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-    {{- end }}

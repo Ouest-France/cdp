@@ -162,8 +162,12 @@ class CLIDriver(object):
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
             # Check that the chart dir no exists
-            if os.path.isdir(self._context.opt['--deploy-spec-dir']):
-                raise ValueError('Directory %s already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
+            if os.path.isdir('%s/templates' % self._context.opt['--deploy-spec-dir']):
+                raise ValueError('Directory %s/templates already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
+            elif os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
+                raise ValueError('File %s/values.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
+            elif os.path.isfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']):
+                raise ValueError('File %s/Chart.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
             else:
                 os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'])
                 self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
