@@ -14,7 +14,7 @@ Usage:
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr)
-        [--replicas=<replica_count>]
+        [--values=<files>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
@@ -40,7 +40,7 @@ Options:
     --image-tag-sha1                    Tag docker image with commit sha1  or use it.
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
     --use-aws-ecr                       Use AWS ECR from k8s configuraiton for pull/push docker image.
-    --replicas=<replica_count>          Set replicaCount variable for k8s configuration.
+    --values=<files>                    Set replicaCount variable for k8s configuration.
     --namespace-project-branch-name     Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name            Use project name to create k8s namespace or choice environment host.
     --create-default-helm               Create default helm for simple project (One docker image).
@@ -192,14 +192,15 @@ class CLIDriver(object):
         else:
             secretParams = ''
 
-        if self._context.opt['--replicas']:
-            replicaParam = '--set replicaCount=%s' % self._context.opt['--replicas']
+        if self._context.opt['--values']:
+            valuesFiles = self._context.opt['--values'].strip().split(',')
+            values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
         else:
-            replicaParam = ''
+            values = ''
 
         # Instal or Upgrade environnement
         self._cmd.run_command('helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s %s %s --debug -i --namespace=%s'
-            % (namespace, self._context.opt['--deploy-spec-dir'], self._context.opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], self._context.registry, self._context.repository, tag, secretParams, replicaParam, namespace))
+            % (namespace, self._context.opt['--deploy-spec-dir'], self._context.opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], self._context.registry, self._context.repository, tag, secretParams, values, namespace))
 
         ressources = self._cmd.run_command('kubectl get deployments -n %s -o name' % (namespace))
         if ressources is not None:
