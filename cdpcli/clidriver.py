@@ -15,6 +15,7 @@ Usage:
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr)
         [--values=<files>]
+        [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
@@ -41,6 +42,7 @@ Options:
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
     --use-aws-ecr                       Use AWS ECR from k8s configuraiton for pull/push docker image.
     --values=<files>                    Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
+    --delete-labels=<minutes>           Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --namespace-project-branch-name     Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name            Use project name to create k8s namespace or choice environment host.
     --create-default-helm               Create default helm for simple project (One docker image).
@@ -54,7 +56,7 @@ Options:
 
 import sys, os
 import logging, verboselogs
-import time
+import time, datetime
 import yaml
 from Context import Context
 from clicommand import CLICommand
@@ -201,6 +203,12 @@ class CLIDriver(object):
         # Instal or Upgrade environnement
         self._cmd.run_command('helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s %s %s --debug -i --namespace=%s'
             % (namespace, self._context.opt['--deploy-spec-dir'], self._context.opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], self._context.registry, self._context.repository, tag, secretParams, values, namespace))
+
+        if self._context.opt['--delete-labels']:
+            now = datetime.datetime.now()
+            date_format = '%Y-%m-%dT%H%M%S'
+            self._cmd.run_command('kubectl label namespace deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s'
+                % (now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format) , namespace))
 
         ressources = self._cmd.run_command('kubectl get deployments -n %s -o name' % (namespace))
         if ressources is not None:

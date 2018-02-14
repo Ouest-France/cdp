@@ -2,10 +2,12 @@
 import unittest
 import os, sys
 import mock
+import datetime
 
 from cdpcli.clicommand import CLICommand
 from cdpcli.clidriver import CLIDriver, __doc__
 from docopt import docopt, DocoptExit
+from freezegun import freeze_time
 
 class FakeCommand(object):
     def __init__(self, verif_cmd):
@@ -162,6 +164,7 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd)
 
+    @freeze_time("2018-02-14 11:55:27")
     def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
@@ -170,6 +173,8 @@ class TestCliDriver(unittest.TestCase):
         timeout = 180
         deploy_spec_dir = 'deploy'
         values = 'values.staging.yaml'
+        delete_minutes = 60
+        date_format = '%Y-%m-%dT%H%M%S'
 
         verif_cmd = [
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
@@ -188,10 +193,14 @@ class TestCliDriver(unittest.TestCase):
                     deploy_spec_dir,
                     values,
                     namespace), 'output': 'unnecessary'},
+            {'cmd': 'kubectl label namespace deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s'
+                % (datetime.datetime.now().strftime(date_format),
+                    (datetime.datetime.now() + datetime.timedelta(minutes = delete_minutes)).strftime(date_format),
+                    namespace), 'output': 'unnecessary'},
             {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1'},
             {'cmd': 'timeout %s kubectl rollout status deployments/package1 -n %s' % (timeout, namespace), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values}, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes}, verif_cmd)
 
     @mock.patch('cdpcli.clidriver.os.path.isdir', return_value=False)
     @mock.patch('cdpcli.clidriver.os.makedirs')
