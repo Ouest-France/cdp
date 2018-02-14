@@ -40,7 +40,7 @@ Options:
     --image-tag-sha1                    Tag docker image with commit sha1  or use it.
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
     --use-aws-ecr                       Use AWS ECR from k8s configuraiton for pull/push docker image.
-    --values=<files>                    Set replicaCount variable for k8s configuration.
+    --values=<files>                    Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --namespace-project-branch-name     Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name            Use project name to create k8s namespace or choice environment host.
     --create-default-helm               Create default helm for simple project (One docker image).
