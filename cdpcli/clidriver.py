@@ -211,8 +211,8 @@ class CLIDriver(object):
         if self._context.opt['--delete-labels']:
             now = datetime.datetime.now()
             date_format = '%Y-%m-%dT%H%M%S'
-            self._cmd.run_command('kubectl label namespace deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s'
-                % (now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format) , namespace))
+            self._cmd.run_command('kubectl label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s'
+                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format) , namespace))
 
         ressources = self._cmd.run_command('kubectl get deployments -n %s -o name' % (namespace))
         if ressources is not None:

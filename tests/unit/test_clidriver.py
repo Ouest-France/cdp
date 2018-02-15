@@ -193,8 +193,9 @@ class TestCliDriver(unittest.TestCase):
                     deploy_spec_dir,
                     values,
                     namespace), 'output': 'unnecessary'},
-            {'cmd': 'kubectl label namespace deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s'
-                % (datetime.datetime.now().strftime(date_format),
+            {'cmd': 'kubectl label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s'
+                % (namespace,
+                    datetime.datetime.now().strftime(date_format),
                     (datetime.datetime.now() + datetime.timedelta(minutes = delete_minutes)).strftime(date_format),
                     namespace), 'output': 'unnecessary'},
             {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1'},
