@@ -10,10 +10,10 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
-        [--use-gitlab-registry | --use-aws-ecr]
+        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
-        (--use-gitlab-registry | --use-aws-ecr)
+        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry)
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
@@ -41,6 +41,7 @@ Options:
     --image-tag-sha1                    Tag docker image with commit sha1  or use it.
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
     --use-aws-ecr                       Use AWS ECR from k8s configuraiton for pull/push docker image.
+    --use-custom-registry               Use custom registry for pull/push docker image.
     --values=<files>                    Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --delete-labels=<minutes>           Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --namespace-project-branch-name     Use project and branch name to create k8s namespace or choice environment host [default].
@@ -191,10 +192,10 @@ class CLIDriver(object):
             tag = self.__getTagBranchName()
 
         # Need to add secret file for docker registry
-        if self._context.opt['--use-gitlab-registry']:
+        if not self._context.opt['--use-aws-ecr']:
             # Copy secret file on k8s deploy dir
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-            secretParams = '--set image.credentials.username=%s --set image.credentials.password=%s' % (os.environ['CI_REGISTRY_USER'], os.environ['REGISTRY_PERMANENT_TOKEN'])
+            secretParams = '--set image.credentials.username=%s --set image.credentials.password=%s' % (self._context.registry_user, self._context.registry_token_ro)
         else:
             secretParams = ''
 
@@ -220,11 +221,11 @@ class CLIDriver(object):
 
             # Patch
             for ressource in ressources:
-                if self._context.opt['--use-gitlab-registry']:
+                if not self._context.opt['--use-aws-ecr']:
                     # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
                     # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
                     self._cmd.run_command('kubectl patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
-                        % (ressource.replace('/', ' '),  os.environ['CI_REGISTRY'], namespace))
+                        % (ressource.replace('/', ' '),  self._context.registry, namespace))
 
             # Rollout
             for ressource in ressources:

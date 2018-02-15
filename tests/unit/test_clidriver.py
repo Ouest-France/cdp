@@ -43,7 +43,7 @@ class FakeCommand(object):
 
 class TestCliDriver(unittest.TestCase):
 
-    registry_permanent_token = 'abcdefghijklmnopqrstuvwxyz'
+    cdp_gitlab_registry_token_read_only = 'abcdefghijklmnopqrstuvwxyz'
     ci_job_token = 'gitlab-ci'
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
@@ -55,13 +55,20 @@ class TestCliDriver(unittest.TestCase):
     dns_subdomain = 'example.com'
     gitlab_user_email = 'test@example.com'
     gitlab_user_id = '12334'
+    cdp_custom_registry_user = 'cdp_custom_registry_user'
+    cdp_custom_registry_token = '1298937676109092092'
+    cdp_custom_registry_token_read_only = '1298937676109092093'
+    cdp_custom_registry = 'docker-artifact.fr:8123'
+    cdp_repository_path = 'http://repo.fr/test'
+    cdp_repository_token = '29873678036783'
+
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
 
     @classmethod
     def setUpClass(cls):
-        os.environ['REGISTRY_PERMANENT_TOKEN'] = TestCliDriver.registry_permanent_token
+        os.environ['CDP_GITLAB_REGISTRY_TOKEN_READ_ONLY'] = TestCliDriver.cdp_gitlab_registry_token_read_only
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
         os.environ['CI_REGISTRY_USER'] = TestCliDriver.ci_registry_user
@@ -73,6 +80,12 @@ class TestCliDriver(unittest.TestCase):
         os.environ['DNS_SUBDOMAIN'] = TestCliDriver.dns_subdomain
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
         os.environ['GITLAB_USER_ID'] = TestCliDriver.gitlab_user_id
+        os.environ['CDP_CUSTOM_REGISTRY_USER'] = TestCliDriver.cdp_custom_registry_user
+        os.environ['CDP_CUSTOM_REGISTRY_TOKEN'] = TestCliDriver.cdp_custom_registry_token
+        os.environ['CDP_CUSTOM_REGISTRY_TOKEN_READ_ONLY'] = TestCliDriver.cdp_custom_registry_token_read_only
+        os.environ['CDP_CUSTOM_REGISTRY'] = TestCliDriver.cdp_custom_registry
+        os.environ['CDP_REPOSITORY_PATH'] = TestCliDriver.cdp_repository_path
+        os.environ['CDP_REPOSITORY_TOKEN'] = TestCliDriver.cdp_repository_token
 
     def test_build_dind(self):
         # Create FakeCommand
@@ -152,7 +165,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_project_path.lower(),
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.ci_registry_user,
-                    TestCliDriver.registry_permanent_token,
+                    TestCliDriver.cdp_gitlab_registry_token_read_only,
                     staging_file,
                     int_file,
                     namespace), 'output': 'unnecessary'},
@@ -163,6 +176,38 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'timeout 300 kubectl rollout status deployments/package2 -n %s' % namespace, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd)
+
+    def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self):
+        # Create FakeCommand
+        namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_name)
+        namespace = namespace.replace('_', '-')
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        verif_cmd = [
+            {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+            {'cmd': 'helm upgrade %s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
+                % (namespace,
+                    namespace,
+                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_project_name,
+                    TestCliDriver.dns_subdomain,
+                    TestCliDriver.ci_commit_sha[:8],
+                    TestCliDriver.cdp_custom_registry,
+                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.cdp_custom_registry_user,
+                    TestCliDriver.cdp_custom_registry_token_read_only,
+                    staging_file,
+                    int_file,
+                    namespace), 'output': 'unnecessary'},
+            {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1\ndeployments/package2'},
+            {'cmd': 'kubectl patch deployments package1 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, namespace), 'output': 'unnecessary'},
+            {'cmd': 'kubectl patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, namespace), 'output': 'unnecessary'},
+            {'cmd': 'timeout 300 kubectl rollout status deployments/package1 -n %s' % namespace, 'output': 'unnecessary'},
+            {'cmd': 'timeout 300 kubectl rollout status deployments/package2 -n %s' % namespace, 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd)
 
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self):
