@@ -28,7 +28,7 @@ RUN apt-get update \
  && pip install docker-compose \
  && cd cdp \
  && python setup.py install \
- && apt-get purge -y python-pip curl python3 python3.5-minimal libpython3.5-minimal \
+ && apt-get purge -y python-pip python3 python3.5-minimal libpython3.5-minimal \
  && apt -y autoremove \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

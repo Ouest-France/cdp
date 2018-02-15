@@ -11,6 +11,9 @@ Usage:
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
+    cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry)
@@ -42,6 +45,8 @@ Options:
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
     --use-aws-ecr                       Use AWS ECR from k8s configuraiton for pull/push docker image.
     --use-custom-registry               Use custom registry for pull/push docker image.
+    --put=<file>                        Put file to artifactory.
+    --delete=<file>                     Delete file in artifactory.
     --values=<files>                    Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --delete-labels=<minutes>           Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --namespace-project-branch-name     Use project and branch name to create k8s namespace or choice environment host [default].
@@ -105,6 +110,9 @@ class CLIDriver(object):
             if self._context.opt['docker']:
                 self.__docker()
 
+            if self._context.opt['artifactory']:
+                self.__artifactory()
+
             if self._context.opt['k8s']:
                 self.__k8s()
 
@@ -158,6 +166,24 @@ class CLIDriver(object):
         if self._context.opt['--image-tag-sha1']:
             self.__buildTagAndPushOnDockerRegistry(self.__getTagSha1())
 
+    def __artifactory(self):
+        if self._context.opt['--put']:
+            upload_file = self._context.opt['--put']
+            http_verb = 'PUT'
+        elif self._context.opt['--delete']:
+            upload_file = self._context.opt['--delete']
+            http_verb = 'DELETE'
+        else:
+            raise ValueError('Incorrect option with artifactory command.')
+
+        # Tag and push docker image
+        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
+            # Default if none option selected
+            self.__callArtifactoryFile(self.__getTagBranchName(), upload_file, http_verb)
+        if self._context.opt['--image-tag-latest']:
+            self.__callArtifactoryFile(self.__getTagLatest(), upload_file, http_verb)
+        if self._context.opt['--image-tag-sha1']:
+            self.__callArtifactoryFile(self.__getTagSha1(), upload_file, http_verb)
 
     def __k8s(self):
         # Need to create default helm charts
@@ -245,6 +271,10 @@ class CLIDriver(object):
             self._cmd.run_command('docker build -t %s .' % (image_tag))
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
+
+
+    def __callArtifactoryFile(self, tag, upload_file, http_verb):
+        self._cmd.run_command('curl --fail -X %s %s/%s/%s -H X-JFrog-Art-Api:%s -T %s' % (http_verb, os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
 
 
     def __validator(self):

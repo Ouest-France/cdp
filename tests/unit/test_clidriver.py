@@ -59,8 +59,8 @@ class TestCliDriver(unittest.TestCase):
     cdp_custom_registry_token = '1298937676109092092'
     cdp_custom_registry_token_read_only = '1298937676109092093'
     cdp_custom_registry = 'docker-artifact.fr:8123'
-    cdp_repository_path = 'http://repo.fr/test'
-    cdp_repository_token = '29873678036783'
+    cdp_artifactory_path = 'http://repo.fr/test'
+    cdp_artifactory_token = '29873678036783'
 
 
     env_cdp_tag = 'CDP_TAG'
@@ -84,8 +84,8 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CDP_CUSTOM_REGISTRY_TOKEN'] = TestCliDriver.cdp_custom_registry_token
         os.environ['CDP_CUSTOM_REGISTRY_TOKEN_READ_ONLY'] = TestCliDriver.cdp_custom_registry_token_read_only
         os.environ['CDP_CUSTOM_REGISTRY'] = TestCliDriver.cdp_custom_registry
-        os.environ['CDP_REPOSITORY_PATH'] = TestCliDriver.cdp_repository_path
-        os.environ['CDP_REPOSITORY_TOKEN'] = TestCliDriver.cdp_repository_token
+        os.environ['CDP_ARTIFACTORY_PATH'] = TestCliDriver.cdp_artifactory_path
+        os.environ['CDP_ARTIFACTORY_TOKEN'] = TestCliDriver.cdp_artifactory_token
 
     def test_build_dind(self):
         # Create FakeCommand
@@ -123,12 +123,22 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         sleep = 10
         verif_cmd = [
-            {'cmd': 'docker login -u %s -p %s %s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--sleep=%s' % sleep }, verif_cmd)
+
+    def test_docker_usedocker_imagetagsha1_usecustomregistry(self):
+        # Create FakeCommand
+        verif_cmd = [
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
+            {'cmd': 'docker build -t %s/%s:%s .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-custom-registry', '--image-tag-sha1' }, verif_cmd)
+
 
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr(self):
         # Create FakeCommand
@@ -144,6 +154,40 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}}
         ]
         self.__run_CLIDriver({ 'docker', '--verbose', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr' }, verif_cmd)
+
+
+    def test_artifactory_put_imagetagsha1_imagetaglatest(self):
+        # Create FakeCommand
+        upload_file = 'config/values.yaml'
+        verif_cmd = [
+            {'cmd': 'curl --fail -X PUT %s/%s/%s -H X-JFrog-Art-Api:%s -T %s'
+                % (TestCliDriver.cdp_artifactory_path,
+                    TestCliDriver.ci_project_path.lower(),
+                    'latest',
+                    TestCliDriver.cdp_artifactory_token,
+                    upload_file ), 'output': 'unnecessary'},
+            {'cmd': 'curl --fail -X PUT %s/%s/%s -H X-JFrog-Art-Api:%s -T %s'
+                % (TestCliDriver.cdp_artifactory_path,
+                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_commit_sha,
+                    TestCliDriver.cdp_artifactory_token,
+                    upload_file ), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'artifactory', '--put=%s' % upload_file, '--image-tag-sha1', '--image-tag-latest' }, verif_cmd)
+
+    def test_artifactory_del(self):
+        # Create FakeCommand
+        upload_file = 'config/values.staging.yaml'
+        verif_cmd = [
+            {'cmd': 'curl --fail -X DELETE %s/%s/%s -H X-JFrog-Art-Api:%s -T %s'
+                % (TestCliDriver.cdp_artifactory_path,
+                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.cdp_artifactory_token,
+                    upload_file ), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'artifactory', '--delete=%s' % upload_file }, verif_cmd)
+
 
     def test_k8s_usegitlabregistry_namespaceprojectbranchname_values(self):
         # Create FakeCommand
