@@ -80,13 +80,18 @@ def main():
     elif opt['--quiet']:
         LOG.setLevel(logging.WARNING)
 
+    # Default value of DOCKER_HOST env var if not set
+    if os.getenv('DOCKER_HOST', None) is None:
+        os.environ['DOCKER_HOST'] = 'tcp://localhost:2375'
+
+    LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
+
     driver = CLIDriver(cmd = CLICommand(opt['--dry-run']), opt = opt)
     return driver.main()
 
 class CLIDriver(object):
 
     def __init__(self, cmd=None, opt=None):
-        LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
         if cmd is None:
             raise ValueError('TODO')
         else:
