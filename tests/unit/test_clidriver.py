@@ -87,17 +87,21 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CDP_ARTIFACTORY_PATH'] = TestCliDriver.cdp_artifactory_path
         os.environ['CDP_ARTIFACTORY_TOKEN'] = TestCliDriver.cdp_artifactory_token
 
-    def test_build_dind(self):
+    def test_build_dind_docker_host(self):
         # Create FakeCommand
         image_name = 'maven:3.5-jdk-8'
         command_name = 'mvn clean install'
+
+        docker_host = 'tcp://docker:2375'
+        os.environ['DOCKER_HOST'] = docker_host
+
         verif_cmd = [
             {'cmd': 'docker pull docker:dind', 'output': 'unnecessary'},
             {'cmd': 'docker run --rm --privileged --name docker-dind -d docker:dind', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
             {'cmd': 'docker run --rm --link docker-dind:docker -e DOCKER_HOST=tcp://docker:2375 -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--dind' }, verif_cmd)
+        self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--dind' }, verif_cmd, docker_host = docker_host)
 
     def test_build_verbose_simulatemergeon_sleep(self):
         # Create FakeCommand
@@ -119,16 +123,20 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'build', '--verbose', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
 
-    def test_docker_usedocker_imagetagbranchname_usegitlabregistry_sleep(self):
+    def test_docker_usedocker_imagetagbranchname_usegitlabregistry_sleep_docker_host(self):
         # Create FakeCommand
         sleep = 10
+
+        docker_host = 'tcp://docker:2375'
+        os.environ['DOCKER_HOST'] = docker_host
+
         verif_cmd = [
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--sleep=%s' % sleep }, verif_cmd, docker_host = docker_host)
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry(self):
         # Create FakeCommand
@@ -156,46 +164,54 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'docker', '--verbose', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr' }, verif_cmd)
 
 
-    def test_artifactory_put_imagetagsha1_imagetaglatest(self):
+    def test_artifactory_put_imagetagsha1_imagetaglatest_dockerhost(self):
         # Create FakeCommand
         upload_file = 'config/values.yaml'
+
+        docker_host = 'tcp://docker:2375'
+        os.environ['DOCKER_HOST'] = docker_host
+
         verif_cmd = [
-            {'cmd': 'curl --fail -X PUT %s/%s/%s -H X-JFrog-Art-Api:%s -T %s'
+            {'cmd': 'curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s'
                 % (TestCliDriver.cdp_artifactory_path,
                     TestCliDriver.ci_project_path.lower(),
                     'latest',
                     TestCliDriver.cdp_artifactory_token,
                     upload_file ), 'output': 'unnecessary'},
-            {'cmd': 'curl --fail -X PUT %s/%s/%s -H X-JFrog-Art-Api:%s -T %s'
+            {'cmd': 'curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s'
                 % (TestCliDriver.cdp_artifactory_path,
                     TestCliDriver.ci_project_path.lower(),
                     TestCliDriver.ci_commit_sha,
                     TestCliDriver.cdp_artifactory_token,
                     upload_file ), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'artifactory', '--put=%s' % upload_file, '--image-tag-sha1', '--image-tag-latest' }, verif_cmd)
+        self.__run_CLIDriver({ 'artifactory', '--put=%s' % upload_file, '--image-tag-sha1', '--image-tag-latest' }, verif_cmd, docker_host = docker_host)
 
     def test_artifactory_del(self):
         # Create FakeCommand
         upload_file = 'config/values.staging.yaml'
         verif_cmd = [
-            {'cmd': 'curl --fail -X DELETE %s/%s/%s -H X-JFrog-Art-Api:%s -T %s'
+            {'cmd': 'curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s'
                 % (TestCliDriver.cdp_artifactory_path,
                     TestCliDriver.ci_project_path.lower(),
                     TestCliDriver.ci_commit_ref_name,
-                    TestCliDriver.cdp_artifactory_token,
-                    upload_file ), 'output': 'unnecessary'}
+                    upload_file,
+                    TestCliDriver.cdp_artifactory_token), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'artifactory', '--delete=%s' % upload_file }, verif_cmd)
 
 
-    def test_k8s_usegitlabregistry_namespaceprojectbranchname_values(self):
+    def test_k8s_usegitlabregistry_namespaceprojectbranchname_values_dockerhost(self):
         # Create FakeCommand
         namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_name)
         namespace = namespace.replace('_', '-')
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
+
+        docker_host = 'tcp://docker:2375'
+        os.environ['DOCKER_HOST'] = docker_host
+
         verif_cmd = [
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
@@ -219,7 +235,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'timeout 300 kubectl rollout status deployments/package1 -n %s' % namespace, 'output': 'unnecessary'},
             {'cmd': 'timeout 300 kubectl rollout status deployments/package2 -n %s' % namespace, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd, docker_host = docker_host)
 
     def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self):
         # Create FakeCommand
@@ -336,11 +352,14 @@ class TestCliDriver(unittest.TestCase):
         )
         mock_dump.assert_called_with(data, mock_open.return_value.__enter__.return_value, default_flow_style=False)
 
-    def test_validator(self):
+    def test_validator_dockerhost(self):
+        docker_host = 'tcp://docker:2375'
+        os.environ['DOCKER_HOST'] = docker_host
+
         verif_cmd = [
             {'cmd': 'validator-cli --url http://%s.%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'validator' }, verif_cmd)
+        self.__run_CLIDriver({ 'validator' }, verif_cmd, docker_host = docker_host)
 
     def test_validator_verbose_path_namespaceprojectname_block(self):
         verif_cmd = [
@@ -360,8 +379,10 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'validator', '--path=%s' % path, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
 
-    def __run_CLIDriver(self, args, verif_cmd, return_code = None):
+    def __run_CLIDriver(self, args, verif_cmd, return_code = None, docker_host = 'tcp://localhost:2375'):
         cmd = FakeCommand(verif_cmd = verif_cmd)
         cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
         self.assertEqual(return_code, cli.main())
+        self.assertEqual(docker_host, os.environ['DOCKER_HOST'])
         cmd.verify_commands()
+        del os.environ['DOCKER_HOST']

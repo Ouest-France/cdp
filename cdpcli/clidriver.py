@@ -80,12 +80,6 @@ def main():
     elif opt['--quiet']:
         LOG.setLevel(logging.WARNING)
 
-    # Default value of DOCKER_HOST env var if not set
-    if os.getenv('DOCKER_HOST', None) is None:
-        os.environ['DOCKER_HOST'] = 'tcp://localhost:2375'
-
-    LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
-
     driver = CLIDriver(cmd = CLICommand(opt['--dry-run']), opt = opt)
     return driver.main()
 
@@ -102,6 +96,12 @@ class CLIDriver(object):
         else:
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
+
+        # Default value of DOCKER_HOST env var if not set
+        if os.getenv('DOCKER_HOST', None) is None:
+            os.environ['DOCKER_HOST'] = 'tcp://localhost:2375'
+
+        LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
 
 
     def main(self, args=None):
@@ -279,8 +279,10 @@ class CLIDriver(object):
 
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
-        self._cmd.run_command('curl --fail -X %s %s/%s/%s -H X-JFrog-Art-Api:%s -T %s' % (http_verb, os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
-
+        if http_verb is 'PUT':
+            self._cmd.run_command('curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
+        elif http_verb is 'DELETE':
+            self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
         if self._context.opt['--block']:
