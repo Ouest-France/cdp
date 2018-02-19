@@ -9,6 +9,8 @@ class Context(object):
         self._opt = opt
 
         if opt['--use-aws-ecr']:
+            os.environ['AWS_ACCESS_KEY_ID'] = os.environ['CDP_AWS_ACCESS_KEY_ID']
+            os.environ['AWS_SECRET_ACCESS_KEY'] = os.environ['CDP_AWS_SECRET_ACCESS_KEY']
             # Use AWS ECR from k8s configuration on gitlab-runner deployment
             login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', cmd.run_command('aws ecr get-login --no-include-email --region eu-central-1', False).strip())
             self._registry = login_regex[0][2]
@@ -19,13 +21,13 @@ class Context(object):
             self._registry = os.environ['CDP_CUSTOM_REGISTRY']
             self._registry_user = os.environ['CDP_CUSTOM_REGISTRY_USER']
             self._registry_token = os.environ['CDP_CUSTOM_REGISTRY_TOKEN']
-            self._registry_token_ro = os.environ['CDP_CUSTOM_REGISTRY_TOKEN_READ_ONLY']
+            self._registry_token_ro = os.environ['CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN']
         elif opt['--use-gitlab-registry']:
             # Use gitlab registry
             self._registry = os.environ['CI_REGISTRY']
             self._registry_user = os.environ['CI_REGISTRY_USER']
             self._registry_token = os.environ['CI_JOB_TOKEN']
-            self._registry_token_ro = os.environ['CDP_GITLAB_REGISTRY_TOKEN_READ_ONLY']
+            self._registry_token_ro = os.environ['CDP_GITLAB_REGISTRY_READ_ONLY_TOKEN']
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']

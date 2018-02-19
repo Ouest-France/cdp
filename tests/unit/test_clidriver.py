@@ -43,7 +43,7 @@ class FakeCommand(object):
 
 class TestCliDriver(unittest.TestCase):
 
-    cdp_gitlab_registry_token_read_only = 'abcdefghijklmnopqrstuvwxyz'
+    cdp_gitlab_registry_read_only_token = 'abcdefghijklmnopqrstuvwxyz'
     ci_job_token = 'gitlab-ci'
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
@@ -57,7 +57,7 @@ class TestCliDriver(unittest.TestCase):
     gitlab_user_id = '12334'
     cdp_custom_registry_user = 'cdp_custom_registry_user'
     cdp_custom_registry_token = '1298937676109092092'
-    cdp_custom_registry_token_read_only = '1298937676109092093'
+    cdp_custom_registry_read_only_token = '1298937676109092093'
     cdp_custom_registry = 'docker-artifact.fr:8123'
     cdp_artifactory_path = 'http://repo.fr/test'
     cdp_artifactory_token = '29873678036783'
@@ -68,7 +68,7 @@ class TestCliDriver(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        os.environ['CDP_GITLAB_REGISTRY_TOKEN_READ_ONLY'] = TestCliDriver.cdp_gitlab_registry_token_read_only
+        os.environ['CDP_GITLAB_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_gitlab_registry_read_only_token
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
         os.environ['CI_REGISTRY_USER'] = TestCliDriver.ci_registry_user
@@ -82,10 +82,12 @@ class TestCliDriver(unittest.TestCase):
         os.environ['GITLAB_USER_ID'] = TestCliDriver.gitlab_user_id
         os.environ['CDP_CUSTOM_REGISTRY_USER'] = TestCliDriver.cdp_custom_registry_user
         os.environ['CDP_CUSTOM_REGISTRY_TOKEN'] = TestCliDriver.cdp_custom_registry_token
-        os.environ['CDP_CUSTOM_REGISTRY_TOKEN_READ_ONLY'] = TestCliDriver.cdp_custom_registry_token_read_only
+        os.environ['CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_custom_registry_read_only_token
         os.environ['CDP_CUSTOM_REGISTRY'] = TestCliDriver.cdp_custom_registry
         os.environ['CDP_ARTIFACTORY_PATH'] = TestCliDriver.cdp_artifactory_path
         os.environ['CDP_ARTIFACTORY_TOKEN'] = TestCliDriver.cdp_artifactory_token
+        os.environ['CDP_AWS_ACCESS_KEY_ID'] = 'accessKeyId'
+        os.environ['CDP_AWS_SECRET_ACCESS_KEY'] = 'secretAccessKey'
 
     def test_build_dind_docker_host(self):
         # Create FakeCommand
@@ -225,7 +227,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_project_path.lower(),
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.ci_registry_user,
-                    TestCliDriver.cdp_gitlab_registry_token_read_only,
+                    TestCliDriver.cdp_gitlab_registry_read_only_token,
                     staging_file,
                     int_file,
                     namespace), 'output': 'unnecessary'},
@@ -257,7 +259,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_project_path.lower(),
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.cdp_custom_registry_user,
-                    TestCliDriver.cdp_custom_registry_token_read_only,
+                    TestCliDriver.cdp_custom_registry_read_only_token,
                     staging_file,
                     int_file,
                     namespace), 'output': 'unnecessary'},
