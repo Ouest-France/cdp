@@ -16,27 +16,35 @@ class FakeCommand(object):
         self._tc = unittest.TestCase('__init__')
 
     def run_command(self, cmd, dry_run = None):
-        # Check cmd parameter
-        self._tc.assertEqual(self._verif_cmd[self._index]['cmd'], cmd)
-
-        # Check dry-run parameter
         try:
-            self._tc.assertEqual(self._verif_cmd[self._index]['dry_run'], dry_run)
-        except KeyError:
-            self._tc.assertTrue(dry_run is None)
+            # Check cmd parameter
+            self._tc.assertEqual(self._verif_cmd[self._index]['cmd'], cmd)
 
-        # Check variable environnement parameter
-        try:
-            env_vars = self._verif_cmd[self._index]['env_vars']
-            for key, value in env_vars.items():
-                self._tc.assertEquals(os.environ[key], value)
-        except KeyError:
-            pass
+            # Check dry-run parameter
+            try:
+                self._tc.assertEqual(self._verif_cmd[self._index]['dry_run'], dry_run)
+            except KeyError:
+                self._tc.assertTrue(dry_run is None)
 
-        # Return mock output
-        output = self._verif_cmd[self._index]['output']
-        self._index = self._index + 1
-        return output
+            # Check variable environnement parameter
+            try:
+                env_vars = self._verif_cmd[self._index]['env_vars']
+                for key, value in env_vars.items():
+                    self._tc.assertEquals(os.environ[key], value)
+            except KeyError:
+                pass
+
+            # Return mock output
+            output = self._verif_cmd[self._index]['output']
+
+            try:
+                raise self._verif_cmd[self._index]['throw'](output)
+            except KeyError:
+                pass
+
+            return output
+        finally:
+            self._index = self._index + 1
 
     def verify_commands(self):
         self._tc.assertEqual(len(self._verif_cmd), self._index)
@@ -150,7 +158,7 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-custom-registry', '--image-tag-sha1' }, verif_cmd)
 
 
-    def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr(self):
+    def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withrepo(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
@@ -158,6 +166,25 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
+            {'cmd': 'aws ecr list-images --repository-name %s --max-items 0' % TestCliDriver.ci_project_path.lower(), 'output': 'unnecessary'},
+            {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
+            {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
+            {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
+            {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}}
+        ]
+        self.__run_CLIDriver({ 'docker', '--verbose', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr' }, verif_cmd)
+
+
+    def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withoutrepo(self):
+        # Create FakeCommand
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+        verif_cmd = [
+            {'cmd': 'aws ecr get-login --no-include-email --region eu-central-1', 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'env', 'output': 'unnecessary'},
+            {'cmd': login_cmd, 'output': 'unnecessary'},
+            {'cmd': 'aws ecr list-images --repository-name %s --max-items 0' % TestCliDriver.ci_project_path.lower(), 'output': 'unnecessary', 'throw': ValueError},
+            {'cmd': 'aws ecr create-repository --repository-name %s' % TestCliDriver.ci_project_path.lower(), 'output': 'unnecessary'},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},

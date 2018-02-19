@@ -162,6 +162,13 @@ class CLIDriver(object):
         # Login to the docker registry
         self._cmd.run_command(self._context.login)
 
+        if self._context.opt['--use-aws-ecr']:
+            try:
+                self._cmd.run_command('aws ecr list-images --repository-name %s --max-items 0' % self._context.repository)
+            except ValueError:
+                LOG.warning('AWS ECR repository doesn\'t  exist. Creating this one.')
+                self._cmd.run_command('aws ecr create-repository --repository-name %s' % self._context.repository)
+
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
             # Default if none option selected
