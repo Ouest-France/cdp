@@ -103,7 +103,7 @@ services:
   - docker:dind
 
 build:
-  image: ouest-france/cdp:latest
+  image: ouestfrance/cdp:latest
   stage: build
   script:
     - cdp build --docker-image=maven:3.5-jdk-8 --command='mvn clean verify' --simulate-merge-on=develop --dind
@@ -112,7 +112,7 @@ build:
     - target/*.jar
 
 package:
-  image: ouest-france/cdp:latest
+  image: ouestfrance/cdp:latest
   stage: package
   script:
     - cdp docker --image-tag-branch-name --use-gitlab-registry
@@ -121,7 +121,7 @@ package:
 deploy:
   variables:
     DNS_SUBDOMAIN: { ingress.k8s }
-  image: ouest-france/cdp:latest
+  image: ouestfrance/cdp:latest
   stage: deploy
   script:
     - cdp k8s --use-gitlab-registry --namespace-project-branch-name --image-tag-branch-name --values=values.staging.yaml

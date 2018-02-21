@@ -18,10 +18,10 @@ jobs:
     - stage: deploy
       script:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - docker build -t $DOCKER_USERNAME/cdp:latest .
-        - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$DOCKER_TAG_LATEST" == 1 ]; then
-          docker push $DOCKER_REPO:latest;
-          else
-          docker tag $DOCKER_USERNAME/cdp $DOCKER_USERNAME/cdp:$TRAVIS_BRANCH;
-          docker push $DOCKER_USERNAME/cdp:$TRAVIS_BRANCH;
+        - export REPO=$DOCKER_USERNAME/cdp
+        - docker build -f Dockerfile -t $REPO:$TRAVIS_BRANCH
+        - if [ "$TRAVIS_BRANCH" == "master" || [ "$DOCKER_TAG_LATEST" == 1 ]; then
+          docker tag $REPO:$TRAVIS_BRANCH $REPO:latest;
+          docker tag $REPO:$TRAVIS_BRANCH $REPO:$TRAVIS_BUILD_NUMBER;
           fi
+        - docker push $REPO
