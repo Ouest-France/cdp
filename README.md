@@ -156,7 +156,7 @@ services:
 
 ### Helm charts
 
-When you use the `docker k8s --use-docker-compose` command, you may need information from the CDP context. Below, the variables made available by the CDP for use in the helm context.
+When you use the `docker k8s` command, you may need information from the CDP context. Below, the variables made available by the CDP for use in the helm context.
 
 ```yaml
 namespace:           Name of kubernetes namespace, based on the following options: [ --namespace-project-branch-name | --namespace-project-name ]
