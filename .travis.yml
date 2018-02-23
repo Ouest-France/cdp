@@ -1,0 +1,28 @@
+sudo: required
+
+language: python
+python:
+  - "2.7"
+
+services:
+  - docker
+
+stages:
+  - name: test
+  - name: deploy
+    if: type IN (push)
+
+jobs:
+  include:
+    - stage: test
+      script: python setup.py test
+    - stage: deploy
+      script:
+        - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
+        - export DOCKER_REPO=${DOCKER_REPO:-ouestfrance/cdp}
+        - docker build -f Dockerfile -t $DOCKER_REPO:$TRAVIS_BRANCH .
+        - if [ "$TRAVIS_BRANCH" == "master" || [ "$DOCKER_TAG_LATEST" == 1 ]; then
+          docker tag $DOCKER_REPO:$TRAVIS_BRANCH $DOCKER_REPO:latest;
+          docker tag $DOCKER_REPO:$TRAVIS_BRANCH $DOCKER_REPO:$TRAVIS_BUILD_NUMBER;
+          fi
+        - docker push $DOCKER_REPO
