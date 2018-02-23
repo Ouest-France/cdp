@@ -8,8 +8,9 @@ services:
   - docker
 
 stages:
-  - test
-  - docker
+  - name: test
+  - name: deploy
+    if: type IN (push)
 
 jobs:
   include:
@@ -18,10 +19,10 @@ jobs:
     - stage: deploy
       script:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
-        - export REPO=$DOCKER_USERNAME/cdp
-        - docker build -f Dockerfile -t $REPO:$TRAVIS_BRANCH .
+        - export DOCKER_REPO=${DOCKER_REPO:-ouestfrance/cdp}
+        - docker build -f Dockerfile -t $DOCKER_REPO:$TRAVIS_BRANCH .
         - if [ "$TRAVIS_BRANCH" == "master" || [ "$DOCKER_TAG_LATEST" == 1 ]; then
-          docker tag $REPO:$TRAVIS_BRANCH $REPO:latest;
-          docker tag $REPO:$TRAVIS_BRANCH $REPO:$TRAVIS_BUILD_NUMBER;
+          docker tag $DOCKER_REPO:$TRAVIS_BRANCH $DOCKER_REPO:latest;
+          docker tag $DOCKER_REPO:$TRAVIS_BRANCH $DOCKER_REPO:$TRAVIS_BUILD_NUMBER;
           fi
-        - docker push $REPO
+        - docker push $DOCKER_REPO
