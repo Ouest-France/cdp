@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2.7
+
 """
 Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:

@@ -188,3 +188,22 @@ spec:
 ## Command Completion
 
 501. Not implemented :)
+
+
+# Development
+
+Required :
+
+- python2.8 (`brew install python3`)
+- pip
+
+```sh
+pip2.7 install -r requirements.txt
+./bin/cdp
+```
+
+### Tests
+
+```sh
+python2.7 setup.py test
+```
