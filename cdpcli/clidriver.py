@@ -22,10 +22,7 @@ Usage:
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
-    cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--path=<path>]
-        [--block-provider | --block | --block-json]
-        [--namespace-project-branch-name | --namespace-project-name]
+    cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>] -- <validator-cli-parameters>
     cdp (-h | --help | --version)
 Options:
     -h, --help                          Show this screen and exit.
@@ -54,10 +51,6 @@ Options:
     --create-default-helm               Create default helm for simple project (One docker image).
     --deploy-spec-dir=<dir>             k8s deployment files [default: charts].
     --timeout=<timeout>                 Time in seconds to wait for any individual kubernetes operation [default: 300].
-    --path=<path>                       Path to validate [default: configurations].
-    --block-provider                    Valid BlockProviderConfig interface [default].
-    --block                             Valid BlockConfig interface.
-    --block-json                        Valid BlockJSON interface.
 """
 
 import sys, os
@@ -292,16 +285,7 @@ class CLIDriver(object):
             self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
-        if self._context.opt['--block']:
-            schema =  'BlockConfig'
-        elif self._context.opt['--block-json']:
-            schema = 'BlockJSON'
-        else :
-            schema = 'BlockProviderConfig'
-
-        url = 'http://%s/%s' % (self.__getHost(), self._context.opt['--path'])
-
-        self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))
+        self._cmd.run_command('validator-cli %s' % str.join('.', sys.argv[3:]))
 
 
     def __getImageName(self):
