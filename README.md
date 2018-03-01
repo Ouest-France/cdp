@@ -188,3 +188,25 @@ spec:
 ## Command Completion
 
 501. Not implemented :)
+
+
+## Development
+
+### Prerequisites
+
+- python 2.7
+- pip 2.7
+
+### Tests
+
+```sh
+python setup.py test
+```
+### Installations
+
+```sh
+pip install -r requirements.txt
+sudo python setup.py install
+
+cdp --help
+```
