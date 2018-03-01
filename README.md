@@ -206,5 +206,7 @@ python setup.py test
 
 ```sh
 pip install -r requirements.txt
-./bin/cdp
+sudo python setup.py install
+
+cdp --help
 ```
