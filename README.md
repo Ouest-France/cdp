@@ -190,20 +190,21 @@ spec:
 501. Not implemented :)
 
 
-# Development
+## Development
 
-Required :
+### Prerequisites
 
-- python2.8 (`brew install python3`)
-- pip
-
-```sh
-pip2.7 install -r requirements.txt
-./bin/cdp
-```
+- python 2.7
+- pip 2.7
 
 ### Tests
 
 ```sh
-python2.7 setup.py test
+python setup.py test
+```
+### Installations
+
+```sh
+pip install -r requirements.txt
+./bin/cdp
 ```
