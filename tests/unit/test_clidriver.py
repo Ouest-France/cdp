@@ -95,8 +95,6 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CDP_CUSTOM_REGISTRY'] = TestCliDriver.cdp_custom_registry
         os.environ['CDP_ARTIFACTORY_PATH'] = TestCliDriver.cdp_artifactory_path
         os.environ['CDP_ARTIFACTORY_TOKEN'] = TestCliDriver.cdp_artifactory_token
-        os.environ['CDP_AWS_ACCESS_KEY_ID'] = 'accessKeyId'
-        os.environ['CDP_AWS_SECRET_ACCESS_KEY'] = 'secretAccessKey'
 
     def test_build_dind_docker_host(self):
         # Create FakeCommand
@@ -162,38 +160,36 @@ class TestCliDriver(unittest.TestCase):
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withrepo(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        region = 'eu-central-1'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
-            {'cmd': 'aws ecr get-login --no-include-email --region %s' % region, 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'aws ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False},
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
-            {'cmd': 'aws ecr list-images --repository-name %s --max-items 0 --region %s' % (TestCliDriver.ci_project_path.lower(), region), 'output': 'unnecessary'},
+            {'cmd': 'aws ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary'},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}}
         ]
-        self.__run_CLIDriver({ 'docker', '--verbose', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr=%s' % region }, verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--verbose', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr' }, verif_cmd)
 
 
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withoutrepo(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        region = 'eu-central-1'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
-            {'cmd': 'aws ecr get-login --no-include-email --region %s' % region, 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'aws ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False},
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
-            {'cmd': 'aws ecr list-images --repository-name %s --max-items 0 --region %s' % (TestCliDriver.ci_project_path.lower(), region), 'output': 'unnecessary', 'throw': ValueError},
-            {'cmd': 'aws ecr create-repository --repository-name %s --region %s' % (TestCliDriver.ci_project_path.lower(), region), 'output': 'unnecessary'},
+            {'cmd': 'aws ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'throw': ValueError},
+            {'cmd': 'aws ecr create-repository --repository-name %s' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary'},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}}
         ]
-        self.__run_CLIDriver({ 'docker', '--verbose', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr=%s' % region }, verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--verbose', '--use-docker-compose', '--image-tag-latest', '--image-tag-sha1', '--use-aws-ecr' }, verif_cmd)
 
 
     def test_artifactory_put_imagetagsha1_imagetaglatest_dockerhost(self):
@@ -305,7 +301,6 @@ class TestCliDriver(unittest.TestCase):
     def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        region = 'eu-central-1'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
         timeout = 180
@@ -315,7 +310,7 @@ class TestCliDriver(unittest.TestCase):
         date_format = '%Y-%m-%dT%H%M%S'
 
         verif_cmd = [
-            {'cmd': 'aws ecr get-login --no-include-email --region %s' % region, 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'aws ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False},
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --values %s/%s --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
@@ -339,7 +334,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'kubectl get deployments -n %s -o name' % (namespace), 'output': 'deployments/package1'},
             {'cmd': 'timeout %s kubectl rollout status deployments/package1 -n %s' % (timeout, namespace), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr=%s' % region, '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes}, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes}, verif_cmd)
 
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
     @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
@@ -349,13 +344,12 @@ class TestCliDriver(unittest.TestCase):
     def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        region = 'eu-central-1'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
         deploy_spec_dir = 'chart'
         sleep = 10
         verif_cmd = [
-            {'cmd': 'aws ecr get-login --no-include-email --region %s' % region, 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'aws ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s %s --timeout 300 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=%s --set image.registry=%s --set image.repository=%s --set image.tag=%s   --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
@@ -372,7 +366,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'timeout 300 kubectl rollout status deployments/package1 -n %s' % (namespace), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr=%s' % region, '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep }, verif_cmd)
 
         mock_isdir.assert_called_with('%s/templates' % deploy_spec_dir)
         mock_isfile.assert_has_calls([call.isfile('%s/values.yaml' % deploy_spec_dir), call.isfile('%s/Chart.yaml' % deploy_spec_dir)])
