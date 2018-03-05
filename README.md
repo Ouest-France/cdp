@@ -15,13 +15,13 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
-        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
+        [--use-gitlab-registry | --use-aws-ecr=<region> | --use-custom-registry]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry)
+        (--use-gitlab-registry | --use-aws-ecr=<region> | --use-custom-registry)
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
@@ -48,7 +48,7 @@ Options:
     --image-tag-latest                  Tag docker image with 'latest'  or use it.
     --image-tag-sha1                    Tag docker image with commit sha1  or use it.
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
-    --use-aws-ecr                       Use AWS ECR from k8s configuraiton for pull/push docker image.
+    --use-aws-ecr=<region>              Use AWS ECR from k8s configuration for pull/push docker image. Specify AWS region.
     --use-custom-registry               Use custom registry for pull/push docker image.
     --put=<file>                        Put file to artifactory.
     --delete=<file>                     Delete file in artifactory.
@@ -79,7 +79,7 @@ k8s:
     - Helm and k8s files to configure the deployment. Must be present in the directory configured by the --deploy-spec-dir=<dir> option
 
 docker|k8s:
-  --use-aws-ecr:
+  --use-aws-ecr=<region>:
     - CDP_AWS_ACCESS_KEY_ID (Gitlab-runner env var) – AWS access key.
     - CDP_AWS_SECRET_ACCESS_KEY (Gitlab-runner env var) – AWS secret key. Access and secret key variables override credentials stored in credential and config files.
   --use-custom-registry:
@@ -135,7 +135,7 @@ deploy:
 When you use the `docker build --use-docker-compose` command, you may need information from the CDP context. Below, the environment variables made available by the CDP for use in the docker-compose.yml.
 
 ```yaml
-CDP_REGISTRY:        --use-gitlab-registry: env['CI_REGISTRY'] | --use-aws-ecr: result from 'aws ecr get-login ...' command | --use-custom-registry: env['CDP_CUSTOM_REGISTRY'] + '/' + env['CI_PROJECT_PATH'].lower()
+CDP_REGISTRY:        --use-gitlab-registry: env['CI_REGISTRY'] | --use-aws-ecr=<region>: result from 'aws ecr get-login ...' command | --use-custom-registry: env['CDP_CUSTOM_REGISTRY'] + '/' + env['CI_PROJECT_PATH'].lower()
 CDP_TAG:             --image-tag-branch-name: env['CI_COMMIT_REF_NAME'] | --image-tag-latest: 'latest'| --image-tag-sha1:  env['CI_COMMIT_SHA']
 ```
 
@@ -162,7 +162,7 @@ When you use the `docker k8s` command, you may need information from the CDP con
 namespace:           Name of kubernetes namespace, based on the following options: [ --namespace-project-branch-name | --namespace-project-name ]
 ingress.host:        Ingress, based on the following options : [ --namespace-project-branch-name | --namespace-project-name ]
 image.commit.sha:    First 8 characters of sha1 corresponding to the current commit.
-image.registry:      Docker image registry, based on the following options: [ --use-gitlab-registry | --use-aws-ecr | --use-custom-registry ]
+image.registry:      Docker image registry, based on the following options: [ --use-gitlab-registry | --use-aws-ecr=<region> | --use-custom-registry ]
 image.repository:    Name of the repository corresponding to the CI_PROJECT_PATH environment variable in lowercase.
 image.tag:           Docker image tag, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
 ```
