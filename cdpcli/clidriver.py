@@ -11,13 +11,13 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
-        [--use-gitlab-registry | --use-aws-ecr=<region> | --use-custom-registry]
+        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
-        (--use-gitlab-registry | --use-aws-ecr=<region> | --use-custom-registry)
+        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry)
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
@@ -44,7 +44,7 @@ Options:
     --image-tag-latest                  Tag docker image with 'latest'  or use it.
     --image-tag-sha1                    Tag docker image with commit sha1  or use it.
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
-    --use-aws-ecr=<region>              Use AWS ECR from k8s configuration for pull/push docker image. Specify AWS region.
+    --use-aws-ecr                       Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry               Use custom registry for pull/push docker image.
     --put=<file>                        Put file to artifactory.
     --delete=<file>                     Delete file in artifactory.
@@ -165,10 +165,10 @@ class CLIDriver(object):
 
         if self._context.opt['--use-aws-ecr']:
             try:
-                self._cmd.run_command('aws ecr list-images --repository-name %s --max-items 0 --region %s' % (self._context.repository, self._context.opt['--use-aws-ecr']))
+                self._cmd.run_command('aws ecr list-images --repository-name %s --max-items 0' % (self._context.repository))
             except ValueError:
                 LOG.warning('AWS ECR repository doesn\'t  exist. Creating this one.')
-                self._cmd.run_command('aws ecr create-repository --repository-name %s --region %s' % (self._context.repository, self._context.opt['--use-aws-ecr']))
+                self._cmd.run_command('aws ecr create-repository --repository-name %s' % (self._context.repository))
 
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:

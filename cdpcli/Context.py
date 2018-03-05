@@ -9,10 +9,8 @@ class Context(object):
         self._opt = opt
 
         if opt['--use-aws-ecr']:
-            os.environ['AWS_ACCESS_KEY_ID'] = os.environ['CDP_AWS_ACCESS_KEY_ID']
-            os.environ['AWS_SECRET_ACCESS_KEY'] = os.environ['CDP_AWS_SECRET_ACCESS_KEY']
             # Use AWS ECR from k8s configuration on gitlab-runner deployment
-            login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', cmd.run_command('aws ecr get-login --no-include-email --region %s' % self.opt['--use-aws-ecr'], False).strip())
+            login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', cmd.run_command('aws ecr get-login --no-include-email', False).strip())
             self._registry = login_regex[0][2]
             self._registry_user = login_regex[0][0]
             self._registry_token = login_regex[0][1]
