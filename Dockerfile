@@ -3,7 +3,7 @@ FROM ubuntu:16.04
 MAINTAINER Lucas POUZAC <lucas.pouzac.pro@gmail.com>
 
 ENV KUBE_VERSION="v1.6.7"
-ENV HELM_VERSION="v2.5.1"
+ENV HELM_VERSION="v2.8.1"
 ENV VALIDATOR_CLI_VERSION="1.0.44"
 
 ADD . cdp/
