@@ -154,10 +154,6 @@ class CLIDriver(object):
         self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
         self._cmd.run_command('docker run --rm %s -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (dind, self._context.opt['--docker-image'], self._context.opt['--command']))
 
-        # Clean git repository
-        if self._context.opt['--simulate-merge-on']:
-            self._cmd.run_command('git checkout .')
-
 
     def __docker(self):
         # Login to the docker registry
