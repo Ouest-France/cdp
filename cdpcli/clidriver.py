@@ -8,6 +8,10 @@ Usage:
         (--command=<build_cmd>)
         [--dind]
         [--simulate-merge-on=<branch_name>]
+    cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        (--preview | --publish)
+        (--codeclimate | --sast)
+        [--simulate-merge-on=<branch_name>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
@@ -38,6 +42,10 @@ Options:
     --command=<build_cmd>               Command to run in the docker image.
     --dind                              Activate 'Docker in Docker' inside this container.
     --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
+    --preview                           Run issues mode (Preview).
+    --publish                           Run publish mode (Analyse).
+    --codeclimate                       Codeclimate mode.
+    --sast                              Static Application Security Testing mode.
     --use-docker                        Use docker to build / push image [default].
     --use-docker-compose                Use docker-compose to build / push image.
     --image-tag-branch-name             Tag docker image with branch name or use it [default].
@@ -61,6 +69,7 @@ Options:
     --block-json                        Valid BlockJSON interface.
 """
 
+import ConfigParser
 import sys, os
 import logging, verboselogs
 import time, datetime
@@ -69,6 +78,7 @@ from Context import Context
 from clicommand import CLICommand
 from cdpcli import __version__
 from docopt import docopt, DocoptExit
+from PropertiesParser import PropertiesParser
 
 LOG = verboselogs.VerboseLogger('clidriver')
 LOG.addHandler(logging.StreamHandler())
@@ -113,6 +123,9 @@ class CLIDriver(object):
             if self._context.opt['build']:
                 self.__build()
 
+            if self._context.opt['sonar']:
+                self.__sonar()
+
             if self._context.opt['docker']:
                 self.__docker()
 
@@ -131,19 +144,7 @@ class CLIDriver(object):
 
 
     def __build(self):
-        if self._context.opt['--simulate-merge-on']:
-            LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
-
-            # Merge branch on selected branch
-            self._cmd.run_command('git config --global user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
-            self._cmd.run_command('git config --global user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
-            self._cmd.run_command('git checkout %s' % self._context.opt['--simulate-merge-on'])
-            self._cmd.run_command('git reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
-            self._cmd.run_command('git merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])
-
-            # TODO Exception process
-        else:
-            LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
+        self.__simulate_merge_on()
 
         dind = ''
         if self._context.opt['--dind']:
@@ -154,6 +155,41 @@ class CLIDriver(object):
         self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
         self._cmd.run_command('docker run --rm %s -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (dind, self._context.opt['--docker-image'], self._context.opt['--command']))
 
+    def __sonar(self):
+        self.__simulate_merge_on()
+
+        sonar_file = 'sonar-project.properties'
+        project_key = None
+        sources = None
+
+        command = 'sonar-scanner -Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s' % (os.environ['SONAR_LOGIN'],
+            os.environ['SONAR_URL'], os.environ['GITLAB_USER_TOKEN'], os.environ['CI_COMMIT_SHA'], os.environ['CI_COMMIT_REF_NAME'], os.environ['CI_PROJECT_PATH'], self.__getTagBranchName())
+
+        # Check if mandatory properties are setted
+        if os.path.isfile(sonar_file):
+            LOG.verbose('Read : %s', sonar_file)
+            cfg = PropertiesParser()
+            cfg.read(sonar_file)
+            project_key = cfg.get('sonar.projectKey')
+            sources = cfg.get('sonar.sources')
+
+        # Set property if not setted
+        if not (project_key and project_key.strip()):
+            command = "%s -Dsonar.projectKey=%s" % (command, os.environ['CI_PROJECT_PATH'].replace('/', '_'))
+
+        # Set property if not setted
+        if not (sources and sources.strip()):
+            command = "%s -Dsonar.sources=." % command
+
+        if self._context.opt['--sast']:
+            command = "%s -Dsonar.gitlab.json_mode=SAST" % command
+        else:
+            command = "%s -Dsonar.gitlab.json_mode=CODECLIMATE" % command
+
+        if self._context.opt['--preview']:
+            command = "%s -Dsonar.analysis.mode=preview" % command
+
+        self._cmd.run_command(command)
 
     def __docker(self):
         # Login to the docker registry
@@ -334,3 +370,18 @@ class CLIDriver(object):
             return '%s.%s' % (os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
         else:
             return '%s.%s.%s' % (os.getenv('CI_ENVIRONMENT_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
+
+    def __simulate_merge_on(self):
+        if self._context.opt['--simulate-merge-on']:
+            LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
+
+            # Merge branch on selected branch
+            self._cmd.run_command('git config --global user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
+            self._cmd.run_command('git config --global user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
+            self._cmd.run_command('git checkout %s' % self._context.opt['--simulate-merge-on'])
+            self._cmd.run_command('git reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
+            self._cmd.run_command('git merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])
+
+            # TODO Exception process
+        else:
+            LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
