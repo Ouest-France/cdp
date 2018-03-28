@@ -1,0 +1,38 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "project.name" . }}
+  labels:
+    app: {{ template "project.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+{{ toYaml .Values.replicas_strategy | indent 2 }}
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "project.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ template "project.name" . }}-{{ .Values.image.commit.sha }}
+          image: {{ .Values.image.fullname }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: "APP_DOMAIN"
+              value: "{{ .Values.ingress.host }}"
+          ports:
+            - containerPort: {{ .Values.service.internalPort }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.internalPort }}
+            initialDelaySeconds: {{ .Values.service.liveness.initialDelaySeconds }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.internalPort }}
+            initialDelaySeconds: {{ .Values.service.readiness.initialDelaySeconds }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

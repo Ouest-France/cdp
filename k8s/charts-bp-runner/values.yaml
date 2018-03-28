@@ -1,0 +1,25 @@
+replicas_strategy:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+minReadySeconds: 60
+revisionHistoryLimit: 1
+image:
+  pullPolicy: Always
+service:
+  type: ClusterIP
+  externalPort: 80
+  internalPort: 8080
+  liveness:
+    initialDelaySeconds: 60
+  readiness:
+    initialDelaySeconds: 20
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 1
+    memory: 1Gi
