@@ -64,13 +64,15 @@ class TestCliDriver(unittest.TestCase):
     dns_subdomain = 'example.com'
     gitlab_user_email = 'test@example.com'
     gitlab_user_id = '12334'
+    gitlab_user_token = '897873763'
     cdp_custom_registry_user = 'cdp_custom_registry_user'
     cdp_custom_registry_token = '1298937676109092092'
     cdp_custom_registry_read_only_token = '1298937676109092093'
     cdp_custom_registry = 'docker-artifact.fr:8123'
     cdp_artifactory_path = 'http://repo.fr/test'
     cdp_artifactory_token = '29873678036783'
-
+    sonar_url = "https://sonar:9000"
+    sonar_login = "987656436908"
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -82,19 +84,23 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
         os.environ['CI_REGISTRY_USER'] = TestCliDriver.ci_registry_user
         os.environ['CI_REGISTRY'] = TestCliDriver.ci_registry
-        os.environ['CI_COMMIT_REF_NAME'] = TestCliDriver. ci_commit_ref_name
+        os.environ['CI_COMMIT_REF_NAME'] = TestCliDriver.ci_commit_ref_name
         os.environ['CI_REGISTRY_IMAGE'] = TestCliDriver.ci_registry_image
         os.environ['CI_PROJECT_NAME'] = TestCliDriver.ci_project_name
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
         os.environ['DNS_SUBDOMAIN'] = TestCliDriver.dns_subdomain
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
         os.environ['GITLAB_USER_ID'] = TestCliDriver.gitlab_user_id
+        os.environ['GITLAB_USER_TOKEN'] = TestCliDriver.gitlab_user_token
         os.environ['CDP_CUSTOM_REGISTRY_USER'] = TestCliDriver.cdp_custom_registry_user
         os.environ['CDP_CUSTOM_REGISTRY_TOKEN'] = TestCliDriver.cdp_custom_registry_token
         os.environ['CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_custom_registry_read_only_token
         os.environ['CDP_CUSTOM_REGISTRY'] = TestCliDriver.cdp_custom_registry
         os.environ['CDP_ARTIFACTORY_PATH'] = TestCliDriver.cdp_artifactory_path
         os.environ['CDP_ARTIFACTORY_TOKEN'] = TestCliDriver.cdp_artifactory_token
+        os.environ['SONAR_URL'] = TestCliDriver.sonar_url
+        os.environ['SONAR_LOGIN'] = TestCliDriver.sonar_login
+
 
     def test_build_dind_docker_host(self):
         # Create FakeCommand
@@ -130,6 +136,53 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--verbose', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
+
+
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
+    def test_sonar_preview_codeclimate_verbose_simulatemergeon_sleep(self, mock_isfile):
+        # Create FakeCommand
+        branch_name = 'master'
+        sleep = 10
+        verif_cmd = [
+            {'cmd': 'env', 'output': 'unnecessary'},
+            {'cmd': 'git config --global user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'output': 'unnecessary'},
+            {'cmd': 'git config --global user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'output': 'unnecessary'},
+            {'cmd': 'git checkout %s' % branch_name, 'output': 'unnecessary'},
+            {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
+            {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
+            {'cmd': 'sonar-scanner -Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.projectKey=%s -Dsonar.sources=. -Dsonar.gitlab.json_mode=CODECLIMATE -Dsonar.analysis.mode=preview'
+                % (TestCliDriver.sonar_login,
+                    TestCliDriver.sonar_url,
+                    TestCliDriver.gitlab_user_token,
+                    TestCliDriver.ci_commit_sha,
+                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_project_path,
+                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_project_path.replace('/','_')), 'output': 'unnecessary'},
+            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'sonar', '--preview', '--codeclimate', '--verbose', '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
+        mock_isfile.assert_called_with('sonar-project.properties')
+
+
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=True)
+    @patch('cdpcli.clidriver.PropertiesParser.get')
+    def test_sonar_publish_sast(self, mock_get, mock_isfile):
+        mock_get.side_effect = ['project_key', 'sources']
+        # Create FakeCommand
+        verif_cmd = [
+            {'cmd': 'sonar-scanner -Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.gitlab.json_mode=SAST'
+                % (TestCliDriver.sonar_login,
+                    TestCliDriver.sonar_url,
+                    TestCliDriver.gitlab_user_token,
+                    TestCliDriver.ci_commit_sha,
+                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_project_path,
+                    TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'sonar', '--publish', '--sast' }, verif_cmd)
+        mock_isfile.assert_called_with('sonar-project.properties')
+        mock_get.assert_has_calls([call.get('sonar.projectKey'), call.get('sonar.sources')])
 
     def test_docker_usedocker_imagetagbranchname_usegitlabregistry_sleep_docker_host(self):
         # Create FakeCommand

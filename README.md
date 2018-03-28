@@ -12,6 +12,10 @@ Usage:
         (--command=<build_cmd>)
         [--dind]
         [--simulate-merge-on=<branch_name>]
+    cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        (--preview | --publish)
+        (--codeclimate | --sast)
+        [--simulate-merge-on=<branch_name>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
@@ -42,6 +46,10 @@ Options:
     --command=<build_cmd>               Command to run in the docker image.
     --dind                              Activate 'Docker in Docker' inside this container.
     --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
+    --preview                           Run issues mode (Preview).
+    --publish                           Run publish mode (Analyse).
+    --codeclimate                       Codeclimate mode.
+    --sast                              Static Application Security Testing mode.
     --use-docker                        Use docker to build / push image [default].
     --use-docker-compose                Use docker-compose to build / push image.
     --image-tag-branch-name             Tag docker image with branch name or use it [default].
@@ -68,6 +76,12 @@ Options:
 ### Prerequisites
 
 ```yaml
+sonar:
+ - SONAR_LOGIN – Sonar access token (scope Administer Quality Profiles / Administer Quality Gates).
+ - SONAR_URL – Sonar url access.
+ - GITLAB_USER_TOKEN – Gitlab access token (scope api).
+ - sonar-project.properties - Add this file to the root of the project. If not present, -Dsonar.projectKey=$CI_PROJECT_PATH and -Dsonar.sources=.
+
 docker:
  --use-docker:
     - File Dockerfile required at the root of the project.
@@ -76,7 +90,7 @@ docker:
 
 k8s:
   without: --create-default-helm:
-    - Helm and k8s files to configure the deployment. Must be present in the directory configured by the --deploy-spec-dir=<dir> option
+    - Helm and k8s files to configure the deployment. Must be present in the directory configured by the --deploy-spec-dir=<dir> option.
 
 docker|k8s:
   --use-aws-ecr:
@@ -100,6 +114,14 @@ artifactory:
 ### Example .gitlab-ci.yml file
 
 ```yaml
+stages:
+  ...
+  - build
+  - quality
+  - package
+  - deploy
+  ...
+  
 services:
   - docker:dind
 
@@ -111,6 +133,24 @@ build:
   artifacts:
     paths:
     - target/*.jar
+
+codeclimate:
+  image: ouestfrance/cdp:latest
+  stage: quality
+  script:
+    - cdp sonar --preview --codeclimate --simulate-merge-on=develop
+  artifacts:
+    paths:
+    - codeclimate.json
+
+sast:
+  image: ouestfrance/cdp:latest
+  stage: quality
+  script:
+    - cdp sonar --preview --sast --simulate-merge-on=develop
+  artifacts:
+    paths:
+    - gl-sast-report.json
 
 package:
   image: ouestfrance/cdp:latest
