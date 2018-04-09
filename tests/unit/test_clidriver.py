@@ -111,9 +111,9 @@ class TestCliDriver(unittest.TestCase):
         os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
+            {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
             {'cmd': 'docker pull docker:dind', 'output': 'unnecessary'},
             {'cmd': 'docker run --rm --privileged --name docker-dind -d docker:dind', 'output': 'unnecessary'},
-            {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
             {'cmd': 'docker run --rm --link docker-dind:docker -e DOCKER_HOST=tcp://docker:2375 -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--dind' }, verif_cmd, docker_host = docker_host)
@@ -132,7 +132,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
             {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
-            {'cmd': 'docker run --rm  -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'},
+            {'cmd': 'docker run --rm -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (image_name, command_name), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--verbose', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)

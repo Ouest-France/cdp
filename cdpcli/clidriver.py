@@ -8,6 +8,7 @@ Usage:
         (--command=<build_cmd>)
         [--dind]
         [--simulate-merge-on=<branch_name>]
+        [--add-maven-settings]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
         (--codeclimate | --sast)
@@ -114,6 +115,8 @@ class CLIDriver(object):
 
         LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
 
+        if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
+            self._cmd.run_command('mkdir -p ~/.ssh && echo "$SSH_PRIVATE_KEY" | tr -d \'\r\' > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa')
 
     def main(self, args=None):
         try:
@@ -145,15 +148,31 @@ class CLIDriver(object):
 
     def __build(self):
         self.__simulate_merge_on()
+        self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
 
-        dind = ''
+        command_run_image = 'docker run --rm'
+
         if self._context.opt['--dind']:
             self._cmd.run_command('docker pull docker:dind')
             self._cmd.run_command('docker run --rm --privileged --name docker-dind -d docker:dind')
-            dind = '--link docker-dind:docker -e DOCKER_HOST=tcp://docker:2375'
+            command_run_image = '%s --link docker-dind:docker -e DOCKER_HOST=tcp://docker:2375' % command_run_image
 
-        self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
-        self._cmd.run_command('docker run --rm %s -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (dind, self._context.opt['--docker-image'], self._context.opt['--command']))
+        if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
+            command_run_image = '%s -v ~/.ssh:/root/.ssh' % command_run_image
+
+        if self._context.opt['--add-maven-settings']:
+            command_run_image = '%s -v /cdp/maven/settings.xml:/root/.m2/settings.xml' % command_run_image
+            command_run_image = '%s -e CDP_REPOSITORY_USERNAME=%s' % (command_run_image, os.environ['CDP_REPOSITORY_USERNAME'])
+            command_run_image = '%s -e CDP_REPOSITORY_PASSWORD=%s' % (command_run_image, os.environ['CDP_REPOSITORY_PASSWORD'])
+            command_run_image = '%s -e CDP_REPOSITORY_URL=%s' % (command_run_image, os.environ['CDP_REPOSITORY_URL'])
+            command_run_image = '%s -e CDP_REPOSITORY_MAVEN_RELEASE=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
+            command_run_image = '%s -e CDP_REPOSITORY_MAVEN_SNAPSHOT=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
+
+        command_run_image = '%s -v ${PWD}:/cdp-data' % command_run_image
+
+        command_run_image = '%s %s /bin/sh -c \'cd /cdp-data; %s\'' % (command_run_image, self._context.opt['--docker-image'], self._context.opt['--command'])
+
+        self._cmd.run_command(command_run_image)
 
     def __sonar(self):
         self.__simulate_merge_on()
