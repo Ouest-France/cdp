@@ -6,7 +6,6 @@ Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
         (--command=<build_cmd>)
-        [--dind]
         [--simulate-merge-on=<branch_name>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
@@ -40,7 +39,6 @@ Options:
     --sleep=<seconds>                   Time to sleep int the end (for debbuging) in seconds [default: 0].
     --docker-image=<image_name>         Specify docker image name for build project.
     --command=<build_cmd>               Command to run in the docker image.
-    --dind                              Activate 'Docker in Docker' inside this container.
     --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
     --preview                           Run issues mode (Preview).
     --publish                           Run publish mode (Analyse).
@@ -110,7 +108,7 @@ class CLIDriver(object):
 
         # Default value of DOCKER_HOST env var if not set
         if os.getenv('DOCKER_HOST', None) is None:
-            os.environ['DOCKER_HOST'] = 'tcp://localhost:2375'
+            os.environ['DOCKER_HOST'] = 'unix://var/run/docker.sock'
 
         LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
 
@@ -145,15 +143,9 @@ class CLIDriver(object):
 
     def __build(self):
         self.__simulate_merge_on()
-
-        dind = ''
-        if self._context.opt['--dind']:
-            self._cmd.run_command('docker pull docker:dind')
-            self._cmd.run_command('docker run --rm --privileged --name docker-dind -d docker:dind')
-            dind = '--link docker-dind:docker -e DOCKER_HOST=tcp://docker:2375'
-
         self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
-        self._cmd.run_command('docker run --rm %s -v ${PWD}:/cdp-data %s /bin/sh -c \'cd /cdp-data; %s\'' % (dind, self._context.opt['--docker-image'], self._context.opt['--command']))
+        self._cmd.run_command('docker run --rm --init -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix://var/run/docker.sock -v ${PWD}:/cdp-data -w /cdp-data --entrypoint="" %s /bin/sh -c \'%s\'' % (self._context.opt['--docker-image'], self._context.opt['--command']))
+
 
     def __sonar(self):
         self.__simulate_merge_on()
