@@ -5,10 +5,9 @@ Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
-        (--command=<build_cmd>)
-        [--dind]
+        (--command=<build_cmd>|--command-maven-release)
         [--simulate-merge-on=<branch_name>]
-        [--add-maven-settings]
+        [--maven_release_plugin=<version>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
         (--codeclimate | --sast)
@@ -34,40 +33,41 @@ Usage:
         [--namespace-project-branch-name | --namespace-project-name]
     cdp (-h | --help | --version)
 Options:
-    -h, --help                          Show this screen and exit.
-    -v, --verbose                       Make more noise.
-    -q, --quiet                         Make less noise.
-    -d, --dry-run                       Simulate execution.
-    --sleep=<seconds>                   Time to sleep int the end (for debbuging) in seconds [default: 0].
-    --docker-image=<image_name>         Specify docker image name for build project.
-    --command=<build_cmd>               Command to run in the docker image.
-    --dind                              Activate 'Docker in Docker' inside this container.
-    --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
-    --preview                           Run issues mode (Preview).
-    --publish                           Run publish mode (Analyse).
-    --codeclimate                       Codeclimate mode.
-    --sast                              Static Application Security Testing mode.
-    --use-docker                        Use docker to build / push image [default].
-    --use-docker-compose                Use docker-compose to build / push image.
-    --image-tag-branch-name             Tag docker image with branch name or use it [default].
-    --image-tag-latest                  Tag docker image with 'latest'  or use it.
-    --image-tag-sha1                    Tag docker image with commit sha1  or use it.
-    --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
-    --use-aws-ecr                       Use AWS ECR from k8s configuration for pull/push docker image.
-    --use-custom-registry               Use custom registry for pull/push docker image.
-    --put=<file>                        Put file to artifactory.
-    --delete=<file>                     Delete file in artifactory.
-    --values=<files>                    Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --delete-labels=<minutes>           Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
-    --namespace-project-branch-name     Use project and branch name to create k8s namespace or choice environment host [default].
-    --namespace-project-name            Use project name to create k8s namespace or choice environment host.
-    --create-default-helm               Create default helm for simple project (One docker image).
-    --deploy-spec-dir=<dir>             k8s deployment files [default: charts].
-    --timeout=<timeout>                 Time in seconds to wait for any individual kubernetes operation [default: 300].
-    --path=<path>                       Path to validate [default: configurations].
-    --block-provider                    Valid BlockProviderConfig interface [default].
-    --block                             Valid BlockConfig interface.
-    --block-json                        Valid BlockJSON interface.
+    -h, --help                            Show this screen and exit.
+    -v, --verbose                         Make more noise.
+    -q, --quiet                           Make less noise.
+    -d, --dry-run                         Simulate execution.
+    --sleep=<seconds>                     Time to sleep int the end (for debbuging) in seconds [default: 0].
+    --docker-image=<image_name>           Specify docker image name for build project.
+    --command=<build_cmd>                 Command to run in the docker image.
+    --command-maven-release               Force maven command for release project.
+    --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
+    --simulate-merge-on=<branch_name>     Build docker image with the merge current branch on specify branch (no commit).
+    --preview                             Run issues mode (Preview).
+    --publish                             Run publish mode (Analyse).
+    --codeclimate                         Codeclimate mode.
+    --sast                                Static Application Security Testing mode.
+    --use-docker                          Use docker to build / push image [default].
+    --use-docker-compose                  Use docker-compose to build / push image.
+    --image-tag-branch-name               Tag docker image with branch name or use it [default].
+    --image-tag-latest                    Tag docker image with 'latest'  or use it.
+    --image-tag-sha1                      Tag docker image with commit sha1  or use it.
+    --use-gitlab-registry                 Use gitlab registry for pull/push docker image [default].
+    --use-aws-ecr                         Use AWS ECR from k8s configuration for pull/push docker image.
+    --use-custom-registry                 Use custom registry for pull/push docker image.
+    --put=<file>                          Put file to artifactory.
+    --delete=<file>                       Delete file in artifactory.
+    --values=<files>                      Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
+    --delete-labels=<minutes>             Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
+    --namespace-project-branch-name       Use project and branch name to create k8s namespace or choice environment host [default].
+    --namespace-project-name              Use project name to create k8s namespace or choice environment host.
+    --create-default-helm                 Create default helm for simple project (One docker image).
+    --deploy-spec-dir=<dir>               k8s deployment files [default: charts].
+    --timeout=<timeout>                   Time in seconds to wait for any individual kubernetes operation [default: 300].
+    --path=<path>                         Path to validate [default: configurations].
+    --block-provider                      Valid BlockProviderConfig interface [default].
+    --block                               Valid BlockConfig interface.
+    --block-json                          Valid BlockJSON interface.
 """
 
 import ConfigParser
@@ -111,7 +111,7 @@ class CLIDriver(object):
 
         # Default value of DOCKER_HOST env var if not set
         if os.getenv('DOCKER_HOST', None) is None:
-            os.environ['DOCKER_HOST'] = 'tcp://localhost:2375'
+            os.environ['DOCKER_HOST'] = 'unix:///var/run/docker.sock'
 
         LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
 
@@ -150,17 +150,14 @@ class CLIDriver(object):
         self.__simulate_merge_on()
         self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
 
-        command_run_image = 'docker run --rm'
-
-        if self._context.opt['--dind']:
-            self._cmd.run_command('docker pull docker:dind')
-            self._cmd.run_command('docker run --rm --privileged --name docker-dind -d docker:dind')
-            command_run_image = '%s --link docker-dind:docker -e DOCKER_HOST=tcp://docker:2375' % command_run_image
+        command_run_image = 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock -v ${PWD}:/cdp-data'
 
         if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
             command_run_image = '%s -v ~/.ssh:/root/.ssh' % command_run_image
 
-        if self._context.opt['--add-maven-settings']:
+        command = self._context.opt['--command']
+
+        if self._context.opt['--command-maven-release'] and 1 == 0:
             command_run_image = '%s -v /cdp/maven/settings.xml:/root/.m2/settings.xml' % command_run_image
             command_run_image = '%s -e CDP_REPOSITORY_USERNAME=%s' % (command_run_image, os.environ['CDP_REPOSITORY_USERNAME'])
             command_run_image = '%s -e CDP_REPOSITORY_PASSWORD=%s' % (command_run_image, os.environ['CDP_REPOSITORY_PASSWORD'])
@@ -168,9 +165,10 @@ class CLIDriver(object):
             command_run_image = '%s -e CDP_REPOSITORY_MAVEN_RELEASE=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
             command_run_image = '%s -e CDP_REPOSITORY_MAVEN_SNAPSHOT=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
 
-        command_run_image = '%s -v ${PWD}:/cdp-data' % command_run_image
+            command = 'mvn --batch-mode clean org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -DreleaseProfiles=release -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" && git push' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'], os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
 
-        command_run_image = '%s %s /bin/sh -c \'cd /cdp-data; %s\'' % (command_run_image, self._context.opt['--docker-image'], self._context.opt['--command'])
+        command_run_image = '%s -w /cdp-data' % command_run_image
+        command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
 
         self._cmd.run_command(command_run_image)
 
