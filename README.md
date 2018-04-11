@@ -10,7 +10,6 @@ Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
         (--command=<build_cmd>)
-        [--dind]
         [--simulate-merge-on=<branch_name>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
@@ -44,7 +43,6 @@ Options:
     --sleep=<seconds>                   Time to sleep int the end (for debbuging) in seconds [default: 0].
     --docker-image=<image_name>         Specify docker image name for build project.
     --command=<build_cmd>               Command to run in the docker image.
-    --dind                              Activate 'Docker in Docker' inside this container.
     --simulate-merge-on=<branch_name>   Build docker image with the merge current branch on specify branch (no commit).
     --preview                           Run issues mode (Preview).
     --publish                           Run publish mode (Analyse).
@@ -121,15 +119,12 @@ stages:
   - package
   - deploy
   ...
-  
-services:
-  - docker:dind
 
 build:
   image: ouestfrance/cdp:latest
   stage: build
   script:
-    - cdp build --docker-image=maven:3.5-jdk-8 --command='mvn clean verify' --simulate-merge-on=develop --dind
+    - cdp build --docker-image=maven:3.5-jdk-8 --command='mvn clean verify' --simulate-merge-on=develop
   artifacts:
     paths:
     - target/*.jar
