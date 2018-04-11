@@ -116,7 +116,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
             {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
-            {'cmd': 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix://var/run/docker.sock -v ${PWD}:/cdp-data -w /cdp-data --entrypoint="" %s /bin/sh -c \'%s\'' % (image_name, command_name), 'output': 'unnecessary'},
+            {'cmd': 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock -v ${PWD}:/cdp-data -w /cdp-data --entrypoint="" %s /bin/sh -c \'%s\'' % (image_name, command_name), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--verbose', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
@@ -172,7 +172,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         sleep = 10
 
-        docker_host = 'unix://var/run/docker.sock'
+        docker_host = 'unix:///var/run/docker.sock'
         os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
@@ -232,7 +232,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         upload_file = 'config/values.yaml'
 
-        docker_host = 'unix://var/run/docker.sock'
+        docker_host = 'unix:///var/run/docker.sock'
         os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
@@ -273,7 +273,7 @@ class TestCliDriver(unittest.TestCase):
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
 
-        docker_host = 'unix://var/run/docker.sock'
+        docker_host = 'unix:///var/run/docker.sock'
         os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
@@ -417,7 +417,7 @@ class TestCliDriver(unittest.TestCase):
         mock_dump.assert_called_with(data, mock_open.return_value.__enter__.return_value, default_flow_style=False)
 
     def test_validator_dockerhost(self):
-        docker_host = 'unix://var/run/docker.sock'
+        docker_host = 'unix:///var/run/docker.sock'
         os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
@@ -443,7 +443,7 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'validator', '--path=%s' % path, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
 
-    def __run_CLIDriver(self, args, verif_cmd, return_code = None, docker_host = 'unix://var/run/docker.sock'):
+    def __run_CLIDriver(self, args, verif_cmd, return_code = None, docker_host = 'unix:///var/run/docker.sock'):
         cmd = FakeCommand(verif_cmd = verif_cmd)
         cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
         self.assertEqual(return_code, cli.main())
