@@ -144,7 +144,7 @@ class CLIDriver(object):
     def __build(self):
         self.__simulate_merge_on()
         self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
-        self._cmd.run_command('docker run --rm --init -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix://var/run/docker.sock -v ${PWD}:/cdp-data -w /cdp-data --entrypoint="" %s /bin/sh -c \'%s\'' % (self._context.opt['--docker-image'], self._context.opt['--command']))
+        self._cmd.run_command('docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix://var/run/docker.sock -v ${PWD}:/cdp-data -w /cdp-data --entrypoint="" %s /bin/sh -c \'%s\'' % (self._context.opt['--docker-image'], self._context.opt['--command']))
 
 
     def __sonar(self):
