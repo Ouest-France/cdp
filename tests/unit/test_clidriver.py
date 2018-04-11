@@ -116,7 +116,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
             {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
-            {'cmd': 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock -v ${PWD}:/cdp-data -w /cdp-data --entrypoint="" %s /bin/sh -c \'%s\'' % (image_name, command_name), 'output': 'unnecessary'},
+            {'cmd': 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock -v ${PWD}:/cdp-data -w /cdp-data %s /bin/sh -c \'%s\'' % (image_name, command_name), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--verbose', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
