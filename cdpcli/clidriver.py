@@ -213,7 +213,7 @@ class CLIDriver(object):
         if os.getenv('MAVEN_OPTS', None) is not None:
             command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
 
-        command = 'mvn %s %s' % (command '-s maven-settings.xml')
+        command = 'mvn %s %s' % (command, '-s maven-settings.xml')
 
         if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
             command = '%s %s' % ('mkdir ~/.ssh && mv id_rsa ~/.ssh && ', command)
