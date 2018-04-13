@@ -183,7 +183,7 @@ class CLIDriver(object):
 
                 command = '%s -DreleaseProfiles=release -Darguments="%s" && git push' % (command, arguments)
             else:
-                command = 'mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s' % (command, os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
+                command = 'mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
 
                 if os.getenv('MAVEN_OPTS', None) is not None:
                     command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
