@@ -165,7 +165,8 @@ class CLIDriver(object):
         command = self._context.opt['--command']
 
         if self._context.opt['--command-maven-deploy']:
-            command_run_image = '%s -v /cdp/maven/settings.xml:/root/.m2/settings.xml' % command_run_image
+            self._cmd.run_command('cp /cdp/maven/settings.xml .')
+
             command_run_image = '%s -e CDP_REPOSITORY_USERNAME=%s' % (command_run_image, os.environ['CDP_REPOSITORY_USERNAME'])
             command_run_image = '%s -e CDP_REPOSITORY_PASSWORD=%s' % (command_run_image, os.environ['CDP_REPOSITORY_PASSWORD'])
             command_run_image = '%s -e CDP_REPOSITORY_URL=%s' % (command_run_image, os.environ['CDP_REPOSITORY_URL'])
@@ -187,6 +188,8 @@ class CLIDriver(object):
 
                 if os.getenv('MAVEN_OPTS', None) is not None:
                     command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
+
+            command = '%s %s' % (command, '-S settings.xml')
 
         command_run_image = '%s -w ${PWD}' % command_run_image
         command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
