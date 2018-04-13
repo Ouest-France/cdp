@@ -5,7 +5,7 @@ Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
-        (--command=<build_cmd>|--command-maven-release)
+        (--command=<build_cmd>|--command-maven-deploy=<type_deploy>)
         [--simulate-merge-on=<branch_name>]
         [--maven_release_plugin=<version>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -40,7 +40,7 @@ Options:
     --sleep=<seconds>                     Time to sleep int the end (for debbuging) in seconds [default: 0].
     --docker-image=<image_name>           Specify docker image name for build project.
     --command=<build_cmd>                 Command to run in the docker image.
-    --command-maven-release               Force maven command for release project.
+    --command-maven-deploy=<deploy>       'release' or 'snapshot' - Maven command to deploy artifact.
     --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
     --simulate-merge-on=<branch_name>     Build docker image with the merge current branch on specify branch (no commit).
     --preview                             Run issues mode (Preview).
@@ -157,7 +157,7 @@ class CLIDriver(object):
 
         command = self._context.opt['--command']
 
-        if self._context.opt['--command-maven-release'] and 1 == 0:
+        if self._context.opt['--command-maven-deploy']:
             command_run_image = '%s -v /cdp/maven/settings.xml:/root/.m2/settings.xml' % command_run_image
             command_run_image = '%s -e CDP_REPOSITORY_USERNAME=%s' % (command_run_image, os.environ['CDP_REPOSITORY_USERNAME'])
             command_run_image = '%s -e CDP_REPOSITORY_PASSWORD=%s' % (command_run_image, os.environ['CDP_REPOSITORY_PASSWORD'])
@@ -165,7 +165,12 @@ class CLIDriver(object):
             command_run_image = '%s -e CDP_REPOSITORY_MAVEN_RELEASE=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
             command_run_image = '%s -e CDP_REPOSITORY_MAVEN_SNAPSHOT=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
 
-            command = 'mvn --batch-mode clean org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -DreleaseProfiles=release -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" && git push' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'], os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
+
+            if self._context.opt['--command-maven-deploy'] == 'release':
+                command = 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]"' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'])
+                command = '%s -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" && git push' % (command, os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
+            else:
+                command = 'mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s' % (command, os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
 
         command_run_image = '%s -w /cdp-data' % command_run_image
         command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
