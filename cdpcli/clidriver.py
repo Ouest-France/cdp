@@ -8,6 +8,7 @@ Usage:
         (--command=<build_cmd>|--command-maven-deploy=<type_deploy>)
         [--simulate-merge-on=<branch_name>]
         [--maven_release_plugin=<version>]
+        [--volume-from=<host_type>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
         (--codeclimate | --sast)
@@ -43,6 +44,7 @@ Options:
     --command-maven-deploy=<deploy>       'release' or 'snapshot' - Maven command to deploy artifact.
     --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
     --simulate-merge-on=<branch_name>     Build docker image with the merge current branch on specify branch (no commit).
+    --volume-from=<host_type>             Volume type of sources - docker or k8s [default: k8s]
     --preview                             Run issues mode (Preview).
     --publish                             Run publish mode (Analyse).
     --codeclimate                         Codeclimate mode.
@@ -150,7 +152,12 @@ class CLIDriver(object):
         self.__simulate_merge_on()
         self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
 
-        command_run_image = 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock -v ${PWD}:/cdp-data'
+        command_run_image = 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
+
+        if self._context.opt['--volume-from'] == 'k8s':
+            command_run_image = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % command_run_image
+        else:
+            command_run_image = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % command_run_image
 
         if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
             command_run_image = '%s -v ~/.ssh:/root/.ssh' % command_run_image
@@ -172,7 +179,7 @@ class CLIDriver(object):
             else:
                 command = 'mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s' % (command, os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
 
-        command_run_image = '%s -w /cdp-data' % command_run_image
+        command_run_image = '%s -w ${PWD}' % command_run_image
         command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
 
         self._cmd.run_command(command_run_image)
