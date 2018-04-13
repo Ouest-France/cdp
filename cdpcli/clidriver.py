@@ -209,12 +209,12 @@ class CLIDriver(object):
             else:
                 command = 'deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
 
-            if os.getenv('MAVEN_OPTS', None) is not None:
-                command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
-            command = '%s %s' % (command, '-s maven-settings.xml')
 
-        command = 'mvn %s' % command
-        
+        if os.getenv('MAVEN_OPTS', None) is not None:
+            command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
+
+        command = 'mvn %s %s' % (command '-s maven-settings.xml')
+
         if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
             command = '%s %s' % ('mkdir ~/.ssh && mv id_rsa ~/.ssh && ', command)
 
