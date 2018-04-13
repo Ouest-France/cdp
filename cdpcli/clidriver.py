@@ -5,9 +5,14 @@ Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
-        (--command=<build_cmd>|--command-maven-deploy=<type_deploy>)
+        (--command=<cmd>)
         [--simulate-merge-on=<branch_name>]
-        [--maven_release_plugin=<version>]
+        [--volume-from=<host_type>]
+    cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        (--docker-version=<version>)
+        (--maven-command=<goals-opts>|--maven-deploy=<type>)
+        [--maven-release-plugin=<version>]
+        [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
@@ -40,11 +45,13 @@ Options:
     -d, --dry-run                         Simulate execution.
     --sleep=<seconds>                     Time to sleep int the end (for debbuging) in seconds [default: 0].
     --docker-image=<image_name>           Specify docker image name for build project.
-    --command=<build_cmd>                 Command to run in the docker image.
-    --command-maven-deploy=<deploy>       'release' or 'snapshot' - Maven command to deploy artifact.
-    --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
+    --command=<cmd>                       Command to run in the docker image.
     --simulate-merge-on=<branch_name>     Build docker image with the merge current branch on specify branch (no commit).
     --volume-from=<host_type>             Volume type of sources - docker or k8s [default: k8s]
+    --docker-version=<version>            Specify maven docker version [default: 3.5-jdk-8].
+    --maven-command=<goals-opts>          Goals and args to pass maven command.
+    --maven-deploy=<deploy>               'release' or 'snapshot' - Maven command to deploy artifact.
+    --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
     --preview                             Run issues mode (Preview).
     --publish                             Run publish mode (Analyse).
     --codeclimate                         Codeclimate mode.
@@ -128,6 +135,9 @@ class CLIDriver(object):
             if self._context.opt['build']:
                 self.__build()
 
+            if self._context.opt['maven']:
+                self.__maven()
+
             if self._context.opt['sonar']:
                 self.__sonar()
 
@@ -161,17 +171,35 @@ class CLIDriver(object):
 
         command = self._context.opt['--command']
 
-        if self._context.opt['--command-maven-deploy']:
-            self._cmd.run_command('cp /cdp/maven/settings.xml .')
+        command_run_image = '%s -w ${PWD}' % command_run_image
+        command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
 
-            command_run_image = '%s -e CDP_REPOSITORY_USERNAME=%s' % (command_run_image, os.environ['CDP_REPOSITORY_USERNAME'])
-            command_run_image = '%s -e CDP_REPOSITORY_PASSWORD=%s' % (command_run_image, os.environ['CDP_REPOSITORY_PASSWORD'])
-            command_run_image = '%s -e CDP_REPOSITORY_URL=%s' % (command_run_image, os.environ['CDP_REPOSITORY_URL'])
-            command_run_image = '%s -e CDP_REPOSITORY_MAVEN_RELEASE=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
-            command_run_image = '%s -e CDP_REPOSITORY_MAVEN_SNAPSHOT=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
+        self._cmd.run_command(command_run_image)
+
+    def __maven(self):
+        self.__simulate_merge_on()
+        self._cmd.run_command('docker pull maven:%s' % (self._context.opt['--docker-version']))
+
+        self._cmd.run_command('cp /cdp/maven/settings.xml maven-settings.xml')
+
+        command_run_image = 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
+
+        command_run_image = '%s -e CDP_REPOSITORY_USERNAME=%s' % (command_run_image, os.environ['CDP_REPOSITORY_USERNAME'])
+        command_run_image = '%s -e CDP_REPOSITORY_PASSWORD=%s' % (command_run_image, os.environ['CDP_REPOSITORY_PASSWORD'])
+        command_run_image = '%s -e CDP_REPOSITORY_URL=%s' % (command_run_image, os.environ['CDP_REPOSITORY_URL'])
+        command_run_image = '%s -e CDP_REPOSITORY_MAVEN_RELEASE=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
+        command_run_image = '%s -e CDP_REPOSITORY_MAVEN_SNAPSHOT=%s' % (command_run_image, os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
+
+        if self._context.opt['--volume-from'] == 'k8s':
+            command_run_image = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % command_run_image
+        else:
+            command_run_image = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % command_run_image
+
+        command = self._context.opt['--maven-command']
 
 
-            if self._context.opt['--command-maven-deploy'] == 'release':
+        if self._context.opt['--maven-deploy']:
+            if self._context.opt['--maven-deploy'] == 'release':
                 command = 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]"' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'])
                 arguments = '-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
 
@@ -184,15 +212,16 @@ class CLIDriver(object):
 
             if os.getenv('MAVEN_OPTS', None) is not None:
                 command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
-            command = '%s %s' % (command, '-s settings.xml')
+            command = '%s %s' % (command, '-s maven-settings.xml')
 
         if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
             command = '%s %s' % ('mkdir ~/.ssh && mv id_rsa ~/.ssh && ', command)
 
         command_run_image = '%s -w ${PWD}' % command_run_image
-        command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
+        command_run_image = '%s maven:%s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-version'], command)
 
         self._cmd.run_command(command_run_image)
+
 
     def __sonar(self):
         self.__simulate_merge_on()

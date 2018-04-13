@@ -9,9 +9,14 @@ Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
-        (--command=<build_cmd>|--command-maven-deploy=<type_deploy>)
+        (--command=<cmd>)
         [--simulate-merge-on=<branch_name>]
-        [--maven_release_plugin=<version>]
+        [--volume-from=<host_type>]
+    cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        (--docker-version=<version>)
+        (--maven-command=<goals-opts>|--maven-deploy=<type>)
+        [--maven-release-plugin=<version>]
+        [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
@@ -44,11 +49,13 @@ Options:
     -d, --dry-run                         Simulate execution.
     --sleep=<seconds>                     Time to sleep int the end (for debbuging) in seconds [default: 0].
     --docker-image=<image_name>           Specify docker image name for build project.
-    --command=<build_cmd>                 Command to run in the docker image.
-    --command-maven-deploy=<deploy>       'release' or 'snapshot' - Maven command to deploy artifact.
-    --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
+    --command=<cmd>                       Command to run in the docker image.
     --simulate-merge-on=<branch_name>     Build docker image with the merge current branch on specify branch (no commit).
     --volume-from=<host_type>             Volume type of sources - docker or k8s [default: k8s]
+    --docker-version=<version>            Specify maven docker version [default: 3.5-jdk-8].
+    --maven-command=<goals-opts>          Goals and args to pass maven command.
+    --maven-deploy=<deploy>               'release' or 'snapshot' - Maven command to deploy artifact.
+    --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
     --preview                             Run issues mode (Preview).
     --publish                             Run publish mode (Analyse).
     --codeclimate                         Codeclimate mode.
