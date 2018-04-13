@@ -9,7 +9,7 @@ Usage:
         [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--docker-version=<version>)
+            (--docker-version=<version>)
         (--goals=<goals-opts>|--deploy=<type>)
         [--maven-release-plugin=<version>]
         [--simulate-merge-on=<branch_name>]
@@ -213,11 +213,13 @@ class CLIDriver(object):
                 command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
             command = '%s %s' % (command, '-s maven-settings.xml')
 
+        command = 'mvn %s' % command
+        
         if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
             command = '%s %s' % ('mkdir ~/.ssh && mv id_rsa ~/.ssh && ', command)
 
         command_run_image = '%s -w ${PWD}' % command_run_image
-        command_run_image = '%s maven:%s /bin/sh -c \'mvn %s\'' % (command_run_image, self._context.opt['--docker-version'], command)
+        command_run_image = '%s maven:%s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-version'], command)
 
         self._cmd.run_command(command_run_image)
 
