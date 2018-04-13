@@ -175,9 +175,18 @@ class CLIDriver(object):
 
             if self._context.opt['--command-maven-deploy'] == 'release':
                 command = 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]"' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'])
-                command = '%s -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" && git push' % (command, os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
+                arguments = '-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
+
+                if os.getenv('MAVEN_OPTS', None) is not None:
+                    arguments = '%s %s' % (arguments, os.environ['MAVEN_OPTS'])
+                    command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
+
+                command = '%s -DreleaseProfiles=release -Darguments="%s" && git push' % (command, arguments)
             else:
                 command = 'mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s' % (command, os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
+
+                if os.getenv('MAVEN_OPTS', None) is not None:
+                    command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
 
         command_run_image = '%s -w ${PWD}' % command_run_image
         command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
