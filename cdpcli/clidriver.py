@@ -189,7 +189,7 @@ class CLIDriver(object):
                 if os.getenv('MAVEN_OPTS', None) is not None:
                     command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
 
-            command = '%s %s' % (command, '-S settings.xml')
+            command = '%s %s' % (command, '-s settings.xml')
 
         command_run_image = '%s -w ${PWD}' % command_run_image
         command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
