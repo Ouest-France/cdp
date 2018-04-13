@@ -177,15 +177,13 @@ class CLIDriver(object):
 
                 if os.getenv('MAVEN_OPTS', None) is not None:
                     arguments = '%s %s' % (arguments, os.environ['MAVEN_OPTS'])
-                    command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
 
-                command = '%s -DreleaseProfiles=release -Darguments="%s" && git push' % (command, arguments)
+                command = '%s -DreleaseProfiles=release -Darguments="%s"' % (command, arguments)
             else:
                 command = 'mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'])
 
-                if os.getenv('MAVEN_OPTS', None) is not None:
-                    command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
-
+            if os.getenv('MAVEN_OPTS', None) is not None:
+                command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
             command = '%s %s' % (command, '-s settings.xml')
 
         if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
