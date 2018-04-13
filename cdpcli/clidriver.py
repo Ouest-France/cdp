@@ -13,13 +13,13 @@ Usage:
         [--simulate-merge-on=<branch_name>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-docker | --use-docker-compose]
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--image-tag=<strategy>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--image-tag=<strategy>]
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
+        [--image-tag=<strategy>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry)
         [--values=<files>]
         [--delete-labels=<minutes>]
@@ -46,9 +46,10 @@ Options:
     --sast                              Static Application Security Testing mode.
     --use-docker                        Use docker to build / push image [default].
     --use-docker-compose                Use docker-compose to build / push image.
-    --image-tag-branch-name             Tag docker image with branch name or use it [default].
-    --image-tag-latest                  Tag docker image with 'latest'  or use it.
-    --image-tag-sha1                    Tag docker image with commit sha1  or use it.
+    --image-tag=<strategy>              Tag docker image strategy
+                                        - branch-name: tag with branch name or use it [default]
+                                        - latest: tag with 'latest' or use it
+                                        - sha1: tag with commit sha1  or use it
     --use-gitlab-registry               Use gitlab registry for pull/push docker image [default].
     --use-aws-ecr                       Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry               Use custom registry for pull/push docker image.
@@ -195,13 +196,11 @@ class CLIDriver(object):
                 self._cmd.run_command('aws ecr create-repository --repository-name %s' % (self._context.repository))
 
         # Tag and push docker image
-        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
+        if self._context.opt['--image-tag'] and self._context.opt['--image-tag'] in ('latest', 'sha1'):
+            self.__buildTagAndPushOnDockerRegistry(self.__getTagLatest() if self._context.opt['--image-tag'] is 'latest' else self.__getTagSha1())
+        else:
             # Default if none option selected
             self.__buildTagAndPushOnDockerRegistry(self.__getTagBranchName())
-        if self._context.opt['--image-tag-latest']:
-            self.__buildTagAndPushOnDockerRegistry(self.__getTagLatest())
-        if self._context.opt['--image-tag-sha1']:
-            self.__buildTagAndPushOnDockerRegistry(self.__getTagSha1())
 
     def __artifactory(self):
         if self._context.opt['--put']:
@@ -214,13 +213,11 @@ class CLIDriver(object):
             raise ValueError('Incorrect option with artifactory command.')
 
         # Tag and push docker image
-        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
+        if self._context.opt['--image-tag'] and self._context.opt['--image-tag'] in ('latest', 'sha1'):
+            self.__callArtifactoryFile(self.__getTagLatest() if self._context.opt['--image-tag'] is 'latest' else self.__getTagSha1(), upload_file, http_verb)
+        else:
             # Default if none option selected
             self.__callArtifactoryFile(self.__getTagBranchName(), upload_file, http_verb)
-        if self._context.opt['--image-tag-latest']:
-            self.__callArtifactoryFile(self.__getTagLatest(), upload_file, http_verb)
-        if self._context.opt['--image-tag-sha1']:
-            self.__callArtifactoryFile(self.__getTagSha1(), upload_file, http_verb)
 
     def __k8s(self):
         # Need to create default helm charts
@@ -247,11 +244,10 @@ class CLIDriver(object):
         namespace = self.__getNamespace()
         host = self.__getHost()
 
-        if self._context.opt['--image-tag-latest']:
-            tag =  self.__getTagLatest()
-        elif self._context.opt['--image-tag-sha1']:
-            tag = self.__getTagSha1()
-        else :
+        if self._context.opt['--image-tag'] and self._context.opt['--image-tag'] in ('latest', 'sha1'):
+            tag = self.__getTagLatest() if self._context.opt['--image-tag'] is 'latest' else self.__getTagSha1()
+        else:
+            # Default if none option selected
             tag = self.__getTagBranchName()
 
         # Need to add secret file for docker registry
