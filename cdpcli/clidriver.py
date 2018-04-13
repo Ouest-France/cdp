@@ -118,7 +118,7 @@ class CLIDriver(object):
         LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
 
         if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
-            self._cmd.run_command('mkdir -p ~/.ssh && echo "$SSH_PRIVATE_KEY" | tr -d \'\r\' > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa')
+            self._cmd.run_command('mkdir -p ~/.ssh && echo "$SSH_PRIVATE_KEY" | tr -d \'\r\' > id_rsa && chmod 600 id_rsa && cp id_rsa ~/.ssh/')
 
     def main(self, args=None):
         try:
@@ -159,9 +159,6 @@ class CLIDriver(object):
         else:
             command_run_image = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % command_run_image
 
-        if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
-            command_run_image = '%s -v ~/.ssh:/root/.ssh' % command_run_image
-
         command = self._context.opt['--command']
 
         if self._context.opt['--command-maven-deploy']:
@@ -190,6 +187,9 @@ class CLIDriver(object):
                     command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
 
             command = '%s %s' % (command, '-s settings.xml')
+
+        if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
+            command = '%s %s' % ('mkdir ~/.ssh && mv id_rsa ~/.ssh && ', command)
 
         command_run_image = '%s -w ${PWD}' % command_run_image
         command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
