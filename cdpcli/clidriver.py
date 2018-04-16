@@ -160,7 +160,7 @@ class CLIDriver(object):
         self.__simulate_merge_on()
         self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
 
-        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
+        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GITLAB\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
 
         if self._context.opt['--volume-from'] == 'k8s':
             command_run_image = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % command_run_image
@@ -183,7 +183,7 @@ class CLIDriver(object):
 
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
-        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
+        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GITLAB\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
 
         if self._context.opt['--volume-from'] == 'k8s':
             command_run_image = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % command_run_image
@@ -226,8 +226,8 @@ class CLIDriver(object):
         project_key = None
         sources = None
 
-        command = 'sonar-scanner -Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s' % (os.environ['SONAR_LOGIN'],
-            os.environ['SONAR_URL'], os.environ['GITLAB_USER_TOKEN'], os.environ['CI_COMMIT_SHA'], os.environ['CI_COMMIT_REF_NAME'], os.environ['CI_PROJECT_PATH'], self.__getTagBranchName())
+        command = 'sonar-scanner -Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s' % (os.environ['CDP_SONAR_LOGIN'],
+            os.environ['CDP_SONAR_URL'], os.environ['GITLAB_USER_TOKEN'], os.environ['CI_COMMIT_SHA'], os.environ['CI_COMMIT_REF_NAME'], os.environ['CI_PROJECT_PATH'], self.__getTagBranchName())
 
         # Check if mandatory properties are setted
         if os.path.isfile(sonar_file):

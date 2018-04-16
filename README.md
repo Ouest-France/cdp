@@ -101,8 +101,8 @@ maven:
     - CDP_REPOSITORY_MAVEN_RELEASE – Repository for release (example libs-release-local)
 
 sonar:
- - SONAR_LOGIN – Sonar access token (scope Administer Quality Profiles / Administer Quality Gates).
- - SONAR_URL – Sonar url access.
+ - CDP_SONAR_LOGIN – Sonar access token (scope Administer Quality Profiles / Administer Quality Gates).
+ - CDP_SONAR_URL – Sonar url access.
  - GITLAB_USER_TOKEN – Gitlab access token (scope api).
  - sonar-project.properties - Add this file to the root of the project. If not present, -Dsonar.projectKey=$CI_PROJECT_PATH and -Dsonar.sources=.
 

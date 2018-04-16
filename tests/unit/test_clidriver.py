@@ -74,8 +74,8 @@ class TestCliDriver(unittest.TestCase):
     cdp_repository_url = 'http://repo.fr'
     cdp_repository_maven_snapshot = 'libs-snapshot-local'
     cdp_repository_maven_release = 'libs-release-local'
-    sonar_url = "https://sonar:9000"
-    sonar_login = "987656436908"
+    cdp_sonar_url = "https://sonar:9000"
+    cdp_sonar_login = "987656436908"
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -104,8 +104,8 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CDP_REPOSITORY_URL'] = TestCliDriver.cdp_repository_url
         os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'] = TestCliDriver.cdp_repository_maven_snapshot
         os.environ['CDP_REPOSITORY_MAVEN_RELEASE'] = TestCliDriver.cdp_repository_maven_release
-        os.environ['SONAR_URL'] = TestCliDriver.sonar_url
-        os.environ['SONAR_LOGIN'] = TestCliDriver.sonar_login
+        os.environ['CDP_SONAR_URL'] = TestCliDriver.cdp_sonar_url
+        os.environ['CDP_SONAR_LOGIN'] = TestCliDriver.cdp_sonar_login
 
 
     def test_build_verbose_simulatemergeon_sleep(self):
@@ -122,7 +122,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
             {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
-            {'cmd': 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} %s /bin/sh -c \'%s\'' % (image_name, command_name), 'output': 'unnecessary'},
+            {'cmd': 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GITLAB\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} %s /bin/sh -c \'%s\'' % (image_name, command_name), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--verbose', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
@@ -135,7 +135,7 @@ class TestCliDriver(unittest.TestCase):
         command_name = 'mvn clean install'
         verif_cmd = [
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
-            {'cmd': 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build") -w ${PWD} %s /bin/sh -c \'%s\'' % (image_name, command_name), 'output': 'unnecessary'}
+            {'cmd': 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GITLAB\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build") -w ${PWD} %s /bin/sh -c \'%s\'' % (image_name, command_name), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--volume-from=docker' }, verif_cmd)
 
@@ -154,7 +154,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
-            {'cmd': 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mvn %s -s maven-settings.xml\'' % (image_version, goals), 'output': 'unnecessary'},
+            {'cmd': 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GITLAB\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mvn %s -s maven-settings.xml\'' % (image_version, goals), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'maven', '--verbose', '--docker-version=%s' % image_version, '--goals=%s' % goals, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
@@ -169,7 +169,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'mkdir -p ~/.ssh && echo "$CDP_SSH_PRIVATE_KEY" | tr -d \'\r\' > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
-            {'cmd': 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mkdir -p ~/.ssh && echo "$CDP_SSH_PRIVATE_KEY" | tr -d \'\r\' > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa && mvn %s -s maven-settings.xml\'' % (image_version, goals), 'output': 'unnecessary'}
+            {'cmd': 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GITLAB\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mkdir -p ~/.ssh && echo "$CDP_SSH_PRIVATE_KEY" | tr -d \'\r\' > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa && mvn %s -s maven-settings.xml\'' % (image_version, goals), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--goals=%s' % goals }, verif_cmd)
 
@@ -184,7 +184,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
-            {'cmd': 'docker run $(env | grep "\\(^CI\\|^CDP\\|^AWS\\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml\'' % (image_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'output': 'unnecessary'}
+            {'cmd': 'docker run $(env | grep "\\(^CI\\|^CDP\\|^AWS\|^GITLAB\\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml\'' % (image_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'output': 'unnecessary'}
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=release'}, verif_cmd)
@@ -199,7 +199,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
-            {'cmd': 'docker run $(env | grep "\\(^CI\\|^CDP\\|^AWS\\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" -s maven-settings.xml\'' % (image_version, maven_release_version, maven_release_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release), 'output': 'unnecessary'}
+            {'cmd': 'docker run $(env | grep "\\(^CI\\|^CDP\\|^AWS\|^GITLAB\\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" -s maven-settings.xml\'' % (image_version, maven_release_version, maven_release_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release), 'output': 'unnecessary'}
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=release', '--maven-release-plugin=%s' % maven_release_version}, verif_cmd)
@@ -212,7 +212,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
-            {'cmd': 'docker run $(env | grep "\\(^CI\\|^CDP\\|^AWS\\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s -s maven-settings.xml\'' % (image_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_snapshot), 'output': 'unnecessary'}
+            {'cmd': 'docker run $(env | grep "\\(^CI\\|^CDP\\|^AWS\|^GITLAB\\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} maven:%s /bin/sh -c \'mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s -s maven-settings.xml\'' % (image_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_snapshot), 'output': 'unnecessary'}
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=snapshot' }, verif_cmd)
@@ -230,8 +230,8 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'git reset --hard origin/%s' % branch_name, 'output': 'unnecessary'},
             {'cmd': 'git merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'output': 'unnecessary'},
             {'cmd': 'sonar-scanner -Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.projectKey=%s -Dsonar.sources=. -Dsonar.gitlab.json_mode=CODECLIMATE -Dsonar.analysis.mode=preview'
-                % (TestCliDriver.sonar_login,
-                    TestCliDriver.sonar_url,
+                % (TestCliDriver.cdp_sonar_login,
+                    TestCliDriver.cdp_sonar_url,
                     TestCliDriver.gitlab_user_token,
                     TestCliDriver.ci_commit_sha,
                     TestCliDriver.ci_commit_ref_name,
@@ -251,8 +251,8 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         verif_cmd = [
             {'cmd': 'sonar-scanner -Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.gitlab.json_mode=SAST'
-                % (TestCliDriver.sonar_login,
-                    TestCliDriver.sonar_url,
+                % (TestCliDriver.cdp_sonar_login,
+                    TestCliDriver.cdp_sonar_url,
                     TestCliDriver.gitlab_user_token,
                     TestCliDriver.ci_commit_sha,
                     TestCliDriver.ci_commit_ref_name,
