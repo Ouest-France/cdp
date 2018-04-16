@@ -9,9 +9,14 @@ Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
-        (--command=<build_cmd>|--command-maven-deploy=<type_deploy>)
+        (--command=<cmd>)
         [--simulate-merge-on=<branch_name>]
-        [--maven_release_plugin=<version>]
+        [--volume-from=<host_type>]
+    cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        (--docker-version=<version>)
+        (--goals=<goals-opts>|--deploy=<type>)
+        [--maven-release-plugin=<version>]
+        [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
@@ -44,11 +49,13 @@ Options:
     -d, --dry-run                         Simulate execution.
     --sleep=<seconds>                     Time to sleep int the end (for debbuging) in seconds [default: 0].
     --docker-image=<image_name>           Specify docker image name for build project.
-    --command=<build_cmd>                 Command to run in the docker image.
-    --command-maven-deploy=<deploy>       'release' or 'snapshot' - Maven command to deploy artifact.
-    --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
+    --command=<cmd>                       Command to run in the docker image.
     --simulate-merge-on=<branch_name>     Build docker image with the merge current branch on specify branch (no commit).
     --volume-from=<host_type>             Volume type of sources - docker or k8s [default: k8s]
+    --docker-version=<version>            Specify maven docker version [default: 3.5-jdk-8].
+    --goals=<goals-opts>                  Goals and args to pass maven command.
+    --deploy=<type>                      'release' or 'snapshot' - Maven command to deploy artifact.
+    --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
     --preview                             Run issues mode (Preview).
     --publish                             Run publish mode (Analyse).
     --codeclimate                         Codeclimate mode.
@@ -79,17 +86,23 @@ Options:
 ### Prerequisites
 
 ```yaml
-build:
- --command-maven-release:
-    - CDP_REPOSITORY_USERNAME – TODO
-    - CDP_REPOSITORY_PASSWORD – TODO
-    - CDP_REPOSITORY_URL – TODO
-    - CDP_REPOSITORY_MAVEN_RELEASE – TODO
-    - CDP_REPOSITORY_MAVEN_SNAPSHOT – TODO
+build|maven:
+ - CDP_SSH_PRIVATE_KEY – Copy private key (gitlab-ci user) in ~/.ssh/id_rsa file which push repository (Optional)
+
+maven:
+ - MAVEN_OPTS – Add option for maven command (Optional)
+ --deploy=x:
+    - CDP_REPOSITORY_USERNAME – Username for read/write in maven repository
+    - CDP_REPOSITORY_PASSWORD – Password
+    - CDP_REPOSITORY_URL – URL of maven repository
+ --deploy=snapshot:
+ - CDP_REPOSITORY_MAVEN_SNAPSHOT – Repository for snapshot (example libs-snapshot-local)
+ --deploy=release:
+    - CDP_REPOSITORY_MAVEN_RELEASE – Repository for release (example libs-release-local)
 
 sonar:
- - SONAR_LOGIN – Sonar access token (scope Administer Quality Profiles / Administer Quality Gates).
- - SONAR_URL – Sonar url access.
+ - CDP_SONAR_LOGIN – Sonar access token (scope Administer Quality Profiles / Administer Quality Gates).
+ - CDP_SONAR_URL – Sonar url access.
  - GITLAB_USER_TOKEN – Gitlab access token (scope api).
  - sonar-project.properties - Add this file to the root of the project. If not present, -Dsonar.projectKey=$CI_PROJECT_PATH and -Dsonar.sources=.
 
@@ -259,3 +272,7 @@ sudo python setup.py install
 
 cdp --help
 ```
+
+## TODO
+
+Vault usage for token and password storage
