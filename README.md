@@ -86,13 +86,19 @@ Options:
 ### Prerequisites
 
 ```yaml
-build:
- --command-maven-release:
-    - CDP_REPOSITORY_USERNAME – TODO
-    - CDP_REPOSITORY_PASSWORD – TODO
-    - CDP_REPOSITORY_URL – TODO
-    - CDP_REPOSITORY_MAVEN_RELEASE – TODO
-    - CDP_REPOSITORY_MAVEN_SNAPSHOT – TODO
+build|maven:
+ - CDP_SSH_PRIVATE_KEY – Copy private key (gitlab-ci user) in ~/.ssh/id_rsa file which push repository (Optional)
+
+maven:
+ - MAVEN_OPTS – Add option for maven command (Optional)
+ --deploy=x:
+    - CDP_REPOSITORY_USERNAME – Username for read/write in maven repository
+    - CDP_REPOSITORY_PASSWORD – Password
+    - CDP_REPOSITORY_URL – URL of maven repository
+ --deploy=snapshot:
+ - CDP_REPOSITORY_MAVEN_SNAPSHOT – Repository for snapshot (example libs-snapshot-local)
+ --deploy=release:
+    - CDP_REPOSITORY_MAVEN_RELEASE – Repository for release (example libs-release-local)
 
 sonar:
  - SONAR_LOGIN – Sonar access token (scope Administer Quality Profiles / Administer Quality Gates).
@@ -266,3 +272,7 @@ sudo python setup.py install
 
 cdp --help
 ```
+
+## TODO
+
+Vault usage for token and password storage
