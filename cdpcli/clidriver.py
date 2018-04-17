@@ -160,7 +160,7 @@ class CLIDriver(object):
         self.__simulate_merge_on()
         self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
 
-        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GITLAB\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
+        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
 
         if self._context.opt['--volume-from'] == 'k8s':
             command_run_image = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % command_run_image
@@ -183,7 +183,7 @@ class CLIDriver(object):
 
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
-        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GITLAB\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
+        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
 
         if self._context.opt['--volume-from'] == 'k8s':
             command_run_image = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % command_run_image
@@ -209,9 +209,6 @@ class CLIDriver(object):
             command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
 
         command = 'mvn %s %s' % (command, '-s %s' % settings)
-
-        if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
-            command = 'mkdir -p ~/.ssh && echo "$CDP_SSH_PRIVATE_KEY" | tr -d \'\r\' > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa && %s' % (command)
 
         command_run_image = '%s -w ${PWD}' % command_run_image
         command_run_image = '%s maven:%s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-version'], command)
@@ -452,4 +449,5 @@ class CLIDriver(object):
 
     def __create_ssh_key(self):
         if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
-            self._cmd.run_command('mkdir -p ~/.ssh && echo "$CDP_SSH_PRIVATE_KEY" | tr -d \'\r\' > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa')
+            self._cmd.run_command('echo "$CDP_SSH_PRIVATE_KEY" | tr -d \'\r\' > id_rsa && chmod 600 id_rsa')
+            os.environ['GIT_SSH_COMMAND'] = 'ssh -i id_rsa'
