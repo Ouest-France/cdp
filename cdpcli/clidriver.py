@@ -417,7 +417,7 @@ class CLIDriver(object):
         if self._context.opt['--simulate-merge-on']:
             LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
 
-            docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-git-image'], self._context.opt['--volume-from'])
+            docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-git-image'], self._context.opt['--volume-from'], True)
 
             # Merge branch on selected branch
             docker_cmd.run('config --global user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
