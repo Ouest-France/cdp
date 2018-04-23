@@ -420,8 +420,8 @@ class CLIDriver(object):
             docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-git-image'], self._context.opt['--volume-from'], True)
 
             # Merge branch on selected branch
-            docker_cmd.run('config --global user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
-            docker_cmd.run('config --global user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
+            docker_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
+            docker_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
             docker_cmd.run('checkout %s' % self._context.opt['--simulate-merge-on'])
             docker_cmd.run('reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
             docker_cmd.run('merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])

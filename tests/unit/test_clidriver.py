@@ -123,8 +123,8 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config --global user.email \"%s\"' % TestCliDriver.gitlab_user_email), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config --global user.name \"%s\"' % TestCliDriver.gitlab_user_id), 'output': 'unnecessary'},
+            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email), 'output': 'unnecessary'},
+            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'checkout %s' % branch_name), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'reset --hard origin/%s' % branch_name), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
@@ -156,8 +156,8 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config --global user.email \"%s\"' % TestCliDriver.gitlab_user_email), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config --global user.name \"%s\"' % TestCliDriver.gitlab_user_id), 'output': 'unnecessary'},
+            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email), 'output': 'unnecessary'},
+            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'checkout %s' % branch_name), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'reset --hard origin/%s' % branch_name), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
@@ -234,8 +234,8 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config --global user.email \"%s\"' % TestCliDriver.gitlab_user_email), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config --global user.name \"%s\"' % TestCliDriver.gitlab_user_id), 'output': 'unnecessary'},
+            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email), 'output': 'unnecessary'},
+            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'checkout %s' % branch_name), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'reset --hard origin/%s' % branch_name), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
@@ -252,7 +252,6 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'sonar', '--preview', '--codeclimate', '--verbose', '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
         mock_isfile.assert_called_with('sonar-project.properties')
-
 
     @patch('cdpcli.clidriver.os.path.isfile', return_value=True)
     @patch('cdpcli.clidriver.PropertiesParser.get')
