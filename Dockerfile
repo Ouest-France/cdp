@@ -14,7 +14,7 @@ ENV PATH="${PATH}:${SONAR_SCANNER_HOME}/bin"
 ADD . cdp/
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends bsdtar curl python python-pip git openssh-client apt-transport-https ca-certificates software-properties-common python-setuptools groff \
+ && apt-get install -y --no-install-recommends bsdtar curl python python-pip openssh-client apt-transport-https ca-certificates software-properties-common python-setuptools groff \
  && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
  && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
  && apt-get update \

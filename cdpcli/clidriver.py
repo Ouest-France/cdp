@@ -6,18 +6,19 @@ Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
         (--command=<cmd>)
-        [--simulate-merge-on=<branch_name>]
+        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-version=<version>)
         (--goals=<goals-opts>|--deploy=<type>)
         [--maven-release-plugin=<version>]
-        [--simulate-merge-on=<branch_name>]
+        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
         (--codeclimate | --sast)
-        [--simulate-merge-on=<branch_name>]
+        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
+        [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
@@ -46,6 +47,7 @@ Options:
     --sleep=<seconds>                     Time to sleep int the end (for debbuging) in seconds [default: 0].
     --docker-image=<image_name>           Specify docker image name for build project.
     --command=<cmd>                       Command to run in the docker image.
+    --docker-image-git=<image_name_git>   Docker image which execute git command [default: ouestfrance/cdp-git:latest].
     --simulate-merge-on=<branch_name>     Build docker image with the merge current branch on specify branch (no commit).
     --volume-from=<host_type>             Volume type of sources - docker or k8s [default: k8s]
     --docker-version=<version>            Specify maven docker version [default: 3.5-jdk-8].
@@ -87,6 +89,7 @@ import yaml
 from Context import Context
 from clicommand import CLICommand
 from cdpcli import __version__
+from dockercommand import DockerCommand
 from docopt import docopt, DocoptExit
 from PropertiesParser import PropertiesParser
 
@@ -158,37 +161,18 @@ class CLIDriver(object):
     def __build(self):
         self.__create_ssh_key()
         self.__simulate_merge_on()
-        self._cmd.run_command('docker pull %s' % (self._context.opt['--docker-image']))
 
-        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
-
-        if self._context.opt['--volume-from'] == 'k8s':
-            command_run_image = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % command_run_image
-        else:
-            command_run_image = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % command_run_image
-
-        command = self._context.opt['--command']
-
-        command_run_image = '%s -w ${PWD}' % command_run_image
-        command_run_image = '%s %s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-image'], command)
-
-        self._cmd.run_command(command_run_image)
+        docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image'], self._context.opt['--volume-from'])
+        docker_cmd.run(self._context.opt['--command'])
 
     def __maven(self):
         self.__create_ssh_key()
         self.__simulate_merge_on()
-        self._cmd.run_command('docker pull maven:%s' % (self._context.opt['--docker-version']))
 
         settings = 'maven-settings.xml'
-
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
-        command_run_image = 'docker run $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\)" | cut -f1 -d= | sed \'s/^/-e /\') --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=unix:///var/run/docker.sock'
-
-        if self._context.opt['--volume-from'] == 'k8s':
-            command_run_image = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % command_run_image
-        else:
-            command_run_image = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % command_run_image
+        docker_cmd = DockerCommand(self._cmd, 'maven:%s' % (self._context.opt['--docker-version']), self._context.opt['--volume-from'])
 
         command = self._context.opt['--goals']
 
@@ -210,10 +194,7 @@ class CLIDriver(object):
 
         command = 'mvn %s %s' % (command, '-s %s' % settings)
 
-        command_run_image = '%s -w ${PWD}' % command_run_image
-        command_run_image = '%s maven:%s /bin/sh -c \'%s\'' % (command_run_image, self._context.opt['--docker-version'], command)
-
-        self._cmd.run_command(command_run_image)
+        docker_cmd.run(command)
 
 
     def __sonar(self):
@@ -339,7 +320,7 @@ class CLIDriver(object):
 
         # Instal or Upgrade environnement
         self._cmd.run_command('helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s %s %s --debug -i --namespace=%s'
-            % (namespace, self._context.opt['--deploy-spec-dir'], self._context.opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], self._context.registry, self._context.repository, tag, secretParams, values, namespace))
+            % (namespace[:53], self._context.opt['--deploy-spec-dir'], self._context.opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], self._context.registry, self._context.repository, tag, secretParams, values, namespace))
 
         if self._context.opt['--delete-labels']:
             now = datetime.datetime.now()
@@ -436,12 +417,14 @@ class CLIDriver(object):
         if self._context.opt['--simulate-merge-on']:
             LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
 
+            docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-git'], self._context.opt['--volume-from'], True)
+
             # Merge branch on selected branch
-            self._cmd.run_command('git config --global user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
-            self._cmd.run_command('git config --global user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
-            self._cmd.run_command('git checkout %s' % self._context.opt['--simulate-merge-on'])
-            self._cmd.run_command('git reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
-            self._cmd.run_command('git merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])
+            docker_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
+            docker_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
+            docker_cmd.run('checkout %s' % self._context.opt['--simulate-merge-on'])
+            docker_cmd.run('reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
+            docker_cmd.run('merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])
 
             # TODO Exception process
         else:
