@@ -6,18 +6,18 @@ Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>)
         (--command=<cmd>)
-        [--docker-git-image=<git_image_name>] [--simulate-merge-on=<branch_name>]
+        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-version=<version>)
         (--goals=<goals-opts>|--deploy=<type>)
         [--maven-release-plugin=<version>]
-        [--docker-git-image=<git_image_name>] [--simulate-merge-on=<branch_name>]
+        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--preview | --publish)
         (--codeclimate | --sast)
-        [--docker-git-image=<git_image_name>] [--simulate-merge-on=<branch_name>]
+        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--use-docker | --use-docker-compose]
@@ -47,7 +47,7 @@ Options:
     --sleep=<seconds>                     Time to sleep int the end (for debbuging) in seconds [default: 0].
     --docker-image=<image_name>           Specify docker image name for build project.
     --command=<cmd>                       Command to run in the docker image.
-    --docker-git-image=<git_image_name>   Docker image which execute git command [default: ouestfrance/cdp-git:latest].
+    --docker-image-git=<image_name_git>   Docker image which execute git command [default: ouestfrance/cdp-git:latest].
     --simulate-merge-on=<branch_name>     Build docker image with the merge current branch on specify branch (no commit).
     --volume-from=<host_type>             Volume type of sources - docker or k8s [default: k8s]
     --docker-version=<version>            Specify maven docker version [default: 3.5-jdk-8].
@@ -417,7 +417,7 @@ class CLIDriver(object):
         if self._context.opt['--simulate-merge-on']:
             LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
 
-            docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-git-image'], self._context.opt['--volume-from'], True)
+            docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-git'], self._context.opt['--volume-from'], True)
 
             # Merge branch on selected branch
             docker_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
