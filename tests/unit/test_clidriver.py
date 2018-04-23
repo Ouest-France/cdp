@@ -57,7 +57,7 @@ class TestCliDriver(unittest.TestCase):
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
     ci_registry = 'registry.gitlab.com'
-    ci_commit_ref_name = 'branch_helloworld'
+    ci_commit_ref_name = 'branch_helloworld_with_many characters_bacause_helm_k8s_bacause_the_length_must_not_longer_than_53'
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
     ci_project_name = 'helloworld'
     ci_project_path = 'HelloWorld/HelloWorld'
@@ -383,7 +383,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
-                % (namespace,
+                % (namespace[:53],
                     namespace,
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.ci_project_name,
@@ -415,7 +415,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'helm upgrade %s charts --timeout 300 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
-                % (namespace,
+                % (namespace[:53],
                     namespace,
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.ci_project_name,
