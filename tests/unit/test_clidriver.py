@@ -61,6 +61,7 @@ class TestCliDriver(unittest.TestCase):
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
     ci_project_name = 'helloworld'
     ci_project_path = 'HelloWorld/HelloWorld'
+    ci_project_path_slug = 'helloworld-helloworld'
     dns_subdomain = 'example.com'
     gitlab_user_email = 'test@example.com'
     gitlab_user_id = '12334'
@@ -96,6 +97,7 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_REGISTRY_IMAGE'] = TestCliDriver.ci_registry_image
         os.environ['CI_PROJECT_NAME'] = TestCliDriver.ci_project_name
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
+        os.environ['CI_PROJECT_PATH_SLUG'] = TestCliDriver.ci_project_path_slug
         os.environ['DNS_SUBDOMAIN'] = TestCliDriver.dns_subdomain
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
         os.environ['GITLAB_USER_ID'] = TestCliDriver.gitlab_user_id
@@ -230,6 +232,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         branch_name = 'master'
         image_name_git = 'ouestfrance/cdp-git:latest'
+        image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:latest'
         sleep = 10
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
@@ -239,15 +242,16 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'checkout %s' % branch_name), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'reset --hard origin/%s' % branch_name), 'output': 'unnecessary'},
             {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'sonar-scanner -Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.projectKey=%s -Dsonar.sources=. -Dsonar.gitlab.json_mode=CODECLIMATE -Dsonar.analysis.mode=preview'
+            {'cmd': 'docker pull %s' % image_name_sonar_scanner, 'output': 'unnecessary'},
+            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_sonar_scanner, '-Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.projectKey=%s -Dsonar.sources=. -Dsonar.gitlab.json_mode=CODECLIMATE -Dsonar.analysis.mode=preview'
                 % (TestCliDriver.cdp_sonar_login,
                     TestCliDriver.cdp_sonar_url,
                     TestCliDriver.gitlab_user_token,
                     TestCliDriver.ci_commit_sha,
                     TestCliDriver.ci_commit_ref_name,
-                    TestCliDriver.ci_project_path,
+                    TestCliDriver.ci_project_path_slug,
                     TestCliDriver.ci_commit_ref_name,
-                    TestCliDriver.ci_project_path.replace('/','_')), 'output': 'unnecessary'},
+                    TestCliDriver.ci_project_path_slug)), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'sonar', '--preview', '--codeclimate', '--verbose', '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
@@ -257,16 +261,18 @@ class TestCliDriver(unittest.TestCase):
     @patch('cdpcli.clidriver.PropertiesParser.get')
     def test_sonar_publish_sast(self, mock_get, mock_isfile):
         mock_get.side_effect = ['project_key', 'sources']
+        image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:latest'
         # Create FakeCommand
         verif_cmd = [
-            {'cmd': 'sonar-scanner -Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.gitlab.json_mode=SAST'
+            {'cmd': 'docker pull %s' % image_name_sonar_scanner, 'output': 'unnecessary'},
+            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_sonar_scanner, '-Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.gitlab.json_mode=SAST'
                 % (TestCliDriver.cdp_sonar_login,
                     TestCliDriver.cdp_sonar_url,
                     TestCliDriver.gitlab_user_token,
                     TestCliDriver.ci_commit_sha,
                     TestCliDriver.ci_commit_ref_name,
-                    TestCliDriver.ci_project_path,
-                    TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'}
+                    TestCliDriver.ci_project_path_slug,
+                    TestCliDriver.ci_commit_ref_name)), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'sonar', '--publish', '--sast' }, verif_cmd)
         mock_isfile.assert_called_with('sonar-project.properties')

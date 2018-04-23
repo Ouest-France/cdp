@@ -8,19 +8,15 @@
 Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--docker-image=<image_name>)
-        (--command=<cmd>)
+        (--docker-image=<image_name>) (--command=<cmd>)
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--docker-version=<version>)
-        (--goals=<goals-opts>|--deploy=<type>)
-        [--maven-release-plugin=<version>]
+        (--docker-version=<version>) (--goals=<goals-opts>|--deploy=<type>) [--maven-release-plugin=<version>]
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--preview | --publish)
-        (--codeclimate | --sast)
+        [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -44,45 +40,46 @@ Usage:
         [--namespace-project-branch-name | --namespace-project-name]
     cdp (-h | --help | --version)
 Options:
-    -h, --help                            Show this screen and exit.
-    -v, --verbose                         Make more noise.
-    -q, --quiet                           Make less noise.
-    -d, --dry-run                         Simulate execution.
-    --sleep=<seconds>                     Time to sleep int the end (for debbuging) in seconds [default: 0].
-    --docker-image=<image_name>           Specify docker image name for build project.
-    --command=<cmd>                       Command to run in the docker image.
-    --docker-image-git=<image_name_git>   Docker image which execute git command [default: ouestfrance/cdp-git:latest].
-    --simulate-merge-on=<branch_name>     Build docker image with the merge current branch on specify branch (no commit).
-    --volume-from=<host_type>             Volume type of sources - docker or k8s [default: k8s]
-    --docker-version=<version>            Specify maven docker version [default: 3.5-jdk-8].
-    --goals=<goals-opts>                  Goals and args to pass maven command.
-    --deploy=<type>                      'release' or 'snapshot' - Maven command to deploy artifact.
-    --maven-release-plugin=<version>      Specify maven-release-plugin version [default: 2.5.3].
-    --preview                             Run issues mode (Preview).
-    --publish                             Run publish mode (Analyse).
-    --codeclimate                         Codeclimate mode.
-    --sast                                Static Application Security Testing mode.
-    --use-docker                          Use docker to build / push image [default].
-    --use-docker-compose                  Use docker-compose to build / push image.
-    --image-tag-branch-name               Tag docker image with branch name or use it [default].
-    --image-tag-latest                    Tag docker image with 'latest'  or use it.
-    --image-tag-sha1                      Tag docker image with commit sha1  or use it.
-    --use-gitlab-registry                 Use gitlab registry for pull/push docker image [default].
-    --use-aws-ecr                         Use AWS ECR from k8s configuration for pull/push docker image.
-    --use-custom-registry                 Use custom registry for pull/push docker image.
-    --put=<file>                          Put file to artifactory.
-    --delete=<file>                       Delete file in artifactory.
-    --values=<files>                      Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --delete-labels=<minutes>             Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
-    --namespace-project-branch-name       Use project and branch name to create k8s namespace or choice environment host [default].
-    --namespace-project-name              Use project name to create k8s namespace or choice environment host.
-    --create-default-helm                 Create default helm for simple project (One docker image).
-    --deploy-spec-dir=<dir>               k8s deployment files [default: charts].
-    --timeout=<timeout>                   Time in seconds to wait for any individual kubernetes operation [default: 300].
-    --path=<path>                         Path to validate [default: configurations].
-    --block-provider                      Valid BlockProviderConfig interface [default].
-    --block                               Valid BlockConfig interface.
-    --block-json                          Valid BlockJSON interface.
+    -h, --help                                                 Show this screen and exit.
+    -v, --verbose                                              Make more noise.
+    -q, --quiet                                                Make less noise.
+    -d, --dry-run                                              Simulate execution.
+    --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
+    --docker-image=<image_name>                                Specify docker image name for build project.
+    --command=<cmd>                                            Command to run in the docker image.
+    --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:latest].
+    --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
+    --volume-from=<host_type>                                  Volume type of sources - docker or k8s [default: k8s]
+    --docker-version=<version>                                 Specify maven docker version [default: 3.5-jdk-8].
+    --goals=<goals-opts>                                       Goals and args to pass maven command.
+    --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
+    --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
+    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:latest].
+    --preview                                                  Run issues mode (Preview).
+    --publish                                                  Run publish mode (Analyse).
+    --codeclimate                                              Codeclimate mode.
+    --sast                                                     Static Application Security Testing mode.
+    --use-docker                                               Use docker to build / push image [default].
+    --use-docker-compose                                       Use docker-compose to build / push image.
+    --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
+    --image-tag-latest                                         Tag docker image with 'latest'  or use it.
+    --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
+    --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default].
+    --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
+    --use-custom-registry                                      Use custom registry for pull/push docker image.
+    --put=<file>                                               Put file to artifactory.
+    --delete=<file>                                            Delete file in artifactory.
+    --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
+    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
+    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
+    --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
+    --create-default-helm                                      Create default helm for simple project (One docker image).
+    --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
+    --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 300].
+    --path=<path>                                              Path to validate [default: configurations].
+    --block-provider                                           Valid BlockProviderConfig interface [default].
+    --block                                                    Valid BlockConfig interface.
+    --block-json                                               Valid BlockJSON interface.
 ```
 
 ### Prerequisites
