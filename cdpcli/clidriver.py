@@ -160,8 +160,8 @@ class CLIDriver(object):
         self.__create_ssh_key()
         self.__simulate_merge_on()
 
-        docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image'], self._context.opt['--volume-from'])
-        docker_cmd.run(self._context.opt['--command'])
+        docker_image_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image'], self._context.opt['--volume-from'])
+        docker_image_cmd.run(self._context.opt['--command'])
 
     def __maven(self):
         self.__create_ssh_key()
@@ -169,8 +169,6 @@ class CLIDriver(object):
 
         settings = 'maven-settings.xml'
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
-
-        docker_cmd = DockerCommand(self._cmd, 'maven:%s' % (self._context.opt['--docker-version']), self._context.opt['--volume-from'])
 
         command = self._context.opt['--goals']
 
@@ -192,13 +190,12 @@ class CLIDriver(object):
 
         command = 'mvn %s %s' % (command, '-s %s' % settings)
 
-        docker_cmd.run(command)
+        maven_cmd = DockerCommand(self._cmd, 'maven:%s' % (self._context.opt['--docker-version']), self._context.opt['--volume-from'])
+        maven_cmd.run(command)
 
 
     def __sonar(self):
         self.__simulate_merge_on()
-
-        docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-sonar-scanner'], self._context.opt['--volume-from'], True)
 
         sonar_file = 'sonar-project.properties'
         project_key = None
@@ -236,7 +233,8 @@ class CLIDriver(object):
         if self._context.opt['--preview']:
             command = "%s -Dsonar.analysis.mode=preview" % command
 
-        docker_cmd.run(command)
+        sonar_scanner_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-sonar-scanner'], self._context.opt['--volume-from'], True)
+        sonar_scanner_cmd.run(command)
 
     def __docker(self):
         # Login to the docker registry
@@ -422,14 +420,14 @@ class CLIDriver(object):
         if self._context.opt['--simulate-merge-on']:
             LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
 
-            docker_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-git'], self._context.opt['--volume-from'], True)
+            git_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-git'], self._context.opt['--volume-from'], True)
 
             # Merge branch on selected branch
-            docker_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
-            docker_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
-            docker_cmd.run('checkout %s' % self._context.opt['--simulate-merge-on'])
-            docker_cmd.run('reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
-            docker_cmd.run('merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])
+            git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
+            git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
+            git_cmd.run('checkout %s' % self._context.opt['--simulate-merge-on'])
+            git_cmd.run('reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
+            git_cmd.run('merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])
 
             # TODO Exception process
         else:
