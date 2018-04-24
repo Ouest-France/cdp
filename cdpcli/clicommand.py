@@ -26,7 +26,7 @@ class CLICommand(object):
             # If dry-run option, no execute command
             if not self._real_dry_run:
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-                self._output, error = p.communicate()
+                self._output, error = self._process.communicate()
 
                 if p.returncode != 0:
                     LOG.warning('---------- ERROR ----------')
