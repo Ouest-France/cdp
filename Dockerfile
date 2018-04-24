@@ -13,7 +13,7 @@ RUN apt-get update \
  && apt-get update \
  && apt-get install -y --no-install-recommends docker-ce \
  && curl -L https://github.com/Ouest-France/platform/releases/download/${VALIDATOR_CLI_VERSION}/validator-cli--x86_64-unknown-linux-gnu.tar.gz | tar zxv -C /bin/ \
- && chmod +x /bin/helm /bin/validator-cli \
+ && chmod +x /bin/validator-cli \
  && mkdir -p /aws \
  && pip install wheel \
  && pip install awscli \
