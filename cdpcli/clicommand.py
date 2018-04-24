@@ -28,9 +28,9 @@ class CLICommand(object):
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 self._output, error = self._process.communicate()
 
-                if _process.returncode != 0:
+                if self._process.returncode != 0:
                     LOG.warning('---------- ERROR ----------')
-                    if _process.returncode == 143:
+                    if self._process.returncode == 143:
                         raise ValueError('Timeout %ss' % self._context.opt['--timeout'])
                     else:
                         raise ValueError(output)
