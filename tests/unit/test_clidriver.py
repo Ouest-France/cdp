@@ -87,7 +87,7 @@ class TestCliDriver(unittest.TestCase):
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
 
-    run_docker_cmd = 'docker run --rm -e DOCKER_HOST $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\)" | cut -f1 -d= | sed \'s/^/-e /\') -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=%s") -w ${PWD} %s %s'
+    run_docker_cmd = 'docker run --rm -e DOCKER_HOST $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\|^KUBERNETES\)" | cut -f1 -d= | sed \'s/^/-e /\') -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=%s") -w ${PWD} %s %s'
     run_docker_cmd_volume_k8s = 'k8s_build_${HOSTNAME}'
     run_docker_cmd_volume_docker = '${HOSTNAME}-build'
     run_docker_cmd_without_entrypoint = '/bin/sh -c \'%s\''
