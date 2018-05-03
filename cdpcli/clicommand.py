@@ -49,4 +49,4 @@ class CLICommand(object):
 
         LOG.info('')
 
-        print self._output
+        return self._output
