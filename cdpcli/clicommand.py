@@ -39,10 +39,7 @@ class CLICommand(object):
 
         if self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
-            if self._process.returncode == 143:
-                raise ValueError('Timeout %ss' % self._context.opt['--timeout'])
-            else:
-                raise ValueError(self._output)
+            raise ValueError(self._output)
         else:
             LOG.info('---------- Output ----------')
             LOG.info(self._output)
