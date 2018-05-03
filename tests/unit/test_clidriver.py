@@ -469,7 +469,7 @@ class TestCliDriver(unittest.TestCase):
         deploy_spec_dir = 'deploy'
         values = 'values.staging.yaml'
         delete_minutes = 60
-        date_format = '%Y-%m-%dT%H%M%S'
+        date_format = '%Y-%m-%dT%H%M%SZ'
 
         verif_cmd = [
             {'cmd': 'aws ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False},

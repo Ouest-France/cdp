@@ -332,10 +332,10 @@ class CLIDriver(object):
             % (namespace[:53], self._context.opt['--deploy-spec-dir'], self._context.opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], self._context.registry, self._context.repository, tag, secretParams, values, namespace))
 
         if self._context.opt['--delete-labels']:
-            now = datetime.datetime.now()
-            date_format = '%Y-%m-%dT%H%M%S'
-            kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
-                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format) , namespace))
+            now = datetime.datetime.utcnow()
+            date_format = '%Y-%m-%dT%H%M%S'            
+            kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
+                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
 
         ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
         if ressources is not None:
