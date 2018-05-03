@@ -20,32 +20,33 @@ class CLICommand(object):
             self._real_dry_run = dry_run
 
         def target():
-            LOG.info('')
-            LOG.info('******************** Run command ********************')
-            LOG.info(command)
             # If dry-run option, no execute command
             if not self._real_dry_run:
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 self._output, error = self._process.communicate()
 
-                if self._process.returncode != 0:
-                    LOG.warning('---------- ERROR ----------')
-                    if self._process.returncode == 143:
-                        raise ValueError('Timeout %ss' % self._context.opt['--timeout'])
-                    else:
-                        raise ValueError(self._output)
-                else:
-                    LOG.info('---------- Output ----------')
-                    LOG.info(self._output)
-
-            LOG.info('')
-
         thread = threading.Thread(target=target)
         thread.start()
+
+        LOG.info('')
+        LOG.info('******************** Run command ********************')
+        LOG.info(command)
 
         thread.join(timeout)
         if thread.is_alive():
             self._process.terminate()
             thread.join()
+
+        if self._process.returncode != 0:
+            LOG.warning('---------- ERROR ----------')
+            if self._process.returncode == 143:
+                raise ValueError('Timeout %ss' % self._context.opt['--timeout'])
+            else:
+                raise ValueError(self._output)
+        else:
+            LOG.info('---------- Output ----------')
+            LOG.info(self._output)
+
+        LOG.info('')
 
         print self._output
