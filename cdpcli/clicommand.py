@@ -32,7 +32,8 @@ class CLICommand(object):
         LOG.info('******************** Run command ********************')
         LOG.info(command)
 
-        thread.join(float(timeout))
+        thread.join(timeout if timeout is None else float(timeout))
+
         if thread.is_alive():
             self._process.terminate()
             thread.join()
