@@ -16,7 +16,7 @@ class DockerCommand(object):
 
     def run(self, prg_cmd, dry_run = None, timeout = None):
         run_docker_cmd = 'docker run --rm -e DOCKER_HOST'
-        run_docker_cmd = '%s $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\)" | cut -f1 -d= | sed \'s/^/-e /\')' % (run_docker_cmd)
+        run_docker_cmd = '%s $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\|^KUBERNETES\)" | cut -f1 -d= | sed \'s/^/-e /\')' % (run_docker_cmd)
         run_docker_cmd = '%s -v /var/run/docker.sock:/var/run/docker.sock' % (run_docker_cmd)
 
         if self._volume_from == 'k8s':
