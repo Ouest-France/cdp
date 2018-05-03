@@ -24,6 +24,7 @@ Usage:
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry)
         [--values=<files>]
@@ -31,6 +32,7 @@ Usage:
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
+        [--volume-from=<host_type>]
     cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
         [--block-provider | --block | --block-json]
@@ -41,42 +43,44 @@ Options:
     -v, --verbose                                              Make more noise.
     -q, --quiet                                                Make less noise.
     -d, --dry-run                                              Simulate execution.
-    --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
-    --docker-image=<image_name>                                Specify docker image name for build project.
+    --block                                                    Valid BlockConfig interface.
+    --block-json                                               Valid BlockJSON interface.
+    --block-provider                                           Valid BlockProviderConfig interface [default].
+    --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
+    --create-default-helm                                      Create default helm for simple project (One docker image).
+    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
+    --delete=<file>                                            Delete file in artifactory.
+    --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
+    --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
     --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:latest].
-    --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
-    --volume-from=<host_type>                                  Volume type of sources - docker or k8s [default: k8s]
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:latest].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:latest].
+    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:latest].
+    --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version [default: 3.5-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
-    --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
-    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:latest].
-    --preview                                                  Run issues mode (Preview).
-    --publish                                                  Run publish mode (Analyse).
-    --codeclimate                                              Codeclimate mode.
-    --sast                                                     Static Application Security Testing mode.
-    --use-docker                                               Use docker to build / push image [default].
-    --use-docker-compose                                       Use docker-compose to build / push image.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
-    --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default].
-    --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
-    --use-custom-registry                                      Use custom registry for pull/push docker image.
-    --put=<file>                                               Put file to artifactory.
-    --delete=<file>                                            Delete file in artifactory.
-    --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
+    --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
-    --create-default-helm                                      Create default helm for simple project (One docker image).
-    --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
-    --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 300].
     --path=<path>                                              Path to validate [default: configurations].
-    --block-provider                                           Valid BlockProviderConfig interface [default].
-    --block                                                    Valid BlockConfig interface.
-    --block-json                                               Valid BlockJSON interface.
+    --preview                                                  Run issues mode (Preview).
+    --publish                                                  Run publish mode (Analyse).
+    --put=<file>                                               Put file to artifactory.
+    --sast                                                     Static Application Security Testing mode.
+    --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
+    --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
+    --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
+    --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
+    --use-custom-registry                                      Use custom registry for pull/push docker image.
+    --use-docker                                               Use docker to build / push image [default].
+    --use-docker-compose                                       Use docker-compose to build / push image.
+    --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default].
+    --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
+    --volume-from=<host_type>                                  Volume type of sources - docker or k8s [default: k8s]
 """
 
 import ConfigParser
@@ -276,6 +280,8 @@ class CLIDriver(object):
             self.__callArtifactoryFile(self.__getTagSha1(), upload_file, http_verb)
 
     def __k8s(self):
+        kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
+        helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
             # Check that the chart dir no exists
@@ -322,16 +328,16 @@ class CLIDriver(object):
             values = ''
 
         # Instal or Upgrade environnement
-        self._cmd.run_command('helm upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s %s %s --debug -i --namespace=%s'
+        helm_cmd.run('upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s %s %s --debug -i --namespace=%s'
             % (namespace[:53], self._context.opt['--deploy-spec-dir'], self._context.opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], self._context.registry, self._context.repository, tag, secretParams, values, namespace))
 
         if self._context.opt['--delete-labels']:
             now = datetime.datetime.utcnow()
-            date_format = '%Y-%m-%dT%H%M%S'
-            self._cmd.run_command('kubectl label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
+            date_format = '%Y-%m-%dT%H%M%S'            
+            kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
 
-        ressources = self._cmd.run_command('kubectl get deployments -n %s -o name' % (namespace))
+        ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
         if ressources is not None:
             ressources = ressources.strip().split('\n')
 
@@ -340,13 +346,13 @@ class CLIDriver(object):
                 if not self._context.opt['--use-aws-ecr']:
                     # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
                     # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
-                    self._cmd.run_command('kubectl patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
+                    kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
                         % (ressource.replace('/', ' '),  self._context.registry, namespace))
 
             # Rollout
             for ressource in ressources:
                 # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
-                self._cmd.run_command('timeout %s kubectl rollout status %s -n %s' % (self._context.opt['--timeout'], ressource, namespace))
+                kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
 
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
