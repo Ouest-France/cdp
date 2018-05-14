@@ -17,6 +17,7 @@ Usage:
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
@@ -24,7 +25,7 @@ Usage:
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>]
+        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry)
         [--values=<files>]
@@ -53,6 +54,7 @@ Options:
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
+    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:latest].
     --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:latest].
     --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:latest].
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:latest].
@@ -117,17 +119,17 @@ class CLIDriver(object):
         else:
             self._cmd = cmd
 
-        if opt is None:
-            raise ValueError('TODO')
-        else:
-            self._context = Context(opt, cmd)
-            LOG.verbose('Context : %s', self._context.__dict__)
-
         # Default value of DOCKER_HOST env var if not set
         if os.getenv('DOCKER_HOST', None) is None:
             os.environ['DOCKER_HOST'] = 'unix:///var/run/docker.sock'
 
         LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
+
+        if opt is None:
+            raise ValueError('TODO')
+        else:
+            self._context = Context(opt, cmd)
+            LOG.verbose('Context : %s', self._context.__dict__)
 
     def main(self, args=None):
         try:
@@ -244,12 +246,15 @@ class CLIDriver(object):
         # Login to the docker registry
         self._cmd.run_command(self._context.login)
 
+
+
         if self._context.opt['--use-aws-ecr']:
+            aws_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-aws'], None, True)
             try:
-                self._cmd.run_command('aws ecr list-images --repository-name %s --max-items 0' % (self._context.repository))
+                aws_cmd.run('ecr list-images --repository-name %s --max-items 0' % (self._context.repository))
             except ValueError:
                 LOG.warning('AWS ECR repository doesn\'t  exist. Creating this one.')
-                self._cmd.run_command('aws ecr create-repository --repository-name %s' % (self._context.repository))
+                aws_cmd.run('ecr create-repository --repository-name %s' % (self._context.repository))
 
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
@@ -333,7 +338,7 @@ class CLIDriver(object):
 
         if self._context.opt['--delete-labels']:
             now = datetime.datetime.utcnow()
-            date_format = '%Y-%m-%dT%H%M%S'            
+            date_format = '%Y-%m-%dT%H%M%S'
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
 
