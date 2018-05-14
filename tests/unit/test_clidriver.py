@@ -17,6 +17,7 @@ class FakeCommand(object):
         self._tc = unittest.TestCase('__init__')
 
     def run_command(self, cmd, dry_run = None, timeout = None):
+        print cmd
         try:
             # Check cmd parameter
             self._tc.assertEqual(self._verif_cmd[self._index]['cmd'], cmd)
@@ -87,11 +88,6 @@ class TestCliDriver(unittest.TestCase):
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
 
-    run_docker_cmd = 'docker run --rm -e DOCKER_HOST $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\|^KUBERNETES\)" | cut -f1 -d= | sed \'s/^/-e /\') -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=%s") -w ${PWD} %s %s'
-    run_docker_cmd_volume_k8s = 'k8s_build_${HOSTNAME}'
-    run_docker_cmd_volume_docker = '${HOSTNAME}-build'
-    run_docker_cmd_without_entrypoint = '/bin/sh -c \'%s\''
-
     @classmethod
     def setUpClass(cls):
         os.environ['CDP_GITLAB_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_gitlab_registry_read_only_token
@@ -131,13 +127,13 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'checkout %s' % branch_name), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'reset --hard origin/%s' % branch_name), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'checkout %s' % branch_name, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'reset --hard origin/%s' % branch_name, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'k8s'), 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name, TestCliDriver.run_docker_cmd_without_entrypoint % command_name), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name, command_name, 'k8s', False), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--verbose', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
@@ -150,7 +146,7 @@ class TestCliDriver(unittest.TestCase):
         command_name = 'mvn clean install'
         verif_cmd = [
             {'cmd': 'docker pull %s' % (image_name), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_docker, image_name, TestCliDriver.run_docker_cmd_without_entrypoint % command_name), 'output': 'unnecessary'}
+            {'cmd': self.__get_rundocker_cmd(image_name, command_name, 'docker', False), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'build', '--docker-image=%s' % image_name, '--command=%s' % command_name, '--volume-from=docker' }, verif_cmd)
 
@@ -164,14 +160,14 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'checkout %s' % branch_name), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'reset --hard origin/%s' % branch_name), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'checkout %s' % branch_name, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'reset --hard origin/%s' % branch_name, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'k8s'), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, 'maven:%s' % image_version, TestCliDriver.run_docker_cmd_without_entrypoint % ('mvn %s -s maven-settings.xml' % goals)), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn %s -s maven-settings.xml' % goals, 'k8s', False), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'maven', '--verbose', '--docker-version=%s' % image_version, '--goals=%s' % goals, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
@@ -186,7 +182,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'echo "$CDP_SSH_PRIVATE_KEY" | tr -d \'\r\' > id_rsa && chmod 600 id_rsa', 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, 'maven:%s' % image_version, TestCliDriver.run_docker_cmd_without_entrypoint % ('mvn %s -s maven-settings.xml' % goals)), 'output': 'unnecessary'}
+            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn %s -s maven-settings.xml' % goals, 'k8s', False), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--goals=%s' % goals }, verif_cmd)
 
@@ -200,7 +196,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, 'maven:%s' % image_version, TestCliDriver.run_docker_cmd_without_entrypoint % ('mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts))), 'output': 'unnecessary'}
+            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'k8s', False), 'output': 'unnecessary'}
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=release'}, verif_cmd)
@@ -215,7 +211,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, 'maven:%s' % image_version, TestCliDriver.run_docker_cmd_without_entrypoint % ('mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" -s maven-settings.xml' % (maven_release_version, maven_release_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release))), 'output': 'unnecessary'}
+            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" -s maven-settings.xml' % (maven_release_version, maven_release_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release), 'k8s', False), 'output': 'unnecessary'}
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=release', '--maven-release-plugin=%s' % maven_release_version}, verif_cmd)
@@ -228,7 +224,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-                {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, 'maven:%s' % image_version, TestCliDriver.run_docker_cmd_without_entrypoint % ('mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_snapshot))), 'output': 'unnecessary'}
+            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn deploy -DskipTest -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_snapshot), 'k8s', False), 'output': 'unnecessary'}
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=snapshot' }, verif_cmd)
@@ -243,13 +239,13 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'checkout %s' % branch_name), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'reset --hard origin/%s' % branch_name), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'checkout %s' % branch_name, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'reset --hard origin/%s' % branch_name, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'k8s'), 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_sonar_scanner, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_sonar_scanner, '-Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.projectKey=%s -Dsonar.sources=. -Dsonar.gitlab.json_mode=CODECLIMATE -Dsonar.analysis.mode=preview'
+            {'cmd': self.__get_rundocker_cmd(image_name_sonar_scanner, '-Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.projectKey=%s -Dsonar.sources=. -Dsonar.gitlab.json_mode=CODECLIMATE -Dsonar.analysis.mode=preview'
                 % (TestCliDriver.cdp_sonar_login,
                     TestCliDriver.cdp_sonar_url,
                     TestCliDriver.gitlab_user_token,
@@ -257,7 +253,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.ci_project_path_slug,
                     TestCliDriver.ci_commit_ref_name,
-                    TestCliDriver.ci_project_path_slug)), 'output': 'unnecessary'},
+                    TestCliDriver.ci_project_path_slug), 'k8s'), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'sonar', '--preview', '--codeclimate', '--verbose', '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
@@ -271,14 +267,14 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         verif_cmd = [
             {'cmd': 'docker pull %s' % image_name_sonar_scanner, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_sonar_scanner, '-Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.gitlab.json_mode=SAST'
+            {'cmd': self.__get_rundocker_cmd(image_name_sonar_scanner, '-Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.gitlab.json_mode=SAST'
                 % (TestCliDriver.cdp_sonar_login,
                     TestCliDriver.cdp_sonar_url,
                     TestCliDriver.gitlab_user_token,
                     TestCliDriver.ci_commit_sha,
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.ci_project_path_slug,
-                    TestCliDriver.ci_commit_ref_name)), 'output': 'unnecessary'}
+                    TestCliDriver.ci_commit_ref_name), 'k8s'), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'sonar', '--publish', '--sast' }, verif_cmd)
         mock_isfile.assert_called_with('sonar-project.properties')
@@ -311,13 +307,16 @@ class TestCliDriver(unittest.TestCase):
 
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withrepo(self):
         # Create FakeCommand
+        image_name_aws = 'ouestfrance/cdp-aws:latest'
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
-            {'cmd': 'aws ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
-            {'cmd': 'aws ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower())), 'output': 'unnecessary'},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
@@ -328,14 +327,17 @@ class TestCliDriver(unittest.TestCase):
 
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withoutrepo(self):
         # Create FakeCommand
+        image_name_aws = 'ouestfrance/cdp-aws:latest'
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
-            {'cmd': 'aws ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
-            {'cmd': 'aws ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'throw': ValueError},
-            {'cmd': 'aws ecr create-repository --repository-name %s' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower())), 'output': 'unnecessary', 'throw': ValueError},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr create-repository --repository-name %s' % (TestCliDriver.ci_project_path.lower())), 'output': 'unnecessary'},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose push', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: 'latest', TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
             {'cmd': 'docker-compose build', 'output': 'unnecessary', 'env_vars' : { TestCliDriver.env_cdp_tag: TestCliDriver.ci_commit_sha, TestCliDriver.env_cdp_registry: '%s/%s' % (aws_host, TestCliDriver.ci_project_path.lower())}},
@@ -398,7 +400,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
                     TestCliDriver.ci_commit_ref_name,
@@ -412,12 +414,12 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.cdp_gitlab_registry_read_only_token,
                     staging_file,
                     int_file,
-                    namespace)), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'get deployments -n %s -o name' % (namespace)), 'output': 'deployments/package1\ndeployments/package2'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'patch deployments package1 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.ci_registry, namespace)), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.ci_registry, namespace)), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'rollout status deployments/package1 -n %s' % namespace), 'output': 'unnecessary', 'timeout': '600'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'rollout status deployments/package2 -n %s' % namespace), 'output': 'unnecessary', 'timeout': '600'}
+                    namespace), 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'get deployments -n %s -o name' % (namespace), 'k8s'), 'output': 'deployments/package1\ndeployments/package2'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'patch deployments package1 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.ci_registry, namespace), 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.ci_registry, namespace), 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package1 -n %s' % namespace, 'k8s'), 'output': 'deployments/package1', 'timeout': '600'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package2 -n %s' % namespace, 'k8s'), 'output': 'deployments/package2', 'timeout': '600'}
         ]
         self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd, docker_host = docker_host)
 
@@ -434,7 +436,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
                     TestCliDriver.ci_commit_ref_name,
@@ -448,18 +450,19 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.cdp_custom_registry_read_only_token,
                     staging_file,
                     int_file,
-                    namespace)), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'get deployments -n %s -o name' % (namespace)), 'output': 'deployments/package1\ndeployments/package2'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'patch deployments package1 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, namespace)), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, namespace)), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'rollout status deployments/package1 -n %s' % namespace), 'output': 'unnecessary', 'timeout': '600'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'rollout status deployments/package2 -n %s' % namespace), 'output': 'unnecessary', 'timeout': '600'}
+                    namespace), 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'get deployments -n %s -o name' % (namespace), 'k8s'), 'output': 'deployments/package1\ndeployments/package2'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'patch deployments package1 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, namespace), 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, namespace), 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package1 -n %s' % namespace, 'k8s'), 'output': 'deployments/package1', 'timeout': '600'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package2 -n %s' % namespace, 'k8s'), 'output': 'deployments/package2', 'timeout': '600'}
         ]
         self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd)
 
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self):
         # Create FakeCommand
+        image_name_aws = 'ouestfrance/cdp-aws:latest'
         image_name_kubectl = 'ouestfrance/cdp-kubectl:latest'
         image_name_helm = 'ouestfrance/cdp-helm:latest'
         aws_host = 'ecr.amazonaws.com'
@@ -472,11 +475,12 @@ class TestCliDriver(unittest.TestCase):
         date_format = '%Y-%m-%dT%H%M%SZ'
 
         verif_cmd = [
-            {'cmd': 'aws ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_helm, 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --values %s/%s --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --values %s/%s --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     timeout,
@@ -489,14 +493,14 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     deploy_spec_dir,
                     values,
-                    namespace)), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
+                    namespace), 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
                 % (namespace,
                     datetime.datetime.now().strftime(date_format),
                     (datetime.datetime.now() + datetime.timedelta(minutes = delete_minutes)).strftime(date_format),
-                    namespace)), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'get deployments -n %s -o name' % (namespace)), 'output': 'deployments/package1'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'rollout status deployments/package1 -n %s' % (namespace)), 'output': 'unnecessary', 'timeout': str(timeout)}
+                    namespace), 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'get deployments -n %s -o name' % (namespace), 'k8s'), 'output': 'deployments/package1'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package1 -n %s' % (namespace), 'k8s'), 'output': 'unnecessary', 'timeout': str(timeout)}
         ]
         self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes}, verif_cmd)
 
@@ -507,6 +511,7 @@ class TestCliDriver(unittest.TestCase):
     @patch("cdpcli.clidriver.yaml.dump")
     def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir):
         # Create FakeCommand
+        image_name_aws = 'ouestfrance/cdp-aws:latest'
         image_name_kubectl = 'ouestfrance/cdp-kubectl:latest'
         image_name_helm = 'ouestfrance/cdp-helm:latest'
         aws_host = 'ecr.amazonaws.com'
@@ -515,11 +520,12 @@ class TestCliDriver(unittest.TestCase):
         deploy_spec_dir = 'chart'
         sleep = 10
         verif_cmd = [
-            {'cmd': 'aws ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False},
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_helm, 'upgrade %s %s --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s   --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s %s --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s   --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     namespace,
@@ -529,9 +535,9 @@ class TestCliDriver(unittest.TestCase):
                     aws_host,
                     TestCliDriver.ci_project_path.lower(),
                     TestCliDriver.ci_commit_sha,
-                    namespace)), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'get deployments -n %s -o name' % (namespace)), 'output': 'deployments/package1'},
-            {'cmd': TestCliDriver.run_docker_cmd % (TestCliDriver.run_docker_cmd_volume_k8s, image_name_kubectl, 'rollout status deployments/package1 -n %s' % (namespace)), 'output': 'unnecessary', 'timeout': '600'},
+                    namespace), 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'get deployments -n %s -o name' % (namespace), 'k8s'), 'output': 'deployments/package1'},
+            {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package1 -n %s' % (namespace), 'k8s'), 'output': 'unnecessary', 'timeout': '600'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep }, verif_cmd)
@@ -588,3 +594,22 @@ class TestCliDriver(unittest.TestCase):
                 del os.environ['MAVEN_OPTS']
             if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
                 del os.environ['CDP_SSH_PRIVATE_KEY']
+
+    def __get_rundocker_cmd(self, docker_image, prg_cmd, volume_from = None, with_entrypoint = True):
+        run_docker_cmd = 'docker run --rm -e DOCKER_HOST $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\|^KUBERNETES\)" | cut -f1 -d= | sed \'s/^/-e /\') -v /var/run/docker.sock:/var/run/docker.sock'
+
+        if volume_from == 'k8s':
+            run_docker_cmd = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % (run_docker_cmd)
+        elif volume_from == 'docker':
+            run_docker_cmd = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % (run_docker_cmd)
+
+
+        run_docker_cmd = '%s -w ${PWD}' % (run_docker_cmd)
+        run_docker_cmd = '%s %s' % (run_docker_cmd, docker_image)
+
+        if (with_entrypoint):
+            run_docker_cmd = '%s %s' % (run_docker_cmd, prg_cmd)
+        else:
+            run_docker_cmd = '%s /bin/sh -c \'%s\'' % (run_docker_cmd, prg_cmd)
+
+        return run_docker_cmd

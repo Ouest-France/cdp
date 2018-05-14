@@ -16,7 +16,6 @@ RUN apt-get update \
  && chmod +x /bin/validator-cli \
  && mkdir -p /aws \
  && pip install wheel \
- && pip install awscli \
  && pip install docker-compose \
  && cd cdp \
  && python setup.py install \

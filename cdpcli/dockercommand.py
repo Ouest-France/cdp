@@ -7,7 +7,7 @@ LOG.setLevel(logging.INFO)
 
 class DockerCommand(object):
 
-    def __init__(self, cmd, docker_image, volume_from, with_entrypoint = False):
+    def __init__(self, cmd, docker_image, volume_from = None, with_entrypoint = False):
         self._cmd = cmd
         self._docker_image = docker_image
         self._volume_from = volume_from
@@ -21,7 +21,7 @@ class DockerCommand(object):
 
         if self._volume_from == 'k8s':
             run_docker_cmd = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % (run_docker_cmd)
-        else:
+        elif self._volume_from == 'docker':
             run_docker_cmd = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % (run_docker_cmd)
 
         run_docker_cmd = '%s -w ${PWD}' % (run_docker_cmd)
@@ -31,4 +31,4 @@ class DockerCommand(object):
         else:
             run_docker_cmd = '%s /bin/sh -c \'%s\'' % (run_docker_cmd, prg_cmd)
 
-        return self._cmd.run_command(run_docker_cmd, timeout=timeout)
+        return self._cmd.run_command(run_docker_cmd, dry_run=dry_run, timeout=timeout)
