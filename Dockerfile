@@ -15,8 +15,6 @@ RUN apk -v --update add docker=$VERSION_DOCKER py-pip groff less mailcap curl op
     && chmod +x /bin/validator-cli \
     && cd cdp \
     && python setup.py install \
-    && apk -v --purge del py-pip \
+    && apk -v --purge del py-pip curl \
     && rm -rf /var/lib/apt/lists/* \
     && rm /var/cache/apk/*
-
-# apt-get install -y --no-install-recommends curl python python-pip openssh-client apt-transport-https ca-certificates software-properties-common python-setuptools groff \
