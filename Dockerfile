@@ -1,4 +1,4 @@
-FROM alpine3.7
+FROM alpine:3.7
 
 MAINTAINER Lucas POUZAC <lucas.pouzac.pro@gmail.com>
 
