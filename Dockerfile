@@ -11,7 +11,7 @@ ADD . cdp/
 
 RUN apk -v --update add python=$VERSION_PYTHON docker=$VERSION_DOCKER py-pip groff less mailcap curl openrc \
     && rc-update add docker boot \
-    && pip install --upgrade wheel docker-compose==$VERSION_DOCKER_COMPOSE \
+    && pip install --upgrade wheel docker-compose==$VERSION_DOCKER_COMPOSE setuptools \
     && curl -L https://github.com/Ouest-France/platform/releases/download/${VERSION_VALIDATOR_CLI}/validator-cli--x86_64-unknown-linux-gnu.tar.gz | tar zxv -C /bin/ \
     && chmod +x /bin/validator-cli \
     && cd cdp \
