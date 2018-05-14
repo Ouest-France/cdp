@@ -1,14 +1,15 @@
-FROM python:2.7-alpine3.7
+FROM alpine3.7
 
 MAINTAINER Lucas POUZAC <lucas.pouzac.pro@gmail.com>
 
 ARG VERSION_VALIDATOR_CLI="1.0.67"
 ARG VERSION_DOCKER="17.12.1-r0"
 ARG VERSION_DOCKER_COMPOSE="1.21.2"
+ARG VERSION_PYTHON="2.7.14-r2"
 
 ADD . cdp/
 
-RUN apk -v --update add docker=$VERSION_DOCKER py-pip groff less mailcap curl openrc \
+RUN apk -v --update add python=$VERSION_PYTHON docker=$VERSION_DOCKER py-pip groff less mailcap curl openrc \
     && rc-update add docker boot \
     && pip install --upgrade wheel docker-compose==$VERSION_DOCKER_COMPOSE \
     && curl -L https://github.com/Ouest-France/platform/releases/download/${VERSION_VALIDATOR_CLI}/validator-cli--x86_64-unknown-linux-gnu.tar.gz | tar zxv -C /bin/ \
