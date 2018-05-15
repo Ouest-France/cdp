@@ -425,7 +425,7 @@ class CLIDriver(object):
         if self._context.opt['--namespace-project-name']:
             return '%s.%s' % (os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
         else:
-            return '%s.%s.%s' % (os.getenv('CI_ENVIRONMENT_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
+            return '%s.%s.%s' % (os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
 
     def __simulate_merge_on(self):
         if self._context.opt['--simulate-merge-on']:
