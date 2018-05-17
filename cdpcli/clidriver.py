@@ -88,6 +88,7 @@ Options:
 import ConfigParser
 import sys, os
 import logging, verboselogs
+import re
 import time, datetime
 import yaml
 from Context import Context
@@ -441,6 +442,9 @@ class CLIDriver(object):
 
             if force_git_config:
                 git_cmd.run('checkout %s' % os.environ['CI_COMMIT_REF_NAME'])
+                repository_url_regex = re.findall('(.*):(.*)@(.*)', os.environ['CI_REPOSITORY_URL'])
+                git_cmd.run('remote -v')
+                git_cmd.run('remote set-url origin %s:%s@%s' % (repository_url_regex[0][0], os.environ['GITLAB_TOKEN'], repository_url_regex[0][2]))
                 git_cmd.run('remote -v')
 
             if self._context.opt['--simulate-merge-on']:
