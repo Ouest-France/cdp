@@ -190,10 +190,14 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         branch_name = 'master'
         image_version = '3.5-jdk-8'
+        image_name_git = 'ouestfrance/cdp-git:latest'
         goals = 'clean install -DskipTests'
         maven_opts = '-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository -e'
         os.environ['MAVEN_OPTS'] = maven_opts
         verif_cmd = [
+            {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'k8s'), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'k8s', False), 'output': 'unnecessary'}
@@ -207,8 +211,12 @@ class TestCliDriver(unittest.TestCase):
         branch_name = 'master'
         image_version = '3.5-jdk-8'
         maven_release_version = '1.0.0'
+        image_name_git = 'ouestfrance/cdp-git:latest'
         goals = 'clean install -DskipTests'
         verif_cmd = [
+            {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'k8s'), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" -s maven-settings.xml' % (maven_release_version, maven_release_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release), 'k8s', False), 'output': 'unnecessary'}
