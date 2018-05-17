@@ -88,7 +88,6 @@ Options:
 import ConfigParser
 import sys, os
 import logging, verboselogs
-import re
 import time, datetime
 import yaml
 from Context import Context
@@ -180,7 +179,7 @@ class CLIDriver(object):
         if self._context.opt['--deploy']:
             if self._context.opt['--deploy'] == 'release':
                 force_git_config = True
-                command = '--batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]"' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'])
+                command = '--batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'])
                 arguments = '-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
 
                 if os.getenv('MAVEN_OPTS', None) is not None:
@@ -442,10 +441,6 @@ class CLIDriver(object):
 
             if force_git_config:
                 git_cmd.run('checkout %s' % os.environ['CI_COMMIT_REF_NAME'])
-                repository_url_regex = re.findall('(.*):(.*)@(.*)', os.environ['CI_REPOSITORY_URL'])
-                git_cmd.run('remote -v')
-                git_cmd.run('remote set-url origin %s:%s@%s' % (repository_url_regex[0][0], os.environ['GITLAB_TOKEN'], repository_url_regex[0][2]))
-                git_cmd.run('remote -v')
 
             if self._context.opt['--simulate-merge-on']:
                 LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
