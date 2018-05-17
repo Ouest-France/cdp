@@ -198,7 +198,7 @@ class CLIDriver(object):
 
         self.__create_ssh_key()
         self.__simulate_merge_on(force_git_config)
-        
+
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
         maven_cmd = DockerCommand(self._cmd, 'maven:%s' % (self._context.opt['--docker-version']), self._context.opt['--volume-from'])
@@ -437,7 +437,7 @@ class CLIDriver(object):
             git_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-git'], self._context.opt['--volume-from'], True)
 
             git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
-            git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
+            git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_NAME'])
 
             if self._context.opt['--simulate-merge-on']:
                 LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
