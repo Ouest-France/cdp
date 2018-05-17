@@ -8,6 +8,11 @@
       <username>${env.CDP_REPOSITORY_USERNAME}</username>
       <password>${env.CDP_REPOSITORY_PASSWORD}</password>
     </server>
+    <server>
+      <id>git</id>
+      <username>gitlab-ci-token</username>
+      <password>${env.GITLAB_TOKEN}</password>  
+    </server>
   </servers>
 
   <profiles>
