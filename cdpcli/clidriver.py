@@ -103,9 +103,9 @@ LOG.setLevel(logging.INFO)
 
 def main():
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
-    if opt['--verbose']:
+    if opt['--verbose'] or os.getenv('CDP_LOG_LEVEL', None) is 'verbose':
         LOG.setLevel(logging.VERBOSE)
-    elif opt['--quiet']:
+    elif opt['--quiet'] or os.getenv('CDP_LOG_LEVEL', None) is 'warning':
         LOG.setLevel(logging.WARNING)
 
     driver = CLIDriver(cmd = CLICommand(opt['--dry-run']), opt = opt)
@@ -438,10 +438,11 @@ class CLIDriver(object):
 
             git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
             git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_NAME'])
-            
+
             if force_git_config:
                 git_cmd.run('checkout %s' % os.environ['CI_COMMIT_REF_NAME'])
-
+                git_cmd.run('remote -v')
+                
             if self._context.opt['--simulate-merge-on']:
                 LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
                 # Merge branch on selected branch
