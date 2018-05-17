@@ -438,6 +438,9 @@ class CLIDriver(object):
 
             git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
             git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_NAME'])
+            
+            if force_git_config:
+                git_cmd.run('checkout %s' % os.environ['CI_COMMIT_REF_NAME'])
 
             if self._context.opt['--simulate-merge-on']:
                 LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
