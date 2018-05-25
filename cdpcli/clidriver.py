@@ -123,7 +123,7 @@ class CLIDriver(object):
         if os.getenv('DOCKER_HOST', None) is None:
             os.environ['DOCKER_HOST'] = 'unix:///var/run/docker.sock'
 
-        os.environ['CDP_DOCKER_HOST_INTERNAL'] = self._cmd.run_command('ip route | awk \'NR==1 {print $3}\'')
+        os.environ['CDP_DOCKER_HOST_INTERNAL'] = self._cmd.run_command('ip route | awk \'NR==1 {print $3}\'').strip()
 
         LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
 
