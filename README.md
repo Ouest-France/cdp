@@ -92,6 +92,9 @@ Options:
 ### Prerequisites
 
 ```yaml
+available:
+  - CDP_DOCKER_HOST_INTERNAL – IP of docker host. Could be used in your tests if necessary.
+
 build|maven:
  - CDP_SSH_PRIVATE_KEY – Copy private key (gitlab-ci user) in ~/.ssh/id_rsa file which push repository (Optional)
 

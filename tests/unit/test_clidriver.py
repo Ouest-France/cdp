@@ -584,14 +584,18 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'validator', '--path=%s' % path, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
 
     def __run_CLIDriver(self, args, verif_cmd, return_code = None, docker_host = 'unix:///var/run/docker.sock'):
+        cdp_docker_host_internal = '172.17.0.1'
         try:
+            verif_cmd.insert(0, {'cmd': 'ip route | awk \'NR==1 {print $3}\'', 'output': cdp_docker_host_internal})
             cmd = FakeCommand(verif_cmd = verif_cmd)
             cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
             self.assertEqual(return_code, cli.main())
             self.assertEqual(docker_host, os.environ['DOCKER_HOST'])
+            self.assertEqual(cdp_docker_host_internal, os.environ['CDP_DOCKER_HOST_INTERNAL'])            
             cmd.verify_commands()
         finally:
             del os.environ['DOCKER_HOST']
+            del os.environ['CDP_DOCKER_HOST_INTERNAL']
             if os.getenv('MAVEN_OPTS', None) is not None:
                 del os.environ['MAVEN_OPTS']
             if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
