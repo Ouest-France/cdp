@@ -416,7 +416,7 @@ class CLIDriver(object):
         if self._context.opt['--namespace-project-name']:
             namespace = os.environ['CI_PROJECT_NAME']
         else:
-            namespace = '%s-%s' % (os.environ['CI_PROJECT_NAME'], os.environ['CI_COMMIT_REF_NAME'])    # Get deployment host
+            namespace = '%s-%s' % (os.environ['CI_PROJECT_NAME'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
 
         return namespace.replace('_', '-')
 
