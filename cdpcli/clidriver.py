@@ -103,9 +103,9 @@ LOG.setLevel(logging.INFO)
 
 def main():
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
-    if opt['--verbose']:
+    if opt['--verbose'] or os.getenv('CDP_LOG_LEVEL', None) == 'verbose':
         LOG.setLevel(logging.VERBOSE)
-    elif opt['--quiet']:
+    elif opt['--quiet'] or os.getenv('CDP_LOG_LEVEL', None) == 'warning':
         LOG.setLevel(logging.WARNING)
 
     driver = CLIDriver(cmd = CLICommand(opt['--dry-run']), opt = opt)
@@ -172,18 +172,17 @@ class CLIDriver(object):
         docker_image_cmd.run(self._context.opt['--command'])
 
     def __maven(self):
-        self.__create_ssh_key()
-        self.__simulate_merge_on()
+        force_git_config = False
 
         settings = 'maven-settings.xml'
-        self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
         command = self._context.opt['--goals']
 
         if self._context.opt['--deploy']:
             if self._context.opt['--deploy'] == 'release':
-                command = '--batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]"' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'])
-                arguments = '-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
+                force_git_config = True
+                command = '--batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git' % (self._context.opt['--maven-release-plugin'], self._context.opt['--maven-release-plugin'])
+                arguments = '-DskipTest -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s' % (os.environ['CDP_REPOSITORY_URL'], os.environ['CDP_REPOSITORY_MAVEN_RELEASE'])
 
                 if os.getenv('MAVEN_OPTS', None) is not None:
                     arguments = '%s %s' % (arguments, os.environ['MAVEN_OPTS'])
@@ -197,6 +196,12 @@ class CLIDriver(object):
             command = '%s %s' % (command, os.environ['MAVEN_OPTS'])
 
         command = 'mvn %s %s' % (command, '-s %s' % settings)
+
+
+        self.__create_ssh_key()
+        self.__simulate_merge_on(force_git_config)
+
+        self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
         maven_cmd = DockerCommand(self._cmd, 'maven:%s' % (self._context.opt['--docker-version']), self._context.opt['--volume-from'])
         maven_cmd.run(command)
@@ -429,18 +434,22 @@ class CLIDriver(object):
         else:
             return '%s.%s.%s' % (os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
 
-    def __simulate_merge_on(self):
-        if self._context.opt['--simulate-merge-on']:
-            LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
-
+    def __simulate_merge_on(self, force_git_config = False):
+        if force_git_config or self._context.opt['--simulate-merge-on']:
             git_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-git'], self._context.opt['--volume-from'], True)
 
-            # Merge branch on selected branch
             git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
-            git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_ID'])
-            git_cmd.run('checkout %s' % self._context.opt['--simulate-merge-on'])
-            git_cmd.run('reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
-            git_cmd.run('merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])
+            git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_NAME'])
+
+            if force_git_config:
+                git_cmd.run('checkout %s' % os.environ['CI_COMMIT_REF_NAME'])
+
+            if self._context.opt['--simulate-merge-on']:
+                LOG.notice('Build docker image with the merge current branch on %s branch', self._context.opt['--simulate-merge-on'])
+                # Merge branch on selected branch
+                git_cmd.run('checkout %s' % self._context.opt['--simulate-merge-on'])
+                git_cmd.run('reset --hard origin/%s' % self._context.opt['--simulate-merge-on'])
+                git_cmd.run('merge %s --no-commit --no-ff' %  os.environ['CI_COMMIT_SHA'])
 
             # TODO Exception process
         else:

@@ -64,6 +64,7 @@ class TestCliDriver(unittest.TestCase):
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
     ci_registry = 'registry.gitlab.com'
+    ci_repository_url = 'https://gitlab-ci-token:iejdzkjziuiez7786@gitlab.com/HelloWorld/HelloWorld/helloworld.git'
     ci_commit_ref_name = 'branch_helloworld_with_many.characters_because_helm_k8s_because_the_length_must_not_longer_than.53'
     ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_53'
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
@@ -71,8 +72,9 @@ class TestCliDriver(unittest.TestCase):
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
     dns_subdomain = 'example.com'
+    gitlab_token = 'azlemksiu76dza'
     gitlab_user_email = 'test@example.com'
-    gitlab_user_id = '12334'
+    gitlab_user_name = 'Hello WORLD'
     gitlab_user_token = '897873763'
     cdp_custom_registry_user = 'cdp_custom_registry_user'
     cdp_custom_registry_token = '1298937676109092092'
@@ -96,6 +98,7 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
         os.environ['CI_REGISTRY_USER'] = TestCliDriver.ci_registry_user
         os.environ['CI_REGISTRY'] = TestCliDriver.ci_registry
+        os.environ['CI_REPOSITORY_URL'] = TestCliDriver.ci_repository_url
         os.environ['CI_COMMIT_REF_NAME'] = TestCliDriver.ci_commit_ref_name
         os.environ['CI_COMMIT_REF_SLUG'] = TestCliDriver.ci_commit_ref_slug
         os.environ['CI_REGISTRY_IMAGE'] = TestCliDriver.ci_registry_image
@@ -103,8 +106,9 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
         os.environ['CI_PROJECT_PATH_SLUG'] = TestCliDriver.ci_project_path_slug
         os.environ['DNS_SUBDOMAIN'] = TestCliDriver.dns_subdomain
+        os.environ['GITLAB_TOKEN'] = TestCliDriver.gitlab_token
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
-        os.environ['GITLAB_USER_ID'] = TestCliDriver.gitlab_user_id
+        os.environ['GITLAB_USER_NAME'] = TestCliDriver.gitlab_user_name
         os.environ['GITLAB_USER_TOKEN'] = TestCliDriver.gitlab_user_token
         os.environ['CDP_CUSTOM_REGISTRY_USER'] = TestCliDriver.cdp_custom_registry_user
         os.environ['CDP_CUSTOM_REGISTRY_TOKEN'] = TestCliDriver.cdp_custom_registry_token
@@ -130,7 +134,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'checkout %s' % branch_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'reset --hard origin/%s' % branch_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'k8s'), 'output': 'unnecessary'},
@@ -163,7 +167,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'checkout %s' % branch_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'reset --hard origin/%s' % branch_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'k8s'), 'output': 'unnecessary'},
@@ -192,13 +196,18 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         branch_name = 'master'
         image_version = '3.5-jdk-8'
+        image_name_git = 'ouestfrance/cdp-git:latest'
         goals = 'clean install -DskipTests'
         maven_opts = '-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository -e'
         os.environ['MAVEN_OPTS'] = maven_opts
         verif_cmd = [
+            {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'checkout %s' % TestCliDriver.ci_commit_ref_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'k8s', False), 'output': 'unnecessary'}
+            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'k8s', False), 'output': 'unnecessary'}
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=release'}, verif_cmd)
@@ -209,11 +218,16 @@ class TestCliDriver(unittest.TestCase):
         branch_name = 'master'
         image_version = '3.5-jdk-8'
         maven_release_version = '1.0.0'
+        image_name_git = 'ouestfrance/cdp-git:latest'
         goals = 'clean install -DskipTests'
         verif_cmd = [
+            {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'checkout %s' % TestCliDriver.ci_commit_ref_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -DaltDeploymentRepository=release::default::%s/%s" -s maven-settings.xml' % (maven_release_version, maven_release_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release), 'k8s', False), 'output': 'unnecessary'}
+            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s" -s maven-settings.xml' % (maven_release_version, maven_release_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release), 'k8s', False), 'output': 'unnecessary'}
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=release', '--maven-release-plugin=%s' % maven_release_version}, verif_cmd)
@@ -242,7 +256,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_id, 'k8s'), 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'checkout %s' % branch_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'reset --hard origin/%s' % branch_name, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'k8s'), 'output': 'unnecessary'},
