@@ -65,7 +65,8 @@ class TestCliDriver(unittest.TestCase):
     ci_registry_user = 'gitlab-ci'
     ci_registry = 'registry.gitlab.com'
     ci_repository_url = 'https://gitlab-ci-token:iejdzkjziuiez7786@gitlab.com/HelloWorld/HelloWorld/helloworld.git'
-    ci_commit_ref_name = 'branch_helloworld_with_many characters_bacause_helm_k8s_bacause_the_length_must_not_longer_than_53'
+    ci_commit_ref_name = 'branch_helloworld_with_many.characters_because_helm_k8s_because_the_length_must_not_longer_than.53'
+    ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_53'
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
     ci_project_name = 'helloworld'
     ci_project_path = 'HelloWorld/HelloWorld'
@@ -99,6 +100,7 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_REGISTRY'] = TestCliDriver.ci_registry
         os.environ['CI_REPOSITORY_URL'] = TestCliDriver.ci_repository_url
         os.environ['CI_COMMIT_REF_NAME'] = TestCliDriver.ci_commit_ref_name
+        os.environ['CI_COMMIT_REF_SLUG'] = TestCliDriver.ci_commit_ref_slug
         os.environ['CI_REGISTRY_IMAGE'] = TestCliDriver.ci_registry_image
         os.environ['CI_PROJECT_NAME'] = TestCliDriver.ci_project_name
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
@@ -401,7 +403,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         image_name_kubectl = 'ouestfrance/cdp-kubectl:latest'
         image_name_helm = 'ouestfrance/cdp-helm:latest'
-        namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_name)
+        namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
@@ -417,7 +419,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
-                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_commit_ref_slug,
                     TestCliDriver.ci_project_name,
                     TestCliDriver.dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
@@ -441,7 +443,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         image_name_kubectl = 'ouestfrance/cdp-kubectl:latest'
         image_name_helm = 'ouestfrance/cdp-helm:latest'
-        namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_name)
+        namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
@@ -453,7 +455,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
-                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_commit_ref_slug,
                     TestCliDriver.ci_project_name,
                     TestCliDriver.dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
@@ -573,7 +575,7 @@ class TestCliDriver(unittest.TestCase):
         os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s.%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
+            {'cmd': 'validator-cli --url http://%s.%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator' }, verif_cmd, docker_host = docker_host)
 
@@ -590,7 +592,7 @@ class TestCliDriver(unittest.TestCase):
         sleep = 10
 
         verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s.%s.%s/%s --schema BlockJSON' % (TestCliDriver.ci_commit_ref_name, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain, path), 'output': 'unnecessary'},
+            {'cmd': 'validator-cli --url http://%s.%s.%s/%s --schema BlockJSON' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain, path), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator', '--path=%s' % path, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
