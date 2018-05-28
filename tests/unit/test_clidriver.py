@@ -59,7 +59,6 @@ class FakeCommand(object):
 
 class TestCliDriver(unittest.TestCase):
 
-    cdp_gitlab_registry_read_only_token = 'abcdefghijklmnopqrstuvwxyz'
     ci_job_token = 'gitlab-ci'
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
@@ -71,6 +70,8 @@ class TestCliDriver(unittest.TestCase):
     ci_project_name = 'helloworld'
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
+    ci_deploy_user = 'gitlab+deploy-token-1'
+    ci_deploy_password = 'ak5zALsZd8g5KvFRxMyD'
     dns_subdomain = 'example.com'
     gitlab_token = 'azlemksiu76dza'
     gitlab_user_email = 'test@example.com'
@@ -93,7 +94,6 @@ class TestCliDriver(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        os.environ['CDP_GITLAB_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_gitlab_registry_read_only_token
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
         os.environ['CI_REGISTRY_USER'] = TestCliDriver.ci_registry_user
@@ -105,6 +105,8 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_PROJECT_NAME'] = TestCliDriver.ci_project_name
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
         os.environ['CI_PROJECT_PATH_SLUG'] = TestCliDriver.ci_project_path_slug
+        os.environ['CI_DEPLOY_USER'] = TestCliDriver.ci_deploy_user
+        os.environ['CI_DEPLOY_PASSWORD'] = TestCliDriver.ci_deploy_password
         os.environ['DNS_SUBDOMAIN'] = TestCliDriver.dns_subdomain
         os.environ['GITLAB_TOKEN'] = TestCliDriver.gitlab_token
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
@@ -385,6 +387,28 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'artifactory', '--delete=%s' % upload_file }, verif_cmd)
 
+    def test_k8s_usegitlabregistry_missing_deploy_token(self):
+        image_name_kubectl = 'ouestfrance/cdp-kubectl:latest'
+        image_name_helm = 'ouestfrance/cdp-helm:latest'
+
+        verif_cmd = [
+            {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
+            {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'}
+        ]
+
+        del os.environ['CI_DEPLOY_USER']
+        del os.environ['CI_DEPLOY_PASSWORD']
+        try:
+            self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name' }, verif_cmd)
+            raise ValueError('Previous command must return error.')
+        except ValueError as e:
+            # Ok beacause previous command return error.
+             print e
+        finally:
+            os.environ['CI_DEPLOY_USER'] = TestCliDriver.ci_deploy_user
+            os.environ['CI_DEPLOY_PASSWORD'] = TestCliDriver.ci_deploy_password
+
 
     def test_k8s_usegitlabregistry_namespaceprojectbranchname_values_dockerhost(self):
         # Create FakeCommand
@@ -413,8 +437,8 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_registry,
                     TestCliDriver.ci_project_path.lower(),
                     TestCliDriver.ci_commit_ref_name,
-                    TestCliDriver.ci_registry_user,
-                    TestCliDriver.cdp_gitlab_registry_read_only_token,
+                    TestCliDriver.ci_deploy_user,
+                    TestCliDriver.ci_deploy_password,
                     staging_file,
                     int_file,
                     namespace), 'k8s'), 'output': 'unnecessary'},
@@ -584,23 +608,23 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'validator', '--path=%s' % path, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
 
-    def __run_CLIDriver(self, args, verif_cmd, return_code = None, docker_host = 'unix:///var/run/docker.sock'):
+    def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock'):
         cdp_docker_host_internal = '172.17.0.1'
         try:
             verif_cmd.insert(0, {'cmd': 'ip route | awk \'NR==1 {print $3}\'', 'output': cdp_docker_host_internal})
             cmd = FakeCommand(verif_cmd = verif_cmd)
             cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
-            self.assertEqual(return_code, cli.main())
-            self.assertEqual(docker_host, os.environ['DOCKER_HOST'])
-            self.assertEqual(cdp_docker_host_internal, os.environ['CDP_DOCKER_HOST_INTERNAL'])
-            cmd.verify_commands()
+            cli.main()
         finally:
-            del os.environ['DOCKER_HOST']
-            del os.environ['CDP_DOCKER_HOST_INTERNAL']
-            if os.getenv('MAVEN_OPTS', None) is not None:
-                del os.environ['MAVEN_OPTS']
-            if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
-                del os.environ['CDP_SSH_PRIVATE_KEY']
+            try:
+                self.assertEqual(docker_host, os.environ['DOCKER_HOST'])
+                self.assertEqual(cdp_docker_host_internal, os.environ['CDP_DOCKER_HOST_INTERNAL'])
+                cmd.verify_commands()
+            finally:
+                del os.environ['DOCKER_HOST']
+                del os.environ['CDP_DOCKER_HOST_INTERNAL']
+                if os.getenv('MAVEN_OPTS', None) is not None:
+                    del os.environ['MAVEN_OPTS']
 
     def __get_rundocker_cmd(self, docker_image, prg_cmd, volume_from = None, with_entrypoint = True):
         run_docker_cmd = 'docker run --rm -e DOCKER_HOST $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\|^KUBERNETES\)" | cut -f1 -d= | sed \'s/^/-e /\') -v /var/run/docker.sock:/var/run/docker.sock'
