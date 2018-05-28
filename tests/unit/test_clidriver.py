@@ -179,19 +179,6 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'maven', '--verbose', '--docker-version=%s' % image_version, '--goals=%s' % goals, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
 
 
-    def test_maven_goals_cdpsshprivatekey(self):
-        # Create FakeCommand
-        image_version = '3.5-jdk-8'
-        goals = 'clean install -DskipTests'
-        os.environ['CDP_SSH_PRIVATE_KEY'] = 'foo'
-        verif_cmd = [
-            {'cmd': 'echo "$CDP_SSH_PRIVATE_KEY" | tr -d \'\r\' > id_rsa && chmod 600 id_rsa', 'output': 'unnecessary'},
-            {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
-            {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn %s -s maven-settings.xml' % goals, 'k8s', False), 'output': 'unnecessary'}
-        ]
-        self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--goals=%s' % goals }, verif_cmd)
-
     def test_maven_deployrelease_mavenopts(self):
         # Create FakeCommand
         branch_name = 'master'
@@ -605,7 +592,7 @@ class TestCliDriver(unittest.TestCase):
             cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
             self.assertEqual(return_code, cli.main())
             self.assertEqual(docker_host, os.environ['DOCKER_HOST'])
-            self.assertEqual(cdp_docker_host_internal, os.environ['CDP_DOCKER_HOST_INTERNAL'])            
+            self.assertEqual(cdp_docker_host_internal, os.environ['CDP_DOCKER_HOST_INTERNAL'])
             cmd.verify_commands()
         finally:
             del os.environ['DOCKER_HOST']

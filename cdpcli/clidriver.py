@@ -165,7 +165,6 @@ class CLIDriver(object):
 
 
     def __build(self):
-        self.__create_ssh_key()
         self.__simulate_merge_on()
 
         docker_image_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image'], self._context.opt['--volume-from'])
@@ -197,8 +196,6 @@ class CLIDriver(object):
 
         command = 'mvn %s %s' % (command, '-s %s' % settings)
 
-
-        self.__create_ssh_key()
         self.__simulate_merge_on(force_git_config)
 
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
@@ -454,8 +451,3 @@ class CLIDriver(object):
             # TODO Exception process
         else:
             LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
-
-    def __create_ssh_key(self):
-        if os.getenv('CDP_SSH_PRIVATE_KEY', None) is not None:
-            self._cmd.run_command('echo "$CDP_SSH_PRIVATE_KEY" | tr -d \'\r\' > id_rsa && chmod 600 id_rsa')
-            os.environ['GIT_SSH_COMMAND'] = 'ssh -i id_rsa'
