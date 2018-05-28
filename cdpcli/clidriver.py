@@ -326,7 +326,7 @@ class CLIDriver(object):
         if not self._context.opt['--use-aws-ecr']:
             # Copy secret file on k8s deploy dir
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-            secretParams = '--set image.credentials.username=%s --set image.credentials.password=%s' % (self._context.registry_user, self._context.registry_token_ro)
+            secretParams = '--set image.credentials.username=%s --set image.credentials.password=%s' % (self._context.registry_user_ro, self._context.registry_token_ro)
         else:
             secretParams = ''
 

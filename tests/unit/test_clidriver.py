@@ -59,7 +59,6 @@ class FakeCommand(object):
 
 class TestCliDriver(unittest.TestCase):
 
-    cdp_gitlab_registry_read_only_token = 'abcdefghijklmnopqrstuvwxyz'
     ci_job_token = 'gitlab-ci'
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
@@ -71,6 +70,8 @@ class TestCliDriver(unittest.TestCase):
     ci_project_name = 'helloworld'
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
+    ci_deploy_user = 'gitlab+deploy-token-1'
+    ci_deploy_password = 'ak5zALsZd8g5KvFRxMyD'
     dns_subdomain = 'example.com'
     gitlab_token = 'azlemksiu76dza'
     gitlab_user_email = 'test@example.com'
@@ -93,7 +94,6 @@ class TestCliDriver(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        os.environ['CDP_GITLAB_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_gitlab_registry_read_only_token
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
         os.environ['CI_REGISTRY_USER'] = TestCliDriver.ci_registry_user
@@ -105,6 +105,8 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_PROJECT_NAME'] = TestCliDriver.ci_project_name
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
         os.environ['CI_PROJECT_PATH_SLUG'] = TestCliDriver.ci_project_path_slug
+        os.environ['CI_DEPLOY_USER'] = TestCliDriver.ci_deploy_user
+        os.environ['CI_DEPLOY_PASSWORD'] = TestCliDriver.ci_deploy_password
         os.environ['DNS_SUBDOMAIN'] = TestCliDriver.dns_subdomain
         os.environ['GITLAB_TOKEN'] = TestCliDriver.gitlab_token
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
@@ -413,8 +415,8 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_registry,
                     TestCliDriver.ci_project_path.lower(),
                     TestCliDriver.ci_commit_ref_name,
-                    TestCliDriver.ci_registry_user,
-                    TestCliDriver.cdp_gitlab_registry_read_only_token,
+                    TestCliDriver.ci_deploy_user,
+                    TestCliDriver.ci_deploy_password,
                     staging_file,
                     int_file,
                     namespace), 'k8s'), 'output': 'unnecessary'},

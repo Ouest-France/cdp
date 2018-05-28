@@ -91,6 +91,8 @@ Options:
 
 ### Prerequisites
 
+Gitlab >= 10.8
+
 ```yaml
 available:
   - CDP_DOCKER_HOST_INTERNAL – IP of docker host. Could be used in your tests if necessary.
@@ -102,7 +104,7 @@ maven:
     - CDP_REPOSITORY_PASSWORD – Password
     - CDP_REPOSITORY_URL – URL of maven repository
  --deploy=snapshot:
- - CDP_REPOSITORY_MAVEN_SNAPSHOT – Repository for snapshot (example libs-snapshot-local)
+    - CDP_REPOSITORY_MAVEN_SNAPSHOT – Repository for snapshot (example libs-snapshot-local)
  --deploy=release:
     - CDP_REPOSITORY_MAVEN_RELEASE – Repository for release (example libs-release-local)
 
@@ -133,7 +135,7 @@ docker|k8s:
     - CDP_CUSTOM_REGISTRY_TOKEN_READ_ONLY (Gitlab-runner env var) – Read only access token used for authentication on custom docker registry.
     - CDP_CUSTOM_REGISTRY_USER (Gitlab-runner env var) – User used for authentication on custom docker registry.
   --use-gitlab-registry:
-    - CDP_GITLAB_REGISTRY_TOKEN_READ_ONLY (Gitlab-runner env var) – Read only access token used for authentication on gitlab docker registry.
+    - Deploy token with the name gitlab-deploy-token and the scope read_registry must be created for each project.
 
 artifactory:
   --put=<file>|--delete=<file>:

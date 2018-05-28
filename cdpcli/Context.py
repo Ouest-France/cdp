@@ -17,18 +17,23 @@ class Context(object):
             self._registry = login_regex[0][2]
             self._registry_user = login_regex[0][0]
             self._registry_token = login_regex[0][1]
+            self._registry_user_ro = login_regex[0][0]
             self._registry_token_ro = login_regex[0][1]
         elif opt['--use-custom-registry']:
             self._registry = os.environ['CDP_CUSTOM_REGISTRY']
             self._registry_user = os.environ['CDP_CUSTOM_REGISTRY_USER']
             self._registry_token = os.environ['CDP_CUSTOM_REGISTRY_TOKEN']
+            self._registry_user_ro = os.environ['CDP_CUSTOM_REGISTRY_USER']
             self._registry_token_ro = os.environ['CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN']
         elif opt['--use-gitlab-registry']:
             # Use gitlab registry
             self._registry = os.environ['CI_REGISTRY']
             self._registry_user = os.environ['CI_REGISTRY_USER']
             self._registry_token = os.environ['CI_JOB_TOKEN']
-            self._registry_token_ro = os.environ['CDP_GITLAB_REGISTRY_READ_ONLY_TOKEN']
+            if os.getenv('CI_DEPLOY_USER', None) == None or os.getenv('CI_DEPLOY_PASSWORD', None) == None:
+                raise ValueError('Compatible with gitlab >= 10.8 or deploy token with the name gitlab-deploy-token and the scope read_registry must be created in this project.')
+            self._registry_user_ro = os.environ['CI_DEPLOY_USER']
+            self._registry_token_ro = os.environ['CI_DEPLOY_PASSWORD']
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
@@ -55,6 +60,10 @@ class Context(object):
     @property
     def registry_token(self):
         return self._registry_token
+
+    @property
+    def registry_user_ro(self):
+        return self._registry_user_ro
 
     @property
     def registry_token_ro(self):
