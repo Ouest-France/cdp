@@ -250,15 +250,24 @@ class CLIDriver(object):
         # Login to the docker registry
         self._cmd.run_command(self._context.login)
 
-
-
         if self._context.opt['--use-aws-ecr']:
             aws_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-aws'], None, True)
-            try:
-                aws_cmd.run('ecr list-images --repository-name %s --max-items 0' % (self._context.repository))
-            except ValueError:
-                LOG.warning('AWS ECR repository doesn\'t  exist. Creating this one.')
-                aws_cmd.run('ecr create-repository --repository-name %s' % (self._context.repository))
+
+            repos = []
+
+            if self._context.opt['--use-docker']:
+                repos.append(self._context.repository)
+            elif self._context.opt['--use-docker-compose']:
+                docker_services = self._cmd.run_command('docker-compose config --services').strip().split('\n')
+                for docker_service in docker_services:
+                    repos.append('%s/%s' % (self._context.repository, docker_service))
+
+            for repo in repos:
+                try:
+                    aws_cmd.run('ecr list-images --repository-name %s --max-items 0' % repo)
+                except ValueError:
+                    LOG.warning('AWS ECR repository doesn\'t  exist. Creating this one.')
+                    aws_cmd.run('ecr create-repository --repository-name %s' % repo)
 
         # Tag and push docker image
         if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
