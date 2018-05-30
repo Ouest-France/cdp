@@ -6,8 +6,6 @@ replicas_strategy:
       maxUnavailable: 0
 minReadySeconds: 60
 revisionHistoryLimit: 2
-image:
-  pullPolicy: Always
 service:
   type: ClusterIP
   externalPort: 80

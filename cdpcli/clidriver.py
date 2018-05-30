@@ -255,7 +255,7 @@ class CLIDriver(object):
 
             repos = []
 
-            if self._context.opt['--use-docker']:
+            if self._context.opt['--use-docker'] or not (self._context.opt['--use-docker-compose']):
                 repos.append(self._context.repository)
             elif self._context.opt['--use-docker-compose']:
                 docker_services = self._cmd.run_command('docker-compose config --services').strip().split('\n')
@@ -326,28 +326,43 @@ class CLIDriver(object):
 
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
+            pullPolicy = 'Always'
         elif self._context.opt['--image-tag-sha1']:
             tag = self.__getTagSha1()
-        else :
+            pullPolicy = 'IfNotPresent'
+        else:
             tag = self.__getTagBranchName()
+            pullPolicy = 'Always'
+
+
+        command = 'upgrade %s' % namespace[:53]
+        command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
+        command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
+        command = '%s --set namespace=%s' % (command, namespace)
+        command = '%s --set ingress.host=%s' % (command, host)
+        command = '%s --set image.commit.sha=sha-%s' % (command, os.environ['CI_COMMIT_SHA'][:8])
+        command = '%s --set image.registry=%s' % (command,  self._context.registry)
+        command = '%s --set image.repository=%s' % (command, self._context.repository)
+        command = '%s --set image.tag=%s' % (command, tag)
+        command = '%s --set image.pullPolicy=%s' % (command, pullPolicy)
 
         # Need to add secret file for docker registry
         if not self._context.opt['--use-aws-ecr']:
             # Copy secret file on k8s deploy dir
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-            secretParams = '--set image.credentials.username=%s --set image.credentials.password=%s' % (self._context.registry_user_ro, self._context.registry_token_ro)
-        else:
-            secretParams = ''
+            command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
+            command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
 
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
-        else:
-            values = ''
+            command = '%s %s' % (command, values)
 
+        command = '%s --debug' % command
+        command = '%s -i' % command
+        command = '%s --namespace=%s' % (command, namespace)
         # Instal or Upgrade environnement
-        helm_cmd.run('upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s %s %s --debug -i --namespace=%s'
-            % (namespace[:53], self._context.opt['--deploy-spec-dir'], self._context.opt['--timeout'], namespace, host, os.environ['CI_COMMIT_SHA'][:8], self._context.registry, self._context.repository, tag, secretParams, values, namespace))
+        helm_cmd.run(command)
 
         if self._context.opt['--delete-labels']:
             now = datetime.datetime.utcnow()

@@ -310,6 +310,23 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-custom-registry', '--image-tag-sha1' }, verif_cmd)
 
 
+    def test_docker_imagetagsha1_useawsecr(self):
+        # Create FakeCommand
+        image_name_aws = 'ouestfrance/cdp-aws:latest'
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+        verif_cmd = [
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
+            {'cmd': login_cmd, 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower())), 'output': 'unnecessary'},
+            {'cmd': 'docker build -t %s/%s:%s .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'docker', '--use-aws-ecr', '--image-tag-sha1' }, verif_cmd)
+
+
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withrepo(self):
         # Create FakeCommand
         image_name_aws = 'ouestfrance/cdp-aws:latest'
@@ -432,7 +449,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
                     TestCliDriver.ci_commit_ref_slug,
@@ -468,7 +485,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
                     TestCliDriver.ci_commit_ref_slug,
@@ -512,7 +529,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'env', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s  --values %s/%s --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     timeout,
@@ -557,7 +574,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s %s --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s   --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s %s --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     namespace,
@@ -620,6 +637,8 @@ class TestCliDriver(unittest.TestCase):
             cmd = FakeCommand(verif_cmd = verif_cmd)
             cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
             cli.main()
+        except AssertionError as e:
+             print e
         finally:
             try:
                 self.assertEqual(docker_host, os.environ['DOCKER_HOST'])

@@ -188,16 +188,27 @@ package:
     - cdp docker --image-tag-branch-name --use-gitlab-registry
     - cdp artifactory --image-tag-branch-name --put=conf/example.yaml
 
-deploy:
+deploy_review:
   variables:
     DNS_SUBDOMAIN: { ingress.k8s }
   image: ouestfrance/cdp:latest
   stage: deploy
   script:
-    - cdp k8s --use-gitlab-registry --namespace-project-branch-name --image-tag-branch-name --values=values.staging.yaml
+    - cdp k8s --use-gitlab-registry --namespace-project-branch-name --image-tag-branch-name
   environment:
     name: review/$CI_COMMIT_REF_NAME
     url: http://$CI_COMMIT_REF_SLUG.$CI_PROJECT_NAME.$DNS_SUBDOMAIN
+
+deploy_staging:
+  variables:
+    DNS_SUBDOMAIN: { ingress.k8s }
+  image: ouestfrance/cdp:latest
+  stage: deploy
+  script:
+    - cdp k8s --use-gitlab-registry --namespace-project-name --image-tag-sha1 --values=values.staging.yaml
+  environment:
+    name: staging
+    url: http://$CI_PROJECT_NAME.$DNS_SUBDOMAIN
 ```
 
 ### Environment variables set by the CDP
@@ -235,6 +246,7 @@ image.commit.sha:    First 8 characters of sha1 corresponding to the current com
 image.registry:      Docker image registry, based on the following options: [ --use-gitlab-registry | --use-aws-ecr | --use-custom-registry ]
 image.repository:    Name of the repository corresponding to the CI_PROJECT_PATH environment variable in lowercase.
 image.tag:           Docker image tag, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
+image.pullPolicy:    Docker pull policy, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
 ```
 
 #### charts/deployment.yaml sample
