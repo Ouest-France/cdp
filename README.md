@@ -235,6 +235,7 @@ image.commit.sha:    First 8 characters of sha1 corresponding to the current com
 image.registry:      Docker image registry, based on the following options: [ --use-gitlab-registry | --use-aws-ecr | --use-custom-registry ]
 image.repository:    Name of the repository corresponding to the CI_PROJECT_PATH environment variable in lowercase.
 image.tag:           Docker image tag, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
+image.pullPolicy:    Docker pull policy, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
 ```
 
 #### charts/deployment.yaml sample
