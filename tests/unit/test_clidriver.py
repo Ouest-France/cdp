@@ -310,6 +310,23 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-custom-registry', '--image-tag-sha1' }, verif_cmd)
 
 
+    def test_docker_imagetagsha1_useawsecr(self):
+        # Create FakeCommand
+        image_name_aws = 'ouestfrance/cdp-aws:latest'
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+        verif_cmd = [
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
+            {'cmd': login_cmd, 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
+            {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower())), 'output': 'unnecessary'},
+            {'cmd': 'docker build -t %s/%s:%s .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'docker', '--use-aws-ecr', '--image-tag-sha1' }, verif_cmd)
+
+
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withrepo(self):
         # Create FakeCommand
         image_name_aws = 'ouestfrance/cdp-aws:latest'

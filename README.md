@@ -188,16 +188,27 @@ package:
     - cdp docker --image-tag-branch-name --use-gitlab-registry
     - cdp artifactory --image-tag-branch-name --put=conf/example.yaml
 
-deploy:
+deploy_review:
   variables:
     DNS_SUBDOMAIN: { ingress.k8s }
   image: ouestfrance/cdp:latest
   stage: deploy
   script:
-    - cdp k8s --use-gitlab-registry --namespace-project-branch-name --image-tag-branch-name --values=values.staging.yaml
+    - cdp k8s --use-gitlab-registry --namespace-project-branch-name --image-tag-branch-name
   environment:
     name: review/$CI_COMMIT_REF_NAME
     url: http://$CI_COMMIT_REF_SLUG.$CI_PROJECT_NAME.$DNS_SUBDOMAIN
+
+deploy_staging:
+  variables:
+    DNS_SUBDOMAIN: { ingress.k8s }
+  image: ouestfrance/cdp:latest
+  stage: deploy
+  script:
+    - cdp k8s --use-gitlab-registry --namespace-project-name --image-tag-sha1 --values=values.staging.yaml
+  environment:
+    name: staging
+    url: http://$CI_PROJECT_NAME.$DNS_SUBDOMAIN
 ```
 
 ### Environment variables set by the CDP
