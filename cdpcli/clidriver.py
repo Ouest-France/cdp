@@ -335,7 +335,7 @@ class CLIDriver(object):
             pullPolicy = 'Always'
 
 
-        command = 'upgrade %s' % namespace[:53]
+        command = 'upgrade --install %s' % namespace[:53]
         command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
         command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
         command = '%s --set namespace=%s' % (command, namespace)
