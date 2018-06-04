@@ -103,9 +103,9 @@ LOG.setLevel(logging.INFO)
 
 def main():
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
-    if opt['--verbose'] or os.getenv('CDP_LOG_LEVEL', None) == 'verbose':
+    if CLIDriver.verbose(opt['--verbose']):
         LOG.setLevel(logging.VERBOSE)
-    elif opt['--quiet'] or os.getenv('CDP_LOG_LEVEL', None) == 'warning':
+    elif CLIDriver.warning(opt['--quiet']):
         LOG.setLevel(logging.WARNING)
 
     driver = CLIDriver(cmd = CLICommand(opt['--dry-run']), opt = opt)
@@ -135,8 +135,8 @@ class CLIDriver(object):
 
     def main(self, args=None):
         try:
-            if self._context.opt['--verbose']:
-                self._cmd.run_command('env')
+            if self.verbose(self._context.opt['--verbose']):
+                self._cmd.run_command('env', dry_run=False)
 
             if self._context.opt['build']:
                 self.__build()
@@ -475,3 +475,11 @@ class CLIDriver(object):
             # TODO Exception process
         else:
             LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
+
+    @staticmethod
+    def verbose(verbose):
+        return verbose or os.getenv('CDP_LOG_LEVEL', None) == 'verbose'
+
+    @staticmethod
+    def warning(quiet):
+        return quiet or os.getenv('CDP_LOG_LEVEL', None) == 'warning'

@@ -133,7 +133,7 @@ class TestCliDriver(unittest.TestCase):
         command_name = 'mvn clean install'
         sleep = 10
         verif_cmd = [
-            {'cmd': 'env', 'output': 'unnecessary'},
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'k8s'), 'output': 'unnecessary'},
@@ -166,7 +166,7 @@ class TestCliDriver(unittest.TestCase):
         goals = 'clean install -DskipTests'
         sleep = 10
         verif_cmd = [
-            {'cmd': 'env', 'output': 'unnecessary'},
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'k8s'), 'output': 'unnecessary'},
@@ -242,7 +242,7 @@ class TestCliDriver(unittest.TestCase):
         image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:latest'
         sleep = 10
         verif_cmd = [
-            {'cmd': 'env', 'output': 'unnecessary'},
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'k8s'), 'output': 'unnecessary'},
@@ -335,7 +335,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
-            {'cmd': 'env', 'output': 'unnecessary'},
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': 'test\ntest2\n'},
@@ -357,7 +357,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
-            {'cmd': 'env', 'output': 'unnecessary'},
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': 'test\ntest2\n'},
@@ -526,7 +526,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
-            {'cmd': 'env', 'output': 'unnecessary'},
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --debug -i --namespace=%s'
@@ -614,7 +614,7 @@ class TestCliDriver(unittest.TestCase):
 
     def test_validator_verbose_path_namespaceprojectname_block(self):
         verif_cmd = [
-            {'cmd': 'env', 'output': 'unnecessary'},
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'validator-cli --url http://%s.%s/configurations --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator', '--verbose', '--namespace-project-name', '--block' }, verif_cmd)
