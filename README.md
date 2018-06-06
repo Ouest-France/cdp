@@ -35,7 +35,6 @@ Usage:
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
-        [--environment-name=<env_name>]
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
@@ -66,7 +65,6 @@ Options:
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:latest].
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version [default: 3.5-jdk-8].
-    --environment-name=<env_name>                              Specify environment name for gitlab. If not set, branch name is used.
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
