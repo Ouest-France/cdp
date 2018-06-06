@@ -90,6 +90,7 @@ class TestCliDriver(unittest.TestCase):
     cdp_sonar_url = "https://sonar:9000"
     cdp_sonar_login = "987656436908"
     cdp_gitlab_api_url = 'https://www.gitlab.com'
+    cdp_gitlab_api_token = 'azlemksiu84dza'
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -127,6 +128,9 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CDP_SONAR_URL'] = TestCliDriver.cdp_sonar_url
         os.environ['CDP_SONAR_LOGIN'] = TestCliDriver.cdp_sonar_login
         os.environ['CDP_GITLAB_API_URL'] = TestCliDriver.cdp_gitlab_api_url
+        os.environ['CDP_GITLAB_API_TOKEN'] = TestCliDriver.cdp_gitlab_api_token
+
+
 
 
     def test_build_verbose_simulatemergeon_sleep(self):
@@ -483,7 +487,7 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values, '--environment-name=%s' % env_name }, verif_cmd, docker_host = docker_host)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.ci_job_token)
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
         self.assertEqual(mock_env2.external_url, 'http://%s.%s.%s' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain))
         mock_env2.save.assert_called_with()
@@ -530,7 +534,7 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.ci_job_token)
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
         mock_environments.create.assert_called_with({'name': 'review/%s' % TestCliDriver.ci_commit_ref_name})
         self.assertEqual(mock_env3.external_url, 'http://%s.%s.%s' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain))
@@ -588,7 +592,7 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes, '--environment-name=%s' % env_name}, verif_cmd)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.ci_job_token)
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
         mock_environments.create.assert_called_with({'name': env_name})
         self.assertEqual(mock_env3.external_url, 'http://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain))
@@ -649,7 +653,7 @@ class TestCliDriver(unittest.TestCase):
         mock_dump.assert_called_with(data, mock_open.return_value.__enter__.return_value, default_flow_style=False)
 
         # GITLAB API check
-        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.ci_job_token)
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
         self.assertEqual(mock_env2.external_url, 'http://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain))
         mock_env2.save.assert_called_with()

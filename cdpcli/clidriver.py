@@ -496,7 +496,7 @@ class CLIDriver(object):
         return name
 
     def __get_environment(self):
-        gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CI_JOB_TOKEN'])
+        gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
         # Get a project by ID
         project = gl.projects.get(os.environ['CI_PROJECT_ID'])
 
