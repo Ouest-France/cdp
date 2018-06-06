@@ -31,7 +31,6 @@ Usage:
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
-        [--environment-name=<env_name>]
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
@@ -62,7 +61,6 @@ Options:
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:latest].
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version [default: 3.5-jdk-8].
-    --environment-name=<env_name>                              Specify environment name for gitlab. If not set, branch name is used.
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
@@ -365,8 +363,6 @@ class CLIDriver(object):
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
 
-        env = self.__create_environment()
-
         # Instal or Upgrade environnement
         helm_cmd.run(command)
 
@@ -393,7 +389,7 @@ class CLIDriver(object):
                 # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
                 kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
 
-        self.__update_environment(env)
+        self.__update_environment()
 
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
@@ -484,47 +480,31 @@ class CLIDriver(object):
         else:
             LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
 
-
-    def __get_environment_name(self):
-        if self._context.opt['--environment-name']:
-            name = self._context.opt['--environment-name']
-        elif self._context.opt['--namespace-project-branch-name'] or not self._context.opt['--namespace-project-name']:
-            name = 'review/%s' % os.environ['CI_COMMIT_REF_NAME']
-        else:
-            name = os.environ['CI_COMMIT_REF_NAME']
-
-        return name
-
     def __get_environment(self):
         gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
         # Get a project by ID
         project = gl.projects.get(os.environ['CI_PROJECT_ID'])
 
-        name = self.__get_environment_name()
         env = None
 
         # Find environment
         for environment in project.environments.list():
-            if environment.name == name:
+            if environment.name == os.getenv('CI_ENVIRONMENT_NAME', None):
                 env = environment
                 break
 
-        return env, project
-
-    def __create_environment(self):
-        env, project = self.__get_environment()
-        # If not found, create it
-        if env is None:
-            env = project.environments.create({'name': self.__get_environment_name()})
-
         return env
 
-    def __update_environment(self, env):
-        if env is None:
-            env = __create_environment()
-
-        env.external_url = 'http://%s' % self.__getHost()
-        env.save()
+    def __update_environment(self):
+        LOG.info('Search environment %s.' % os.getenv('CI_ENVIRONMENT_NAME', None))
+        env = self.__get_environment()
+        if env is not None:
+            external_url = 'http://%s' % self.__getHost()
+            env.external_url = external_url
+            env.save()
+            LOG.info('Update external url %s.' % external_url)
+        else:
+            LOG.warning('Environment %s not found.' % os.getenv('CI_ENVIRONMENT_NAME', None))
 
     @staticmethod
     def verbose(verbose):
