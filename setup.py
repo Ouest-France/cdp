@@ -24,6 +24,7 @@ def find_version(*file_paths):
 
 
 requires = ['docopt==0.6.2',
+            'python-gitlab==1.4.0',
             'verboselogs==1.7',
             'pyyaml==3.12']
 

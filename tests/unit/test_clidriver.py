@@ -8,7 +8,7 @@ from cdpcli.clicommand import CLICommand
 from cdpcli.clidriver import CLIDriver, __doc__
 from docopt import docopt, DocoptExit
 from freezegun import freeze_time
-from mock import call, patch
+from mock import call, patch, Mock
 
 class FakeCommand(object):
     def __init__(self, verif_cmd):
@@ -67,12 +67,14 @@ class TestCliDriver(unittest.TestCase):
     ci_commit_ref_name = 'branch_helloworld_with_many.characters_because_helm_k8s_because_the_length_must_not_longer_than.53'
     ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_53'
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
+    ci_project_id = '14'
     ci_project_name = 'helloworld'
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
     ci_deploy_user = 'gitlab+deploy-token-1'
     ci_deploy_password = 'ak5zALsZd8g5KvFRxMyD'
-    dns_subdomain = 'example.com'
+    cdp_dns_subdomain = 'example.com'
+    cdp_dns_subdomain_staging = 'staging.example.com'
     gitlab_token = 'azlemksiu76dza'
     gitlab_user_email = 'test@example.com'
     gitlab_user_name = 'Hello WORLD'
@@ -88,6 +90,8 @@ class TestCliDriver(unittest.TestCase):
     cdp_repository_maven_release = 'libs-release-local'
     cdp_sonar_url = "https://sonar:9000"
     cdp_sonar_login = "987656436908"
+    cdp_gitlab_api_url = 'https://www.gitlab.com'
+    cdp_gitlab_api_token = 'azlemksiu84dza'
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -102,12 +106,15 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_COMMIT_REF_NAME'] = TestCliDriver.ci_commit_ref_name
         os.environ['CI_COMMIT_REF_SLUG'] = TestCliDriver.ci_commit_ref_slug
         os.environ['CI_REGISTRY_IMAGE'] = TestCliDriver.ci_registry_image
+        os.environ['CI_PROJECT_ID'] = TestCliDriver.ci_project_id
         os.environ['CI_PROJECT_NAME'] = TestCliDriver.ci_project_name
         os.environ['CI_PROJECT_PATH'] = TestCliDriver.ci_project_path
         os.environ['CI_PROJECT_PATH_SLUG'] = TestCliDriver.ci_project_path_slug
         os.environ['CI_DEPLOY_USER'] = TestCliDriver.ci_deploy_user
         os.environ['CI_DEPLOY_PASSWORD'] = TestCliDriver.ci_deploy_password
-        os.environ['DNS_SUBDOMAIN'] = TestCliDriver.dns_subdomain
+        os.environ['CDP_DNS_SUBDOMAIN_DEFAULT'] = TestCliDriver.cdp_dns_subdomain
+        os.environ['CDP_DNS_SUBDOMAIN_PROD'] = TestCliDriver.cdp_dns_subdomain
+        os.environ['CDP_DNS_SUBDOMAIN_STAGING'] = TestCliDriver.cdp_dns_subdomain_staging
         os.environ['GITLAB_TOKEN'] = TestCliDriver.gitlab_token
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
         os.environ['GITLAB_USER_NAME'] = TestCliDriver.gitlab_user_name
@@ -123,6 +130,10 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CDP_REPOSITORY_MAVEN_RELEASE'] = TestCliDriver.cdp_repository_maven_release
         os.environ['CDP_SONAR_URL'] = TestCliDriver.cdp_sonar_url
         os.environ['CDP_SONAR_LOGIN'] = TestCliDriver.cdp_sonar_login
+        os.environ['CDP_GITLAB_API_URL'] = TestCliDriver.cdp_gitlab_api_url
+        os.environ['CDP_GITLAB_API_TOKEN'] = TestCliDriver.cdp_gitlab_api_token
+
+
 
 
     def test_build_verbose_simulatemergeon_sleep(self):
@@ -188,7 +199,6 @@ class TestCliDriver(unittest.TestCase):
         image_name_git = 'ouestfrance/cdp-git:latest'
         goals = 'clean install -DskipTests'
         maven_opts = '-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository -e'
-        os.environ['MAVEN_OPTS'] = maven_opts
         verif_cmd = [
             {'cmd': 'docker pull %s' % image_name_git, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_git, 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'k8s'), 'output': 'unnecessary'},
@@ -199,7 +209,8 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': self.__get_rundocker_cmd('maven:%s' % image_version, 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTest -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'k8s', False), 'output': 'unnecessary'}
         ]
 
-        self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=release'}, verif_cmd)
+        self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=release'},
+            verif_cmd, env_vars = {'MAVEN_OPTS': maven_opts})
 
 
     def test_maven_deployrelease_mavenreleaseversion(self):
@@ -290,7 +301,6 @@ class TestCliDriver(unittest.TestCase):
         sleep = 10
 
         docker_host = 'unix:///var/run/docker.sock'
-        os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
@@ -298,7 +308,8 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--sleep=%s' % sleep }, verif_cmd, docker_host = docker_host)
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--sleep=%s' % sleep },
+            verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host})
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry(self):
         # Create FakeCommand
@@ -378,7 +389,6 @@ class TestCliDriver(unittest.TestCase):
         upload_file = 'config/values.yaml'
 
         docker_host = 'unix:///var/run/docker.sock'
-        os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
             {'cmd': 'curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s'
@@ -394,7 +404,8 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.cdp_artifactory_token,
                     upload_file ), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'artifactory', '--put=%s' % upload_file, '--image-tag-sha1', '--image-tag-latest' }, verif_cmd, docker_host = docker_host)
+        self.__run_CLIDriver({ 'artifactory', '--put=%s' % upload_file, '--image-tag-sha1', '--image-tag-latest' },
+            verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host})
 
     def test_artifactory_del(self):
         # Create FakeCommand
@@ -432,7 +443,13 @@ class TestCliDriver(unittest.TestCase):
             os.environ['CI_DEPLOY_PASSWORD'] = TestCliDriver.ci_deploy_password
 
 
-    def test_k8s_usegitlabregistry_namespaceprojectbranchname_values_dockerhost(self):
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
+    def test_k8s_usegitlabregistry_namespaceprojectbranchname_values_dockerhost(self, mock_Gitlab):
+        env_name = 'production'
+
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
+
         # Create FakeCommand
         image_name_kubectl = 'ouestfrance/cdp-kubectl:latest'
         image_name_helm = 'ouestfrance/cdp-helm:latest'
@@ -443,7 +460,6 @@ class TestCliDriver(unittest.TestCase):
         values = ','.join([staging_file, int_file])
 
         docker_host = 'unix:///var/run/docker.sock'
-        os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
@@ -454,7 +470,7 @@ class TestCliDriver(unittest.TestCase):
                     namespace,
                     TestCliDriver.ci_commit_ref_slug,
                     TestCliDriver.ci_project_name,
-                    TestCliDriver.dns_subdomain,
+                    TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.ci_registry,
                     TestCliDriver.ci_project_path.lower(),
@@ -470,7 +486,15 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package1 -n %s' % namespace, 'k8s'), 'output': 'deployments/package1', 'timeout': '600'},
             {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package2 -n %s' % namespace, 'k8s'), 'output': 'deployments/package2', 'timeout': '600'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd, docker_host = docker_host)
+        self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values },
+            verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST': docker_host, 'CI_ENVIRONMENT_NAME': env_name})
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+        self.assertEqual(mock_env2.external_url, 'http://%s.%s.%s' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        mock_env2.save.assert_called_with()
+
 
     def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self):
         # Create FakeCommand
@@ -490,7 +514,7 @@ class TestCliDriver(unittest.TestCase):
                     namespace,
                     TestCliDriver.ci_commit_ref_slug,
                     TestCliDriver.ci_project_name,
-                    TestCliDriver.dns_subdomain,
+                    TestCliDriver.cdp_dns_subdomain_staging,
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.cdp_custom_registry,
                     TestCliDriver.ci_project_path.lower(),
@@ -506,7 +530,8 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package1 -n %s' % namespace, 'k8s'), 'output': 'deployments/package1', 'timeout': '600'},
             {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package2 -n %s' % namespace, 'k8s'), 'output': 'deployments/package2', 'timeout': '600'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
+            env_vars = {'CI_RUNNER_TAGS': 'test, staging'})
 
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self):
@@ -535,7 +560,7 @@ class TestCliDriver(unittest.TestCase):
                     timeout,
                     namespace,
                     TestCliDriver.ci_project_name,
-                    TestCliDriver.dns_subdomain,
+                    TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
                     TestCliDriver.ci_project_path.lower(),
@@ -551,14 +576,21 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'get deployments -n %s -o name' % (namespace), 'k8s'), 'output': 'deployments/package1'},
             {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package1 -n %s' % (namespace), 'k8s'), 'output': 'unnecessary', 'timeout': str(timeout)}
         ]
-        self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes}, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes}, verif_cmd,
+            env_vars = {'CI_RUNNER_TAGS': 'test, test2'})
 
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
     @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("__builtin__.open")
     @patch("cdpcli.clidriver.yaml.dump")
-    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir):
+    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
+        env_name = 'review/test'
+
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
+
         # Create FakeCommand
         image_name_aws = 'ouestfrance/cdp-aws:latest'
         image_name_kubectl = 'ouestfrance/cdp-kubectl:latest'
@@ -579,7 +611,7 @@ class TestCliDriver(unittest.TestCase):
                     deploy_spec_dir,
                     namespace,
                     TestCliDriver.ci_project_name,
-                    TestCliDriver.dns_subdomain,
+                    TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
                     TestCliDriver.ci_project_path.lower(),
@@ -589,7 +621,8 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': self.__get_rundocker_cmd(image_name_kubectl, 'rollout status deployments/package1 -n %s' % (namespace), 'k8s'), 'output': 'unnecessary', 'timeout': '600'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
+            verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name, 'CI_RUNNER_TAGS': 'test'})
 
         mock_isdir.assert_called_with('%s/templates' % deploy_spec_dir)
         mock_isfile.assert_has_calls([call.isfile('%s/values.yaml' % deploy_spec_dir), call.isfile('%s/Chart.yaml' % deploy_spec_dir)])
@@ -603,19 +636,25 @@ class TestCliDriver(unittest.TestCase):
         )
         mock_dump.assert_called_with(data, mock_open.return_value.__enter__.return_value, default_flow_style=False)
 
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+        self.assertEqual(mock_env2.external_url, 'http://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        mock_env2.save.assert_called_with()
+
+
     def test_validator_dockerhost(self):
         docker_host = 'unix:///var/run/docker.sock'
-        os.environ['DOCKER_HOST'] = docker_host
 
         verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s.%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
+            {'cmd': 'validator-cli --url http://%s.%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'validator' }, verif_cmd, docker_host = docker_host)
+        self.__run_CLIDriver({ 'validator' }, verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST' : docker_host})
 
     def test_validator_verbose_path_namespaceprojectname_block(self):
         verif_cmd = [
             {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
-            {'cmd': 'validator-cli --url http://%s.%s/configurations --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain), 'output': 'unnecessary'}
+            {'cmd': 'validator-cli --url http://%s.%s/configurations --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator', '--verbose', '--namespace-project-name', '--block' }, verif_cmd)
 
@@ -625,30 +664,33 @@ class TestCliDriver(unittest.TestCase):
         sleep = 10
 
         verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s.%s.%s/%s --schema BlockJSON' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.dns_subdomain, path), 'output': 'unnecessary'},
+            {'cmd': 'validator-cli --url http://%s.%s.%s/%s --schema BlockJSON' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, path), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator', '--path=%s' % path, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
 
-    def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock'):
+    def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock', env_vars = {}):
         cdp_docker_host_internal = '172.17.0.1'
         try:
+            for key,val in env_vars.items():
+                os.environ[key] = val
+
             verif_cmd.insert(0, {'cmd': 'ip route | awk \'NR==1 {print $3}\'', 'output': cdp_docker_host_internal})
             cmd = FakeCommand(verif_cmd = verif_cmd)
             cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
             cli.main()
-        except AssertionError as e:
-             print e
+        except BaseException as e:
+            print '************************** ERROR *******************************'
+            print e
+            print '****************************************************************'
         finally:
             try:
                 self.assertEqual(docker_host, os.environ['DOCKER_HOST'])
                 self.assertEqual(cdp_docker_host_internal, os.environ['CDP_DOCKER_HOST_INTERNAL'])
                 cmd.verify_commands()
             finally:
-                del os.environ['DOCKER_HOST']
-                del os.environ['CDP_DOCKER_HOST_INTERNAL']
-                if os.getenv('MAVEN_OPTS', None) is not None:
-                    del os.environ['MAVEN_OPTS']
+                for key,val in env_vars.items():
+                    del os.environ[key]
 
     def __get_rundocker_cmd(self, docker_image, prg_cmd, volume_from = None, with_entrypoint = True):
         run_docker_cmd = 'docker run --rm -e DOCKER_HOST $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\|^KUBERNETES\)" | cut -f1 -d= | sed \'s/^/-e /\') -v /var/run/docker.sock:/var/run/docker.sock'
@@ -668,3 +710,22 @@ class TestCliDriver(unittest.TestCase):
             run_docker_cmd = '%s /bin/sh -c \'%s\'' % (run_docker_cmd, prg_cmd)
 
         return run_docker_cmd
+
+
+    def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2'):
+        mock_env1 = Mock()
+        mock_env1.name = 'test'
+        mock_env2 = Mock()
+        mock_env2.name = mock_env2_name
+
+        mock_environments = Mock()
+        attrs1 = {'list.return_value': [mock_env1, mock_env2]}
+        mock_environments.configure_mock(**attrs1)
+
+        mock_projects = Mock()
+        attrs = {'get.return_value.environments': mock_environments}
+        mock_projects.configure_mock(**attrs)
+
+        mock_Gitlab.return_value.projects = mock_projects
+
+        return mock_projects, mock_environments, mock_env1, mock_env2

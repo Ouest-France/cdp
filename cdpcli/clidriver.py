@@ -90,6 +90,7 @@ import sys, os
 import logging, verboselogs
 import time, datetime
 import yaml
+import gitlab
 from Context import Context
 from clicommand import CLICommand
 from cdpcli import __version__
@@ -361,6 +362,7 @@ class CLIDriver(object):
         command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
+
         # Instal or Upgrade environnement
         helm_cmd.run(command)
 
@@ -386,6 +388,8 @@ class CLIDriver(object):
             for ressource in ressources:
                 # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
                 kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
+
+        self.__update_environment()
 
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
@@ -449,11 +453,24 @@ class CLIDriver(object):
         return namespace.replace('_', '-')
 
     def __getHost(self):
+        dns_subdomain = os.getenv('DNS_SUBDOMAIN', None) # Deprecated
+        if dns_subdomain is None:
+            ci_runner_tags = os.getenv('CI_RUNNER_TAGS', None)
+            if ci_runner_tags is not None:
+                tags = ci_runner_tags.strip().split(',')
+                for tag in tags:
+                    dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_%s' % tag.strip().upper().replace('-', '_'), None)
+                    if dns_subdomain is not None:
+                        break;
+
+        if dns_subdomain is None:
+            dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_DEFAULT', None)
+
         # Get k8s namespace
         if self._context.opt['--namespace-project-name']:
-            return '%s.%s' % (os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
+            return '%s.%s' % (os.environ['CI_PROJECT_NAME'], dns_subdomain)
         else:
-            return '%s.%s.%s' % (os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], os.environ['DNS_SUBDOMAIN'])
+            return '%s.%s.%s' % (os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], dns_subdomain)
 
     def __simulate_merge_on(self, force_git_config = False):
         if force_git_config or self._context.opt['--simulate-merge-on']:
@@ -475,6 +492,35 @@ class CLIDriver(object):
             # TODO Exception process
         else:
             LOG.notice('Build docker image with the current branch : %s', os.environ['CI_COMMIT_REF_NAME'])
+
+    def __get_environment(self):
+        if os.getenv('CDP_GITLAB_API_URL', None) is not None and os.getenv('CDP_GITLAB_API_TOKEN', None) is not None:
+            gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
+            # Get a project by ID
+            project = gl.projects.get(os.environ['CI_PROJECT_ID'])
+
+            env = None
+
+            # Find environment
+            for environment in project.environments.list():
+                if environment.name == os.getenv('CI_ENVIRONMENT_NAME', None):
+                    env = environment
+                    break
+
+            return env
+
+    def __update_environment(self):
+        if os.getenv('CI_ENVIRONMENT_NAME', None) is not None:
+            LOG.info('******************** Update env url ********************')
+            LOG.info('Search environment %s.' % os.getenv('CI_ENVIRONMENT_NAME', None))
+            env = self.__get_environment()
+            if env is not None:
+                external_url = 'http://%s' % self.__getHost()
+                env.external_url = external_url
+                env.save()
+                LOG.info('Update external url %s.' % external_url)
+            else:
+                LOG.warning('Environment %s not found.' % os.getenv('CI_ENVIRONMENT_NAME', None))
 
     @staticmethod
     def verbose(verbose):
