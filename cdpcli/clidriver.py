@@ -459,7 +459,7 @@ class CLIDriver(object):
             if ci_runner_tags is not None:
                 tags = ci_runner_tags.strip().split(',')
                 for tag in tags:
-                    dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_%s' % tag.strip().upper(), None)
+                    dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_%s' % tag.strip().upper().replace('-', '_'), None)
                     if dns_subdomain is not None:
                         break;
 
