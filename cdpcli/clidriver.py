@@ -470,7 +470,7 @@ class CLIDriver(object):
         if self._context.opt['--namespace-project-name']:
             return '%s.%s' % (os.environ['CI_PROJECT_NAME'], dns_subdomain)
         else:
-            return '%s.%s.%s' % (os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], dns_subdomain)
+            return '%s-%s.%s' % (os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], dns_subdomain)
 
     def __simulate_merge_on(self, force_git_config = False):
         if force_git_config or self._context.opt['--simulate-merge-on']:
