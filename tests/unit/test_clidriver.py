@@ -465,7 +465,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s-%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
                     TestCliDriver.ci_commit_ref_slug,
@@ -492,7 +492,7 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'http://%s.%s.%s' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'http://%s-%s.%s' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
 
@@ -509,7 +509,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
+            {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s-%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
                     TestCliDriver.ci_commit_ref_slug,
@@ -647,7 +647,7 @@ class TestCliDriver(unittest.TestCase):
         docker_host = 'unix:///var/run/docker.sock'
 
         verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s.%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain), 'output': 'unnecessary'}
+            {'cmd': 'validator-cli --url http://%s-%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator' }, verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST' : docker_host})
 
@@ -664,7 +664,7 @@ class TestCliDriver(unittest.TestCase):
         sleep = 10
 
         verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s.%s.%s/%s --schema BlockJSON' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, path), 'output': 'unnecessary'},
+            {'cmd': 'validator-cli --url http://%s-%s.%s/%s --schema BlockJSON' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, path), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'validator', '--path=%s' % path, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
