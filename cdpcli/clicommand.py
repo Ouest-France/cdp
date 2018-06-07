@@ -12,7 +12,7 @@ class CLICommand(object):
         LOG.verbose('Dry-run init %s' % self._dry_run)
 
     def run_command(self, command, dry_run = None, timeout = None):
-        self._output = None
+        self._output = ''
         self._process = None
         if dry_run is None:
             self._real_dry_run = self._dry_run
@@ -38,7 +38,7 @@ class CLICommand(object):
             self._process.terminate()
             thread.join()
 
-        if self._process.returncode != 0:
+        if self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
             raise ValueError(self._output)
         else:
