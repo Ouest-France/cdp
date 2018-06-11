@@ -1,5 +1,6 @@
 import subprocess, threading
 import logging, verboselogs
+import timeit
 
 LOG = verboselogs.VerboseLogger('clicommand')
 LOG.addHandler(logging.StreamHandler())
@@ -12,7 +13,9 @@ class CLICommand(object):
         LOG.verbose('Dry-run init %s' % self._dry_run)
 
     def run_command(self, command, dry_run = None, timeout = None):
+        start = timeit.default_timer()
         self._output = ''
+        self._error = ''
         self._process = None
         if dry_run is None:
             self._real_dry_run = self._dry_run
@@ -23,7 +26,7 @@ class CLICommand(object):
             # If dry-run option, no execute command
             if not self._real_dry_run:
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-                self._output, error = self._process.communicate()
+                self._output, self._error = self._process.communicate()
 
         thread = threading.Thread(target=target)
         thread.start()
@@ -31,8 +34,11 @@ class CLICommand(object):
         LOG.info('')
         LOG.info('******************** Run command ********************')
         LOG.info(command)
+        LOG.info('---------- Output ----------')
+        LOG.info(self._output)
 
         thread.join(timeout if timeout is None else float(timeout))
+        LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
 
         if thread.is_alive():
             self._process.terminate()
@@ -40,10 +46,7 @@ class CLICommand(object):
 
         if self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
-            raise ValueError(self._output)
-        else:
-            LOG.info('---------- Output ----------')
-            LOG.info(self._output)
+            raise ValueError(self._error)
 
         LOG.info('')
 

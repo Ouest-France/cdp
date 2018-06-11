@@ -23,6 +23,16 @@
       </activation>
       <repositories>
         <repository>
+          <id>central</id>
+          <url>http://repo.maven.apache.org/maven2</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+        <repository>
           <id>release</id>
           <url>${env.CDP_REPOSITORY_URL}/${env.CDP_REPOSITORY_MAVEN_RELEASE}</url>
           <snapshots>
