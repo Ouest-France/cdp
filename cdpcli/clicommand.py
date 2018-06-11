@@ -44,7 +44,7 @@ class CLICommand(object):
 
         if self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
-            raise ValueError(self._error)
+            raise ValueError(self._output)
         else:
             LOG.info('---------- Output ----------')
             LOG.info(self._output)
