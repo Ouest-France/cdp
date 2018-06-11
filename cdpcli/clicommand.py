@@ -31,15 +31,9 @@ class CLICommand(object):
             if not self._real_dry_run:
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 self._output, self._error = self._process.communicate()
-                LOG.info('---------- Output ----------')
-                while self._process.poll() is None:
-                    log = self._process.stdout.readline()
-                    if log:
-                        LOG.info(log)
 
         thread = threading.Thread(target=target)
         thread.start()
-
         thread.join(timeout if timeout is None else float(timeout))
 
         if thread.is_alive():
@@ -51,6 +45,9 @@ class CLICommand(object):
         if self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
             raise ValueError(self._error)
+        else:
+            LOG.info('---------- Output ----------')
+            LOG.info(self._output)
 
         LOG.info('')
 
