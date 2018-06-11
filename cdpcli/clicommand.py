@@ -38,11 +38,12 @@ class CLICommand(object):
         LOG.info(self._output)
 
         thread.join(timeout if timeout is None else float(timeout))
-        LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
 
         if thread.is_alive():
             self._process.terminate()
             thread.join()
+            
+        LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
 
         if self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
