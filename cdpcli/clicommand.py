@@ -34,13 +34,16 @@ class CLICommand(object):
         LOG.info('')
         LOG.info('******************** Run command ********************')
         LOG.info(command)
-        LOG.info('---------- Output ----------')
-        while self._process.poll() is None:
-            LOG.info(self._process.stdout.readline())
 
         thread.join(timeout if timeout is None else float(timeout))
 
         if thread.is_alive():
+            LOG.info('---------- Output ----------')
+            while self._process.poll() is None:
+                log = self._process.stdout.readline()
+                if log:
+                    LOG.info(log)
+
             self._process.terminate()
             thread.join()
 
