@@ -35,14 +35,15 @@ class CLICommand(object):
         LOG.info('******************** Run command ********************')
         LOG.info(command)
         LOG.info('---------- Output ----------')
-        LOG.info(self._output)
+        while self._process.poll() is None:
+            LOG.info(self._process.stdout.readline())
 
         thread.join(timeout if timeout is None else float(timeout))
 
         if thread.is_alive():
             self._process.terminate()
             thread.join()
-            
+
         LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
 
         if self._process is not None and self._process.returncode != 0:
