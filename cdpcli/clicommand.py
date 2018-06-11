@@ -22,28 +22,27 @@ class CLICommand(object):
         else:
             self._real_dry_run = dry_run
 
+        LOG.info('')
+        LOG.info('******************** Run command ********************')
+        LOG.info(command)
+
         def target():
             # If dry-run option, no execute command
             if not self._real_dry_run:
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 self._output, self._error = self._process.communicate()
+                LOG.info('---------- Output ----------')
+                while self._process.poll() is None:
+                    log = self._process.stdout.readline()
+                    if log:
+                        LOG.info(log)
 
         thread = threading.Thread(target=target)
         thread.start()
 
-        LOG.info('')
-        LOG.info('******************** Run command ********************')
-        LOG.info(command)
-
         thread.join(timeout if timeout is None else float(timeout))
 
         if thread.is_alive():
-            LOG.info('---------- Output ----------')
-            while self._process.poll() is None:
-                log = self._process.stdout.readline()
-                if log:
-                    LOG.info(log)
-
             self._process.terminate()
             thread.join()
 
