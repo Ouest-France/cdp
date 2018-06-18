@@ -92,6 +92,7 @@ class TestCliDriver(unittest.TestCase):
     cdp_sonar_login = "987656436908"
     cdp_gitlab_api_url = 'https://www.gitlab.com'
     cdp_gitlab_api_token = 'azlemksiu84dza'
+    cdp_bp_validator_host = 'https://validator-server.com'
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -132,6 +133,7 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CDP_SONAR_LOGIN'] = TestCliDriver.cdp_sonar_login
         os.environ['CDP_GITLAB_API_URL'] = TestCliDriver.cdp_gitlab_api_url
         os.environ['CDP_GITLAB_API_TOKEN'] = TestCliDriver.cdp_gitlab_api_token
+        os.environ['CDP_BP_VALIDATOR_HOST'] = TestCliDriver.cdp_bp_validator_host
 
 
 
@@ -643,31 +645,54 @@ class TestCliDriver(unittest.TestCase):
         mock_env2.save.assert_called_with()
 
 
-    def test_validator_dockerhost(self):
+    def test_validator_validateconfigurations_dockerhost(self):
         docker_host = 'unix:///var/run/docker.sock'
 
-        verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s-%s.%s/configurations --schema BlockProviderConfig' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain), 'output': 'unnecessary'}
-        ]
-        self.__run_CLIDriver({ 'validator' }, verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST' : docker_host})
+        url = '%s/validate/configurations?url=http://%s-%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
-    def test_validator_verbose_path_namespaceprojectname_block(self):
+        verif_cmd = [
+            {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
+            {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'validator-server', '--validate-configurations' }, verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST' : docker_host})
+
+    def test_validator_verbose_namespaceprojectname_validateconfigurations(self):
+
+        url = '%s/validate/configurations?url=http://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
+
         verif_cmd = [
             {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
-            {'cmd': 'validator-cli --url http://%s.%s/configurations --schema BlockConfig' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain), 'output': 'unnecessary'}
+            {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
+            {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'validator', '--verbose', '--namespace-project-name', '--block' }, verif_cmd)
+        self.__run_CLIDriver({ 'validator-server', '--verbose', '--namespace-project-name', '--validate-configurations' }, verif_cmd)
 
-    def test_validator_url_blockjson_sleep(self):
-        url = 'http://test.com/configuration2'
+    def test_validator_path_validateconfigurations_sleep(self):
         path = 'blockconfigurations'
         sleep = 10
+        url = '%s/validate/configurations?url=http://%s-%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, path)
 
         verif_cmd = [
-            {'cmd': 'validator-cli --url http://%s-%s.%s/%s --schema BlockJSON' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, path), 'output': 'unnecessary'},
+            {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
+            {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'validator', '--path=%s' % path, '--block-json', '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'validator-server', '--path=%s' % path, '--validate-configurations', '--sleep=%s' % sleep }, verif_cmd)
+
+
+    def test_validator_validateconfigurations_ko(self):
+        url = '%s/validate/configurations?url=http://%s-%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
+
+        verif_cmd = [
+            {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
+            {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary', 'throw': ValueError}
+        ]
+        try:
+            self.__run_CLIDriver({ 'validator-server', '--validate-configurations' }, verif_cmd)
+            raise ValueError('Previous command must return error.')
+        except ValueError as e:
+            # Ok beacause previous command return error.
+             print e
 
     def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock', env_vars = {}):
         cdp_docker_host_internal = '172.17.0.1'
@@ -683,6 +708,7 @@ class TestCliDriver(unittest.TestCase):
             print '************************** ERROR *******************************'
             print e
             print '****************************************************************'
+            raise e
         finally:
             try:
                 self.assertEqual(docker_host, os.environ['DOCKER_HOST'])

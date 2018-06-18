@@ -34,9 +34,9 @@ Usage:
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
-    cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+    cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
-        [--block-provider | --block | --block-json]
+        (--validate-configurations)
         [--namespace-project-branch-name | --namespace-project-name]
     cdp (-h | --help | --version)
 Options:
@@ -44,9 +44,6 @@ Options:
     -v, --verbose                                              Make more noise.
     -q, --quiet                                                Make less noise.
     -d, --dry-run                                              Simulate execution.
-    --block                                                    Valid BlockConfig interface.
-    --block-json                                               Valid BlockJSON interface.
-    --block-provider                                           Valid BlockProviderConfig interface [default].
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --create-default-helm                                      Create default helm for simple project (One docker image).
@@ -81,6 +78,7 @@ Options:
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image.
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default].
+    --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker or k8s [default: k8s]
 """
@@ -157,7 +155,7 @@ class CLIDriver(object):
             if self._context.opt['k8s']:
                 self.__k8s()
 
-            if self._context.opt['validator']:
+            if self._context.opt['validator-server']:
                 self.__validator()
 
         finally:
@@ -413,16 +411,18 @@ class CLIDriver(object):
             self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
-        if self._context.opt['--block']:
-            schema =  'BlockConfig'
-        elif self._context.opt['--block-json']:
-            schema = 'BlockJSON'
-        else :
-            schema = 'BlockProviderConfig'
-
         url = 'http://%s/%s' % (self.__getHost(), self._context.opt['--path'])
 
-        self._cmd.run_command('validator-cli --url %s --schema %s' % (url, schema))
+        if self._context.opt['--validate-configurations']:
+            url_validator = '%s/validate/configurations?url=%s' % (os.environ['CDP_BP_VALIDATOR_HOST'], url)
+        else :
+            raise ValueError('NOT IMPLEMENTED')
+
+        LOG.info('---------- Silent mode ----------')
+        self._cmd.run_command('curl -s %s | jq .' % url_validator)
+
+        LOG.info('---------- Failed mode ----------')
+        self._cmd.run_command('curl -sf --output /dev/null %s' % url_validator)
 
 
     def __getImageName(self):

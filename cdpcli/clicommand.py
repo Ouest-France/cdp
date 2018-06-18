@@ -40,8 +40,6 @@ class CLICommand(object):
             self._process.terminate()
             thread.join()
 
-        LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
-
         if self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
             raise ValueError(self._output)
@@ -49,6 +47,7 @@ class CLICommand(object):
             LOG.info('---------- Output ----------')
             LOG.info(self._output)
 
+        LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
         LOG.info('')
 
         return self._output

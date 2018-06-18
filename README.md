@@ -38,9 +38,9 @@ Usage:
         [--create-default-helm] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
-    cdp validator [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+    cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
-        [--block-provider | --block | --block-json]
+        (--validate-configurations)
         [--namespace-project-branch-name | --namespace-project-name]
     cdp (-h | --help | --version)
 Options:
@@ -48,9 +48,6 @@ Options:
     -v, --verbose                                              Make more noise.
     -q, --quiet                                                Make less noise.
     -d, --dry-run                                              Simulate execution.
-    --block                                                    Valid BlockConfig interface.
-    --block-json                                               Valid BlockJSON interface.
-    --block-provider                                           Valid BlockProviderConfig interface [default].
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --create-default-helm                                      Create default helm for simple project (One docker image).
@@ -85,6 +82,7 @@ Options:
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image.
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default].
+    --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker or k8s [default: k8s]
 ```
@@ -141,6 +139,9 @@ artifactory:
   --put=<file>|--delete=<file>:
     - CDP_ARTIFACTORY_PATH (Gitlab-runner env var) – Repository path used for put or delete file.
     - CDP_ARTIFACTORY_TOKEN (Gitlab-runner env var) – Access token used by X-JFrog-Art-Api header for autentication on artifactory.
+
+validator-server:
+  - CDP_BP_VALIDATOR_HOST – Validator server access (example - https://validator.example.com)
 ```
 
 ### Example .gitlab-ci.yml file
@@ -266,11 +267,6 @@ spec:
           ...
 ...
 ```
-
-## Command Completion
-
-501. Not implemented :)
-
 
 ## Development
 
