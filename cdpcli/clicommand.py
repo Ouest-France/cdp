@@ -13,6 +13,12 @@ class CLICommand(object):
         LOG.verbose('Dry-run init %s' % self._dry_run)
 
     def run_command(self, command, dry_run = None, timeout = None):
+        LOG.info('')
+        LOG.info('******************** Run command ********************')
+        LOG.info(command)
+        return self.run(command, dry_run, timeout)
+
+    def run(self, command, dry_run = None, timeout = None):
         start = timeit.default_timer()
         self._output = ''
         self._error = ''
@@ -21,10 +27,6 @@ class CLICommand(object):
             self._real_dry_run = self._dry_run
         else:
             self._real_dry_run = dry_run
-
-        LOG.info('')
-        LOG.info('******************** Run command ********************')
-        LOG.info(command)
 
         def target():
             # If dry-run option, no execute command
