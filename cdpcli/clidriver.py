@@ -126,6 +126,9 @@ class CLIDriver(object):
 
         LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
 
+        if self.verbose(opt['--verbose']):
+            self._cmd.run_command('env', dry_run=False)
+
         if opt is None:
             raise ValueError('TODO')
         else:
@@ -134,9 +137,6 @@ class CLIDriver(object):
 
     def main(self, args=None):
         try:
-            if self.verbose(self._context.opt['--verbose']):
-                self._cmd.run_command('env', dry_run=False)
-
             if self._context.opt['build']:
                 self.__build()
 
@@ -159,8 +159,9 @@ class CLIDriver(object):
                 self.__validator()
 
         finally:
-            if self._context.opt['--sleep'] != "0":
-                self._cmd.run_command('sleep %s' % self._context.opt['--sleep'])
+            sleep = self.sleep(self._context.opt['--sleep'])
+            if sleep is not None and sleep != "0":
+                self._cmd.run_command('sleep %s' % sleep)
 
 
     def __build(self):
@@ -529,3 +530,10 @@ class CLIDriver(object):
     @staticmethod
     def warning(quiet):
         return quiet or os.getenv('CDP_LOG_LEVEL', None) == 'warning'
+
+    @staticmethod
+    def sleep(sleep):
+        if sleep:
+            return sleep
+        else:
+            return os.getenv('CDP_SLEEP', None)

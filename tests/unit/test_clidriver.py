@@ -346,9 +346,9 @@ class TestCliDriver(unittest.TestCase):
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
-            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': 'test\ntest2\n'},
@@ -368,9 +368,9 @@ class TestCliDriver(unittest.TestCase):
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
-            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': 'test\ntest2\n'},
@@ -551,9 +551,9 @@ class TestCliDriver(unittest.TestCase):
         date_format = '%Y-%m-%dT%H%M%SZ'
 
         verif_cmd = [
+            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_aws, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_aws, 'ecr get-login --no-include-email'), 'output': login_cmd, 'dry_run': False},
-            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % image_name_helm, 'output': 'unnecessary'},
             {'cmd': self.__get_rundocker_cmd(image_name_helm, 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --debug -i --namespace=%s'
