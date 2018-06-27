@@ -36,4 +36,11 @@ class DockerCommand(object):
         else:
             run_docker_cmd = '%s /bin/sh -c \'%s\'' % (run_docker_cmd, prg_cmd)
 
-        return self._cmd.run_command(run_docker_cmd, dry_run=dry_run, timeout=timeout)
+
+        LOG.info('')
+        LOG.info('******************** Docker command ********************')
+        LOG.info('Image: %s' % self._docker_image)
+        LOG.info('Command: %s' % prg_cmd)
+        LOG.verbose(run_docker_cmd)
+
+        return self._cmd.run(run_docker_cmd, dry_run=dry_run, timeout=timeout)

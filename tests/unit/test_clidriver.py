@@ -17,6 +17,9 @@ class FakeCommand(object):
         self._tc = unittest.TestCase('__init__')
 
     def run_command(self, cmd, dry_run = None, timeout = None):
+        return self.run(cmd, dry_run, timeout)
+
+    def run(self, cmd, dry_run = None, timeout = None):
         print cmd
         try:
 
