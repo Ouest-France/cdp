@@ -1,5 +1,6 @@
 import subprocess
 import logging, verboselogs
+import os
 
 LOG = verboselogs.VerboseLogger('dockercommand')
 LOG.addHandler(logging.StreamHandler())
@@ -16,7 +17,11 @@ class DockerCommand(object):
 
     def run(self, prg_cmd, dry_run = None, timeout = None):
         run_docker_cmd = 'docker run --rm -e DOCKER_HOST'
-        run_docker_cmd = '%s $(env | grep "\(^CI\|^CDP\|^AWS\|^GIT\|^KUBERNETES\)" | cut -f1 -d= | sed \'s/^/-e /\')' % (run_docker_cmd)
+
+        for env in os.environ:
+            if env.startswith('CI') or env.startswith('CDP') or env.startswith('AWS') or env.startswith('GIT') or env.startswith('KUBERNETES'):
+                run_docker_cmd = '%s -e %s' % (run_docker_cmd, env)
+
         run_docker_cmd = '%s -v /var/run/docker.sock:/var/run/docker.sock' % (run_docker_cmd)
 
         if self._volume_from == 'k8s':
