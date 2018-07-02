@@ -492,7 +492,7 @@ class TestCliDriver(unittest.TestCase):
 
         # Create FakeCommand
         namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
-        namespace = namespace.replace('_', '-')
+        namespace = namespace.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
@@ -537,7 +537,7 @@ class TestCliDriver(unittest.TestCase):
     def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self):
         # Create FakeCommand
         namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
-        namespace = namespace.replace('_', '-')
+        namespace = namespace.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])

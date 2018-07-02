@@ -451,7 +451,7 @@ class CLIDriver(object):
         else:
             namespace = '%s-%s' % (os.environ['CI_PROJECT_NAME'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
 
-        return namespace.replace('_', '-')
+        return namespace.replace('_', '-')[:63]
 
     def __getHost(self):
         dns_subdomain = os.getenv('DNS_SUBDOMAIN', None) # Deprecated
