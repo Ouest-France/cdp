@@ -31,7 +31,7 @@ Usage:
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
-        [--create-default-helm] [--deploy-spec-dir=<dir>]
+        [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -62,6 +62,7 @@ Options:
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
+    --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
@@ -300,6 +301,15 @@ class CLIDriver(object):
     def __k8s(self):
         kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
         helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
+
+        namespace = self.__getNamespace()
+        host = self.__getHost()
+
+        command = 'upgrade %s' % namespace[:53]
+        command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
+        command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
+        command = '%s --set namespace=%s' % (command, namespace)
+
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
             # Check that the chart dir no exists
@@ -321,8 +331,8 @@ class CLIDriver(object):
                     )
                     yaml.dump(data, outfile, default_flow_style=False)
 
-        namespace = self.__getNamespace()
-        host = self.__getHost()
+                command = '%s --set service.internalPort=%s' % (command, self._context.opt['--internal-port'])
+
 
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
@@ -334,11 +344,6 @@ class CLIDriver(object):
             tag = self.__getTagBranchName()
             pullPolicy = 'Always'
 
-
-        command = 'upgrade %s' % namespace[:53]
-        command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
-        command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
-        command = '%s --set namespace=%s' % (command, namespace)
         command = '%s --set ingress.host=%s' % (command, host)
         command = '%s --set image.commit.sha=sha-%s' % (command, os.environ['CI_COMMIT_SHA'][:8])
         command = '%s --set image.registry=%s' % (command,  self._context.registry)
