@@ -55,11 +55,11 @@ Options:
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:latest].
-    --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:latest].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:latest].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:latest].
-    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:latest].
+    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.15.19].
+    --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.15.0].
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.8.2-1.6.7].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.6.7].
+    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version [default: 3.5-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
