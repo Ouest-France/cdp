@@ -35,7 +35,7 @@ Usage:
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
-        [--create-default-helm] [--deploy-spec-dir=<dir>]
+        [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -66,6 +66,7 @@ Options:
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
+    --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.

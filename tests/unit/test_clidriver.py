@@ -618,7 +618,7 @@ class TestCliDriver(unittest.TestCase):
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("__builtin__.open")
     @patch("cdpcli.clidriver.yaml.dump")
-    def test_k8s_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
+    def test_k8s_createdefaulthelm_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
         env_name = 'review/test'
 
         #Get Mock
@@ -636,7 +636,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s'
+            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     namespace,
@@ -652,6 +652,68 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
+            verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name, 'CI_RUNNER_TAGS': 'test'})
+
+        mock_isdir.assert_called_with('%s/templates' % deploy_spec_dir)
+        mock_isfile.assert_has_calls([call.isfile('%s/values.yaml' % deploy_spec_dir), call.isfile('%s/Chart.yaml' % deploy_spec_dir)])
+        mock_makedirs.assert_called_with('%s/templates' % deploy_spec_dir)
+        mock_open.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, 'w')
+        data = dict(
+            apiVersion = 'v1',
+            description = 'A Helm chart for Kubernetes',
+            name = TestCliDriver.ci_project_name,
+            version = '0.1.0'
+        )
+        mock_dump.assert_called_with(data, mock_open.return_value.__enter__.return_value, default_flow_style=False)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+        self.assertEqual(mock_env2.external_url, 'http://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        mock_env2.save.assert_called_with()
+
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
+    @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
+    @patch('cdpcli.clidriver.os.makedirs')
+    @patch("__builtin__.open")
+    @patch("cdpcli.clidriver.yaml.dump")
+    def test_k8s_createdefaulthelmwithspecificport_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
+        env_name = 'review/test'
+
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
+
+        # Create FakeCommand
+        internal_port = 80
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+        namespace = TestCliDriver.ci_project_name
+        deploy_spec_dir = 'chart'
+        sleep = 10
+        verif_cmd = [
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
+            {'cmd': 'ecr get-login --no-include-email', 'output': login_cmd, 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
+            {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
+            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s'
+                % (TestCliDriver.ci_project_name,
+                    deploy_spec_dir,
+                    namespace,
+                    internal_port,
+                    TestCliDriver.ci_project_name,
+                    TestCliDriver.cdp_dns_subdomain,
+                    TestCliDriver.ci_commit_sha[:8],
+                    aws_host,
+                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_commit_sha,
+                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+            {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': 'deployments/package1', 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'rollout status deployments/package1 -n %s' % (namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--internal-port=%s' % internal_port, '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
             verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name, 'CI_RUNNER_TAGS': 'test'})
 
         mock_isdir.assert_called_with('%s/templates' % deploy_spec_dir)
