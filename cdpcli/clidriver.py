@@ -520,7 +520,7 @@ class CLIDriver(object):
             LOG.info('******************** Update env url ********************')
             LOG.info('Search environment %s.' % os.getenv('CI_ENVIRONMENT_NAME', None))
             env = self.__get_environment()
-            if env is not None:
+            if env is not None and (env.external_url is None or not env.external_url.strip()):
                 env.external_url = 'https://%s' % self.__getHost()
                 env.save()
                 LOG.info('Update external url %s.' % env.external_url)
