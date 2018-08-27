@@ -529,7 +529,7 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'http://%s.%s' % (namespace, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (namespace, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
 
@@ -667,7 +667,7 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'http://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
@@ -729,7 +729,7 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'http://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
 
@@ -739,7 +739,7 @@ class TestCliDriver(unittest.TestCase):
         namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
 
-        url = '%s/validate/configurations?url=http://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
@@ -749,7 +749,7 @@ class TestCliDriver(unittest.TestCase):
 
     def test_validator_verbose_namespaceprojectname_validateconfigurations(self):
 
-        url = '%s/validate/configurations?url=http://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
@@ -765,7 +765,7 @@ class TestCliDriver(unittest.TestCase):
         namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
 
-        url = '%s/validate/configurations?url=http://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, path)
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, path)
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
@@ -779,7 +779,7 @@ class TestCliDriver(unittest.TestCase):
         namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
 
-        url = '%s/validate/configurations?url=http://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},

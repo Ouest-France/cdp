@@ -417,7 +417,7 @@ class CLIDriver(object):
             self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
-        url = 'http://%s/%s' % (self.__getHost(), self._context.opt['--path'])
+        url = 'https://%s/%s' % (self.__getHost(), self._context.opt['--path'])
 
         if self._context.opt['--validate-configurations']:
             url_validator = '%s/validate/configurations?url=%s' % (os.environ['CDP_BP_VALIDATOR_HOST'], url)
@@ -521,7 +521,7 @@ class CLIDriver(object):
             LOG.info('Search environment %s.' % os.getenv('CI_ENVIRONMENT_NAME', None))
             env = self.__get_environment()
             if env is not None:
-                env.external_url = 'http://%s' % self.__getHost()
+                env.external_url = 'https://%s' % self.__getHost()
                 env.save()
                 LOG.info('Update external url %s.' % env.external_url)
             else:
