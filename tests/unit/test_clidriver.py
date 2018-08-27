@@ -819,8 +819,10 @@ class TestCliDriver(unittest.TestCase):
     def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2'):
         mock_env1 = Mock()
         mock_env1.name = 'test'
+        mock_env1.external_url = None
         mock_env2 = Mock()
         mock_env2.name = mock_env2_name
+        mock_env2.external_url = None
 
         mock_environments = Mock()
         attrs1 = {'list.return_value': [mock_env1, mock_env2]}
