@@ -3,4 +3,3 @@ python-gitlab==1.4.0
 verboselogs==1.7
 pyyaml==3.12
 mock==2.0.0
-setuptools==33.1.1
