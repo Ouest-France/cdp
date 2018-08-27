@@ -507,7 +507,7 @@ class CLIDriver(object):
             env = None
             # Find environment
             LOG.verbose('List environments:')
-            for environment in project.environments.list():
+            for environment in project.environments.list(all=True):
                 LOG.verbose(' - env %s.' % (environment.name))
                 if environment.name == os.getenv('CI_ENVIRONMENT_NAME', None):
                     env = environment
