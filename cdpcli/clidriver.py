@@ -502,14 +502,13 @@ class CLIDriver(object):
             gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
             # Get a project by ID
             project = gl.projects.get(os.environ['CI_PROJECT_ID'])
-
-            LOG.info('Project %s.' % project)
+            LOG.verbose('Project %s' % project)
 
             env = None
-
             # Find environment
+            LOG.verbose('List environments:')
             for environment in project.environments.list():
-                LOG.info('Environnement %s. (%s)' % (environment.name, os.getenv('CI_ENVIRONMENT_NAME', None)))
+                LOG.verbose(' - env %s.' % (environment.name))
                 if environment.name == os.getenv('CI_ENVIRONMENT_NAME', None):
                     env = environment
                     break
@@ -522,10 +521,9 @@ class CLIDriver(object):
             LOG.info('Search environment %s.' % os.getenv('CI_ENVIRONMENT_NAME', None))
             env = self.__get_environment()
             if env is not None:
-                external_url = 'http://%s' % self.__getHost()
-                env.external_url = external_url
+                env.external_url = 'http://%s' % self.__getHost()
                 env.save()
-                LOG.info('Update external url %s.' % external_url)
+                LOG.info('Update external url %s.' % env.external_url)
             else:
                 LOG.warning('Environment %s not found.' % os.getenv('CI_ENVIRONMENT_NAME', None))
 
