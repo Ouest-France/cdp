@@ -491,7 +491,7 @@ class TestCliDriver(unittest.TestCase):
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
 
         # Create FakeCommand
-        namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
@@ -503,11 +503,10 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s-%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
-                    TestCliDriver.ci_commit_ref_slug,
-                    TestCliDriver.ci_project_name,
+                    namespace,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.ci_registry,
@@ -530,13 +529,13 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'http://%s-%s.%s' % (TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (namespace, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
 
     def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self):
         # Create FakeCommand
-        namespace = '%s-%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
@@ -545,11 +544,10 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s-%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
-                    TestCliDriver.ci_commit_ref_slug,
-                    TestCliDriver.ci_project_name,
+                    namespace,
                     TestCliDriver.cdp_dns_subdomain_staging,
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.cdp_custom_registry,
@@ -669,7 +667,7 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'http://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
@@ -731,14 +729,17 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'http://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
 
     def test_validator_validateconfigurations_dockerhost(self):
         docker_host = 'unix:///var/run/docker.sock'
 
-        url = '%s/validate/configurations?url=http://%s-%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = namespace.replace('_', '-')[:63]
+
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
@@ -748,7 +749,7 @@ class TestCliDriver(unittest.TestCase):
 
     def test_validator_verbose_namespaceprojectname_validateconfigurations(self):
 
-        url = '%s/validate/configurations?url=http://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
@@ -760,7 +761,11 @@ class TestCliDriver(unittest.TestCase):
     def test_validator_path_validateconfigurations_sleep(self):
         path = 'blockconfigurations'
         sleep = 10
-        url = '%s/validate/configurations?url=http://%s-%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, path)
+
+        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = namespace.replace('_', '-')[:63]
+
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, path)
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
@@ -771,7 +776,10 @@ class TestCliDriver(unittest.TestCase):
 
 
     def test_validator_validateconfigurations_ko(self):
-        url = '%s/validate/configurations?url=http://%s-%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = namespace.replace('_', '-')[:63]
+
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
@@ -811,8 +819,10 @@ class TestCliDriver(unittest.TestCase):
     def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2'):
         mock_env1 = Mock()
         mock_env1.name = 'test'
+        mock_env1.external_url = None
         mock_env2 = Mock()
         mock_env2.name = mock_env2_name
+        mock_env2.external_url = None
 
         mock_environments = Mock()
         attrs1 = {'list.return_value': [mock_env1, mock_env2]}

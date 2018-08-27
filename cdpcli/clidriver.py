@@ -417,7 +417,7 @@ class CLIDriver(object):
             self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
-        url = 'http://%s/%s' % (self.__getHost(), self._context.opt['--path'])
+        url = 'https://%s/%s' % (self.__getHost(), self._context.opt['--path'])
 
         if self._context.opt['--validate-configurations']:
             url_validator = '%s/validate/configurations?url=%s' % (os.environ['CDP_BP_VALIDATOR_HOST'], url)
@@ -454,7 +454,7 @@ class CLIDriver(object):
         if self._context.opt['--namespace-project-name']:
             namespace = os.environ['CI_PROJECT_NAME']
         else:
-            namespace = '%s-%s' % (os.environ['CI_PROJECT_NAME'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
+            namespace = '%s-%s' % (os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
 
         return namespace.replace('_', '-')[:63]
 
@@ -473,10 +473,8 @@ class CLIDriver(object):
             dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_DEFAULT', None)
 
         # Get k8s namespace
-        if self._context.opt['--namespace-project-name']:
-            return '%s.%s' % (os.environ['CI_PROJECT_NAME'], dns_subdomain)
-        else:
-            return '%s-%s.%s' % (os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], dns_subdomain)
+        return '%s.%s' % (self.__getNamespace(), dns_subdomain)
+
 
     def __simulate_merge_on(self, force_git_config = False):
         if force_git_config or self._context.opt['--simulate-merge-on']:
@@ -504,11 +502,13 @@ class CLIDriver(object):
             gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
             # Get a project by ID
             project = gl.projects.get(os.environ['CI_PROJECT_ID'])
+            LOG.verbose('Project %s' % project)
 
             env = None
-
             # Find environment
+            LOG.verbose('List environments:')
             for environment in project.environments.list():
+                LOG.verbose(' - env %s.' % (environment.name))
                 if environment.name == os.getenv('CI_ENVIRONMENT_NAME', None):
                     env = environment
                     break
@@ -521,10 +521,9 @@ class CLIDriver(object):
             LOG.info('Search environment %s.' % os.getenv('CI_ENVIRONMENT_NAME', None))
             env = self.__get_environment()
             if env is not None:
-                external_url = 'http://%s' % self.__getHost()
-                env.external_url = external_url
+                env.external_url = 'https://%s' % self.__getHost()
                 env.save()
-                LOG.info('Update external url %s.' % external_url)
+                LOG.info('Update external url, unless present in the file gitlabci.yaml: %s.' % env.external_url)
             else:
                 LOG.warning('Environment %s not found.' % os.getenv('CI_ENVIRONMENT_NAME', None))
 
