@@ -199,7 +199,7 @@ deploy_review:
     - cdp k8s --use-gitlab-registry --namespace-project-branch-name --image-tag-branch-name
   environment:
     name: review/$CI_COMMIT_REF_NAME
-    url: http://$CI_COMMIT_REF_SLUG.$CI_PROJECT_NAME.$DNS_SUBDOMAIN
+    url: https://$CI_COMMIT_REF_SLUG.$CI_PROJECT_NAME.$DNS_SUBDOMAIN
 
 deploy_staging:
   variables:
@@ -210,7 +210,7 @@ deploy_staging:
     - cdp k8s --use-gitlab-registry --namespace-project-name --image-tag-sha1 --values=values.staging.yaml
   environment:
     name: staging
-    url: http://$CI_PROJECT_NAME.$DNS_SUBDOMAIN
+    url: https://$CI_PROJECT_NAME.$DNS_SUBDOMAIN
 ```
 
 ### Environment variables set by the CDP
