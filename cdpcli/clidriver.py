@@ -454,7 +454,7 @@ class CLIDriver(object):
         if self._context.opt['--namespace-project-name']:
             namespace = os.environ['CI_PROJECT_NAME']
         else:
-            namespace = '%s-%s' % (os.environ['CI_PROJECT_NAME'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
+            namespace = '%s-%s' % (os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
 
         return namespace.replace('_', '-')[:63]
 
@@ -473,10 +473,8 @@ class CLIDriver(object):
             dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_DEFAULT', None)
 
         # Get k8s namespace
-        if self._context.opt['--namespace-project-name']:
-            return '%s.%s' % (os.environ['CI_PROJECT_NAME'], dns_subdomain)
-        else:
-            return '%s-%s.%s' % (os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']), os.environ['CI_PROJECT_NAME'], dns_subdomain)
+        return '%s.%s' % (self.__getNamespace(), dns_subdomain)
+
 
     def __simulate_merge_on(self, force_git_config = False):
         if force_git_config or self._context.opt['--simulate-merge-on']:
@@ -505,10 +503,13 @@ class CLIDriver(object):
             # Get a project by ID
             project = gl.projects.get(os.environ['CI_PROJECT_ID'])
 
+            LOG.info('Project %s.' % project)
+
             env = None
 
             # Find environment
             for environment in project.environments.list():
+                LOG.info('Environnement %s. (%s)' % (environment.name, os.getenv('CI_ENVIRONMENT_NAME', None)))
                 if environment.name == os.getenv('CI_ENVIRONMENT_NAME', None):
                     env = environment
                     break
