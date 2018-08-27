@@ -521,12 +521,9 @@ class CLIDriver(object):
             LOG.info('Search environment %s.' % os.getenv('CI_ENVIRONMENT_NAME', None))
             env = self.__get_environment()
             if env is not None:
-                if (env.external_url is None or not env.external_url.strip()):
-                    env.external_url = 'https://%s' % self.__getHost()
-                    env.save()
-                    LOG.info('Update external url: %s.' % env.external_url)
-                else:
-                    LOG.info('External url already present: %s.' % env.external_url)
+                env.external_url = 'https://%s' % self.__getHost()
+                env.save()
+                LOG.info('Update external url, unless present in the file gitlabci.yaml: %s.' % env.external_url)
             else:
                 LOG.warning('Environment %s not found.' % os.getenv('CI_ENVIRONMENT_NAME', None))
 
