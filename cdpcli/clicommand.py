@@ -20,9 +20,9 @@ class CLICommand(object):
 
     def run(self, command, dry_run = None, timeout = None):
         start = timeit.default_timer()
-        self._output = ''
-        self._error = ''
         self._process = None
+        self._output = []
+
         if dry_run is None:
             self._real_dry_run = self._dry_run
         else:
@@ -33,9 +33,13 @@ class CLICommand(object):
             # If dry-run option, no execute command
             if not self._real_dry_run:
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-                self._output, self._error = self._process.communicate()                
-                for line in iter(self._process.stdout.readline, ''):
-                    LOG.info(line)
+                while True:
+                    output = process.stdout.readline()
+                    if output == '' and process.poll() is not None:
+                        break
+                    if output:
+                        self._output.append(line)
+                        LOG.info(output.strip())
 
         thread = threading.Thread(target=target)
         thread.start()

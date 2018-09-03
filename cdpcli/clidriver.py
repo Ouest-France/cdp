@@ -259,9 +259,9 @@ class CLIDriver(object):
             if self._context.opt['--use-docker'] or not (self._context.opt['--use-docker-compose']):
                 repos.append(self._context.repository)
             elif self._context.opt['--use-docker-compose']:
-                docker_services = self._cmd.run_command('docker-compose config --services').strip().split('\n')
+                docker_services = self._cmd.run_command('docker-compose config --services')
                 for docker_service in docker_services:
-                    repos.append('%s/%s' % (self._context.repository, docker_service))
+                    repos.append('%s/%s' % (self._context.repository, docker_service.strip()))
 
             for repo in repos:
                 try:
@@ -377,21 +377,19 @@ class CLIDriver(object):
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
 
         ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
-        if ressources is not None:
-            ressources = ressources.strip().split('\n')
 
-            # Patch
-            for ressource in ressources:
-                if not self._context.opt['--use-aws-ecr']:
-                    # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
-                    # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
-                    kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
-                        % (ressource.replace('/', ' '),  self._context.registry, namespace))
+        # Patch
+        for ressource in ressources:
+            if not self._context.opt['--use-aws-ecr']:
+                # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
+                # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
+                kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
+                    % (ressource.replace('/', ' '),  self._context.registry, namespace))
 
-            # Rollout
-            for ressource in ressources:
-                # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
-                kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
+        # Rollout
+        for ressource in ressources:
+            # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
+            kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
 
         self.__update_environment()
 
