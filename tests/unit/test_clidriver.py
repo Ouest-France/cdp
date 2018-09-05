@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 
 import unittest
-import os, sys
+import os, sys, re
 import datetime
 
 from cdpcli.clicommand import CLICommand
@@ -115,7 +115,8 @@ class TestCliDriver(unittest.TestCase):
     ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_53'
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
     ci_project_id = '14'
-    ci_project_name = 'helloworld'
+    ci_project_name = 'hello-world'
+    ci_project_name_fisrt_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', ci_project_name)])
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
     ci_deploy_user = 'gitlab+deploy-token-1'
@@ -491,7 +492,7 @@ class TestCliDriver(unittest.TestCase):
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
 
         # Create FakeCommand
-        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
@@ -535,7 +536,7 @@ class TestCliDriver(unittest.TestCase):
 
     def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self):
         # Create FakeCommand
-        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
@@ -736,7 +737,7 @@ class TestCliDriver(unittest.TestCase):
     def test_validator_validateconfigurations_dockerhost(self):
         docker_host = 'unix:///var/run/docker.sock'
 
-        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
 
         url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
@@ -762,7 +763,7 @@ class TestCliDriver(unittest.TestCase):
         path = 'blockconfigurations'
         sleep = 10
 
-        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
 
         url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, path)
@@ -776,7 +777,7 @@ class TestCliDriver(unittest.TestCase):
 
 
     def test_validator_validateconfigurations_ko(self):
-        namespace = '%s-%s' % (TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
 
         url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
