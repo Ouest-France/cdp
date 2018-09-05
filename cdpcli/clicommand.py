@@ -52,7 +52,7 @@ class CLICommand(object):
         LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
         if self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
-            raise ValueError()
+            raise ValueError('Error code %s' % self._process.returncode)
 
         LOG.info('')
 
