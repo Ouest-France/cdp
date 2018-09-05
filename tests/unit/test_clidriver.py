@@ -798,7 +798,7 @@ class TestCliDriver(unittest.TestCase):
             for key,val in env_vars.items():
                 os.environ[key] = val
 
-            verif_cmd.insert(0, {'cmd': 'ip route | awk \'NR==1 {print $3}\'', 'output': cdp_docker_host_internal})
+            verif_cmd.insert(0, {'cmd': 'ip route | awk \'NR==1 {print $3}\'', 'output': [cdp_docker_host_internal]})
             cmd = FakeCommand(verif_cmd = verif_cmd)
             cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
             cli.main()
