@@ -99,16 +99,19 @@ from PropertiesParser import PropertiesParser
 
 LOG = verboselogs.VerboseLogger('clidriver')
 LOG.addHandler(logging.StreamHandler())
-LOG.setLevel(logging.INFO)
 
 def main():
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
-    if CLIDriver.verbose(opt['--verbose']):
-        LOG.setLevel(logging.VERBOSE)
-    elif CLIDriver.warning(opt['--quiet']):
-        LOG.setLevel(logging.WARNING)
 
-    driver = CLIDriver(cmd = CLICommand(opt['--dry-run']), opt = opt)
+    # Log management 
+    log_level = logging.INFO
+    if CLIDriver.verbose(opt['--verbose']):
+        log_level = logging.VERBOSE
+    elif CLIDriver.warning(opt['--quiet']):
+        log_level = logging.WARNING
+    LOG.setLevel(log_level)
+
+    driver = CLIDriver(cmd = CLICommand(opt['--dry-run']), opt = opt, log_level = log_level)
     return driver.main()
 
 class CLIDriver(object):

@@ -4,12 +4,13 @@ import timeit
 
 LOG = verboselogs.VerboseLogger('clicommand')
 LOG.addHandler(logging.StreamHandler())
-LOG.setLevel(logging.INFO)
+
 
 class CLICommand(object):
 
-    def __init__(self, dry_run = 1):
+    def __init__(self, dry_run = 1, log_level = logging.INFO):
         self._dry_run = dry_run
+        LOG.setLevel(log_level)
         LOG.verbose('Dry-run init %s' % self._dry_run)
 
     def run_command(self, command, dry_run = None, timeout = None):
@@ -55,5 +56,6 @@ class CLICommand(object):
             raise ValueError('Error code %s' % self._process.returncode)
 
         LOG.info('')
+        LOG.verbose('CLICommand output: %s' % self._output)
 
         return self._output
