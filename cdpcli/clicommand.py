@@ -34,12 +34,12 @@ class CLICommand(object):
             if not self._real_dry_run:
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 while True:
-                    output = self._process.stdout.readline()
-                    if output == '' and self._process.poll() is not None:
+                    line = self._process.stdout.readline().strip()
+                    if line == '' and self._process.poll() is not None:
                         break
                     if output:
                         self._output.append(line)
-                        LOG.info(output.strip())
+                        LOG.info(line)
 
         thread = threading.Thread(target=target)
         thread.start()
