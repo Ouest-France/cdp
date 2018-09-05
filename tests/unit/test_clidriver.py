@@ -144,8 +144,8 @@ class TestCliDriver(unittest.TestCase):
     image_name_git = 'ouestfrance/cdp-git:2.15.0'
     image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:3.1.0'
     image_name_aws = 'ouestfrance/cdp-aws:1.15.19'
-    image_name_kubectl = 'ouestfrance/cdp-kubectl:1.9.9'
-    image_name_helm = 'ouestfrance/cdp-helm:2.9.1-1.9.9'
+    image_name_kubectl = 'ouestfrance/cdp-kubectl:1.6.7'
+    image_name_helm = 'ouestfrance/cdp-helm:2.8.2-1.6.7'
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
