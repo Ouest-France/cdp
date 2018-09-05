@@ -504,7 +504,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
                     namespace,
@@ -545,7 +545,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s'
                 % (namespace[:53],
                     namespace,
                     namespace,
@@ -586,7 +586,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     timeout,
@@ -635,7 +635,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     namespace,
@@ -696,7 +696,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s'
                 % (TestCliDriver.ci_project_name,
                     deploy_spec_dir,
                     namespace,
