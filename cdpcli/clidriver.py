@@ -85,7 +85,7 @@ Options:
 """
 
 import ConfigParser
-import sys, os
+import sys, os, re
 import logging, verboselogs
 import time, datetime
 import yaml
@@ -452,7 +452,8 @@ class CLIDriver(object):
         if self._context.opt['--namespace-project-name']:
             namespace = os.environ['CI_PROJECT_NAME']
         else:
-            namespace = '%s-%s' % (os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
+            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
+            namespace = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
 
         return namespace.replace('_', '-')[:63]
 
