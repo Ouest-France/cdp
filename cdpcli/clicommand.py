@@ -37,7 +37,7 @@ class CLICommand(object):
                     line = self._process.stdout.readline().strip()
                     if line == '' and self._process.poll() is not None:
                         break
-                    if output:
+                    if line:
                         self._output.append(line)
                         LOG.info(line)
 
