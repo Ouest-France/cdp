@@ -53,8 +53,8 @@ Options:
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
     --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.15.19].
     --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.15.0].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.8.2-1.6.7].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.6.7].
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.9.1-1.9.9].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.9.9].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version [default: 3.5-jdk-8].
@@ -366,6 +366,7 @@ class CLIDriver(object):
         command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
+        command = '%s --force' % command
 
         # Instal or Upgrade environnement
         helm_cmd.run(command)
@@ -452,6 +453,7 @@ class CLIDriver(object):
         if self._context.opt['--namespace-project-name']:
             namespace = os.environ['CI_PROJECT_NAME']
         else:
+            # Get first letter for each word
             projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
             namespace = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
 
