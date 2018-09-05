@@ -39,7 +39,7 @@ class CLICommand(object):
                         break
                     if line:
                         self._output.append(line.strip())
-                        LOG.info(line)
+                        LOG.info(line.rstrip('\n'))
 
         thread = threading.Thread(target=target)
         thread.start()
