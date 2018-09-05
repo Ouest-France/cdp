@@ -103,7 +103,7 @@ LOG.addHandler(logging.StreamHandler())
 def main():
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
 
-    # Log management 
+    # Log management
     log_level = logging.INFO
     if CLIDriver.verbose(opt['--verbose']):
         log_level = logging.VERBOSE
@@ -111,7 +111,7 @@ def main():
         log_level = logging.WARNING
     LOG.setLevel(log_level)
 
-    driver = CLIDriver(cmd = CLICommand(opt['--dry-run']), opt = opt, log_level = log_level)
+    driver = CLIDriver(cmd = CLICommand(opt['--dry-run'], log_level = log_level), opt = opt)
     return driver.main()
 
 class CLIDriver(object):
