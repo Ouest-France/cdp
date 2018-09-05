@@ -34,8 +34,8 @@ class CLICommand(object):
             if not self._real_dry_run:
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 while True:
-                    output = process.stdout.readline()
-                    if output == '' and process.poll() is not None:
+                    output = self._process.stdout.readline()
+                    if output == '' and self._process.poll() is not None:
                         break
                     if output:
                         self._output.append(line)
