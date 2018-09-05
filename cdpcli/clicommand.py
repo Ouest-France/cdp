@@ -20,19 +20,26 @@ class CLICommand(object):
 
     def run(self, command, dry_run = None, timeout = None):
         start = timeit.default_timer()
-        self._output = ''
-        self._error = ''
         self._process = None
+        self._output = []
+
         if dry_run is None:
             self._real_dry_run = self._dry_run
         else:
             self._real_dry_run = dry_run
 
         def target():
+            LOG.info('---------- Output ----------')
             # If dry-run option, no execute command
             if not self._real_dry_run:
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-                self._output, self._error = self._process.communicate()
+                while True:
+                    line = self._process.stdout.readline()
+                    if line.strip() == '' and self._process.poll() is not None:
+                        break
+                    if line:
+                        self._output.append(line.strip())
+                        LOG.info(line.rstrip('\n'))
 
         thread = threading.Thread(target=target)
         thread.start()
@@ -42,14 +49,11 @@ class CLICommand(object):
             self._process.terminate()
             thread.join()
 
+        LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
         if self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
-            raise ValueError(self._output)
-        else:
-            LOG.info('---------- Output ----------')
-            LOG.info(self._output)
+            raise ValueError()
 
-        LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
         LOG.info('')
 
         return self._output
