@@ -36,6 +36,9 @@ class CLICommand(object):
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 while True:
                     line = self._process.stdout.readline()
+                    LOG.verbose('original line: %s' % line)
+                    LOG.verbose('poll: %s' % self._process.poll())
+
                     if line.strip() == '' and self._process.poll() is not None:
                         break
                     if line:
@@ -51,11 +54,12 @@ class CLICommand(object):
             thread.join()
 
         LOG.info('---------- Time: %s s' % (round(timeit.default_timer() - start, 3)))
+        LOG.info('')
+        LOG.verbose('---------- CLICommand output: %s' % self._output)
+        LOG.verbose('')
+
         if self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
             raise ValueError('Error code %s' % self._process.returncode)
-
-        LOG.info('')
-        LOG.verbose('CLICommand output: %s' % self._output)
 
         return self._output
