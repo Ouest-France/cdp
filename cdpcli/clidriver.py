@@ -163,7 +163,7 @@ class CLIDriver(object):
                 self.__validator()
 
         finally:
-            sleep = self.sleep(self._context.opt['--sleep'])
+            sleep =  os.getenv('CDP_SLEEP', self._context.opt['--sleep'])
             if sleep is not None and sleep != "0":
                 self._cmd.run_command('sleep %s' % sleep)
 
@@ -537,10 +537,3 @@ class CLIDriver(object):
     @staticmethod
     def warning(quiet):
         return quiet or os.getenv('CDP_LOG_LEVEL', None) == 'warning'
-
-    @staticmethod
-    def sleep(sleep):
-        if sleep:
-            return sleep
-        else:
-            return os.getenv('CDP_SLEEP', None)

@@ -617,7 +617,7 @@ class TestCliDriver(unittest.TestCase):
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("__builtin__.open")
     @patch("cdpcli.clidriver.yaml.dump")
-    def test_k8s_createdefaulthelm_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
+    def test_k8s_createdefaulthelm_imagetagsha1_useawsecr_namespaceprojectname_overridesleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
         env_name = 'review/test'
 
         #Get Mock
@@ -629,6 +629,7 @@ class TestCliDriver(unittest.TestCase):
         namespace = TestCliDriver.ci_project_name
         deploy_spec_dir = 'chart'
         sleep = 10
+        sleep_override = 20
         verif_cmd = [
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
@@ -648,10 +649,10 @@ class TestCliDriver(unittest.TestCase):
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1'], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'rollout status deployments/package1 -n %s' % (namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
+            {'cmd': 'sleep %s' % sleep_override, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
-            verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name, 'CI_RUNNER_TAGS': 'test'})
+            verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name, 'CI_RUNNER_TAGS': 'test', 'CDP_SLEEP': str(sleep_override)})
 
         mock_isdir.assert_called_with('%s/templates' % deploy_spec_dir)
         mock_isfile.assert_has_calls([call.isfile('%s/values.yaml' % deploy_spec_dir), call.isfile('%s/Chart.yaml' % deploy_spec_dir)])
