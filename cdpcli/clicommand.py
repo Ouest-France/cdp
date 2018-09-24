@@ -36,9 +36,6 @@ class CLICommand(object):
                 self._process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
                 while True:
                     line = self._process.stdout.readline()
-                    LOG.verbose('original line: %s' % line)
-                    LOG.verbose('poll: %s' % self._process.poll())
-
                     if line.strip() == '' and self._process.poll() is not None:
                         break
                     if line:
