@@ -144,11 +144,81 @@ class TestCliDriver(unittest.TestCase):
     image_name_git = 'ouestfrance/cdp-git:2.15.0'
     image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:3.1.0'
     image_name_aws = 'ouestfrance/cdp-aws:1.15.19'
-    image_name_kubectl = 'ouestfrance/cdp-kubectl:1.6.7'
-    image_name_helm = 'ouestfrance/cdp-helm:2.8.2-1.6.7'
+    image_name_kubectl = 'ouestfrance/cdp-kubectl:1.9.9'
+    image_name_helm = 'ouestfrance/cdp-helm:2.9.1-1.9.9'
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
+
+    deployment_json_without_secret = """{
+      "apiVersion": "extensions/v1beta1",
+      "kind": "Deployment",
+      "metadata": {
+      },
+      "spec": {
+          "revisionHistoryLimit": 1,
+          "template": {
+              "spec": {
+              }
+          }
+      },
+      "status": {
+          "availableReplicas": 3,
+          "conditions": [
+              {
+                  "lastTransitionTime": "2018-09-26T11:33:39Z",
+                  "lastUpdateTime": "2018-09-26T11:33:39Z",
+                  "message": "Deployment has minimum availability.",
+                  "reason": "MinimumReplicasAvailable",
+                  "status": "True",
+                  "type": "Available"
+              }
+          ],
+          "observedGeneration": 2,
+          "readyReplicas": 3,
+          "replicas": 3,
+          "updatedReplicas": 3
+      }
+  }"""
+
+    deployment_json_with_secret = """{
+      "apiVersion": "extensions/v1beta1",
+      "kind": "Deployment",
+      "metadata": {
+      },
+      "spec": {
+          "revisionHistoryLimit": 1,
+          "template": {
+              "spec": {
+                  "imagePullSecrets": [
+                      {
+                          "name": "cdp-registry.gitlab.com"
+                      },
+                      {
+                          "name": "custom"
+                      }
+                  ]
+              }
+          }
+      },
+      "status": {
+          "availableReplicas": 3,
+          "conditions": [
+              {
+                  "lastTransitionTime": "2018-09-26T11:33:39Z",
+                  "lastUpdateTime": "2018-09-26T11:33:39Z",
+                  "message": "Deployment has minimum availability.",
+                  "reason": "MinimumReplicasAvailable",
+                  "status": "True",
+                  "type": "Available"
+              }
+          ],
+          "observedGeneration": 2,
+          "readyReplicas": 3,
+          "replicas": 3,
+          "updatedReplicas": 3
+      }
+  }"""
 
     @classmethod
     def setUpClass(cls):
@@ -519,8 +589,8 @@ class TestCliDriver(unittest.TestCase):
                     int_file,
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1','deployments/package2'], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'patch deployments package1 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.ci_registry, namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.ci_registry, namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get deployments package1 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_with_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get deployments package2 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_with_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'rollout status deployments/package1 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package1', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'rollout status deployments/package2 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package2', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
         ]
@@ -560,7 +630,9 @@ class TestCliDriver(unittest.TestCase):
                     int_file,
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1','deployments/package2'], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get deployments package1 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_without_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'patch deployments package1 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get deployments package2 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_without_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'rollout status deployments/package1 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package1', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'rollout status deployments/package2 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package2', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}

@@ -53,8 +53,8 @@ Options:
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
     --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.15.19].
     --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.15.0].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.8.2-1.6.7].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.6.7].
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.9.1-1.9.9].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.9.9].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version [default: 3.5-jdk-8].
@@ -88,8 +88,9 @@ import ConfigParser
 import sys, os, re
 import logging, verboselogs
 import time, datetime
-import yaml
+import yaml, json
 import gitlab
+import pyjq
 from Context import Context
 from clicommand import CLICommand
 from cdpcli import __version__
@@ -384,10 +385,21 @@ class CLIDriver(object):
         # Patch
         for ressource in ressources:
             if not self._context.opt['--use-aws-ecr']:
-                # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
-                # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
-                kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
-                    % (ressource.replace('/', ' '),  self._context.registry, namespace))
+                deployment_resource = ressource.replace('/', ' ')
+                # Verify if pull secrets already exists
+                try:
+                    deployment_json = kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace))[0]
+                    already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s")' % self._context.registry, json.loads(deployment_json)))
+                except Exception, e:
+                    # Not present
+                    LOG.verbose(str(e))
+                    already_patch = 0
+
+                if already_patch == 0:
+                    # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
+                    # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
+                    kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
+                        % (deployment_resource,  self._context.registry, namespace))
 
         # Rollout
         for ressource in ressources:
