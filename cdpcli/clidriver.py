@@ -370,6 +370,8 @@ class CLIDriver(object):
         command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
+        command = '%s --force' % command
+
 
         # Instal or Upgrade environnement
         helm_cmd.run(command)
