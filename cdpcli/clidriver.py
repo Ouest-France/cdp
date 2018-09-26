@@ -388,7 +388,7 @@ class CLIDriver(object):
                 deployment_resource = ressource.replace('/', ' ')
                 # Verify if pull secrets already exists
                 try:
-                    deployment_json = kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace))[0]
+                    deployment_json = ''.join(kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace)))
                     already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s")' % self._context.registry, json.loads(deployment_json)))
                 except Exception, e:
                     # Not present
