@@ -57,7 +57,7 @@ Options:
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.9.9].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image=<image_name>                                Specify docker image name for build project.
-    --docker-version=<version>                                 Specify maven docker version [default: 3.5-jdk-8].
+    --docker-version=<version>                                 Specify maven docker version [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
