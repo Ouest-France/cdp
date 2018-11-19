@@ -8,7 +8,7 @@ Usage:
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--docker-version=<version>) (--goals=<goals-opts>|--deploy=<type>)
+        (--docker-image-maven=<image_name_maven>|--docker-version=<version>) (--goals=<goals-opts>|--deploy=<type>)
         [--maven-release-plugin=<version>]
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
@@ -55,9 +55,10 @@ Options:
     --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.15.0].
     --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.9.1-1.9.9].
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.9.9].
+    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image=<image_name>                                Specify docker image name for build project.
-    --docker-version=<version>                                 Specify maven docker version [default: 3.5.3-jdk-8].
+    --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
@@ -205,7 +206,10 @@ class CLIDriver(object):
 
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
-        maven_cmd = DockerCommand(self._cmd, 'maven:%s' % (self._context.opt['--docker-version']), self._context.opt['--volume-from'])
+        if self._context.opt['--docker-version'] is not None and self._context.opt['--docker-version'] != "3.5.3-jdk-8":
+            maven_cmd = DockerCommand(self._cmd, 'maven:%s' % (self._context.opt['--docker-version']), self._context.opt['--volume-from'])
+        else:
+            maven_cmd = DockerCommand(self._cmd, '%s' % (self._context.opt['--docker-image-maven']), self._context.opt['--volume-from'])
         maven_cmd.run(command)
 
 

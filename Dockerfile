@@ -9,7 +9,7 @@ ARG VERSION_PYTHON_SETUPTOOLS="33.1.1-r1"
 
 ADD . cdp/
 
-RUN apk -v --update add python=$VERSION_PYTHON python-dev=$VERSION_PYTHON py-setuptools=$VERSION_PYTHON_SETUPTOOLS docker=$VERSION_DOCKER py-pip groff less mailcap curl openrc build-base libgit2-dev autoconf automake=1.15.1-r0 libtool \
+RUN apk -v --update add python=$VERSION_PYTHON python-dev=$VERSION_PYTHON py-setuptools=$VERSION_PYTHON_SETUPTOOLS docker=$VERSION_DOCKER py-pip groff less mailcap curl openrc build-base libgit2-dev autoconf automake=1.15.1-r0 libtool jq \
     && ln -s /usr/lib/libcurl.so.4 /usr/lib/libcurl-gnutls.so.4 \
     && rc-update add docker boot \
     && pip install --upgrade wheel docker-compose==$VERSION_DOCKER_COMPOSE \
