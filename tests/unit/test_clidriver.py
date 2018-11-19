@@ -295,7 +295,7 @@ class TestCliDriver(unittest.TestCase):
     def test_maven_goals_verbose_simulatemergeon_sleep(self):
         # Create FakeCommand
         branch_name = 'master'
-        image_version = '3.5-jdk-8'
+        image_name_maven = 'maven:3.5-jdk-8'
         goals = 'clean install -DskipTests'
         sleep = 10
         verif_cmd = [
@@ -307,17 +307,17 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'reset --hard origin/%s' % branch_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
-            {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-            {'cmd': 'mvn %s -s maven-settings.xml' % goals, 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': 'maven:%s' % image_version},
+            {'cmd': 'docker pull %s' % (image_name_maven), 'output': 'unnecessary'},
+            {'cmd': 'mvn %s -s maven-settings.xml' % goals, 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'maven', '--verbose', '--docker-version=%s' % image_version, '--goals=%s' % goals, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'maven', '--verbose', '--docker-image-maven=%s' % image_name_maven, '--goals=%s' % goals, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
 
 
     def test_maven_deployrelease_mavenopts(self):
         # Create FakeCommand
         branch_name = 'master'
-        image_version = '3.5-jdk-8'
+        image_name_maven = 'maven:3.5-jdk-8'
         goals = 'clean install -DskipTests'
         maven_opts = '-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository -e'
         verif_cmd = [
@@ -326,11 +326,11 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'checkout %s' % TestCliDriver.ci_commit_ref_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
-            {'cmd': 'docker pull maven:%s' % (image_version), 'output': 'unnecessary'},
-            {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': 'maven:%s' % image_version}
+            {'cmd': 'docker pull %s' % (image_name_maven), 'output': 'unnecessary'},
+            {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven}
         ]
 
-        self.__run_CLIDriver({ 'maven', '--docker-version=%s' % image_version, '--deploy=release'},
+        self.__run_CLIDriver({ 'maven', '--docker-image-maven=%s' % image_name_maven, '--deploy=release'},
             verif_cmd, env_vars = {'MAVEN_OPTS': maven_opts})
 
 
