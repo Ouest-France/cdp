@@ -4,3 +4,5 @@ verboselogs==1.7
 pyyaml==3.13
 mock==2.0.0
 pyjq===2.2.0
+awscli==1.16.61
+python-magic

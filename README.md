@@ -16,6 +16,7 @@ Usage:
         [--maven-release-plugin=<version>]
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
+        [--use-aws-ecr-maven]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
@@ -79,6 +80,7 @@ Options:
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
+    --use-aws-ecr-maven                                        Use AWS ECR for pulling maven image
     --use-custom-registry                                      Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image.
