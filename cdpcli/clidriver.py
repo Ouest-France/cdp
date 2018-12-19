@@ -12,7 +12,7 @@ Usage:
         [--maven-release-plugin=<version>]
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
-        [--use-aws-ecr-maven]
+        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
@@ -148,7 +148,6 @@ class CLIDriver(object):
                 self.__build()
 
             if self._context.opt['maven']:
-                # self.__docker()
                 self.__maven()
 
             if self._context.opt['sonar']:
@@ -185,7 +184,7 @@ class CLIDriver(object):
 
         command = self._context.opt['--goals']
 
-        if self._context.opt['--use-aws-ecr-maven']:
+        if self._context.opt['--use-aws-ecr'] or self._context.opt['--use-custom-registry'] or self._context.opt['--use-gitlab-registry']:
             self._cmd.run_command(self._context.login)
 
         if self._context.opt['--deploy']:
