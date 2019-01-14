@@ -184,9 +184,6 @@ class CLIDriver(object):
 
         command = self._context.opt['--goals']
 
-        if self._context.opt['--use-aws-ecr'] or self._context.opt['--use-custom-registry'] or self._context.opt['--use-gitlab-registry']:
-            self._cmd.run_command(self._context.login)
-
         if self._context.opt['--deploy']:
             if self._context.opt['--deploy'] == 'release':
                 force_git_config = True
@@ -260,9 +257,6 @@ class CLIDriver(object):
         sonar_scanner_cmd.run(command)
 
     def __docker(self):
-        # Login to the docker registry
-        self._cmd.run_command(self._context.login)
-
         if self._context.opt['--use-aws-ecr']:
             aws_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-aws'], None, True)
 
