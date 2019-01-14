@@ -11,30 +11,39 @@ class Context(object):
         self._opt = opt
         self._cmd = cmd
 
-        if opt['--use-aws-ecr']:
-            aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
-            # Use AWS ECR from k8s configuration on gitlab-runner deployment
-            login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email', dry_run=False)[0].strip())
-            self._registry = login_regex[0][2]
-            self._registry_user_ro = login_regex[0][0]
-            self._registry_token_ro = login_regex[0][1]
-            # Login registry
-            self.__login(self._registry, login_regex[0][0], login_regex[0][1])
-        elif opt['--use-custom-registry']:
-            self._registry = os.environ['CDP_CUSTOM_REGISTRY']
-            self._registry_user_ro = os.environ['CDP_CUSTOM_REGISTRY_USER']
-            self._registry_token_ro = os.environ['CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN']
-        elif opt['--use-gitlab-registry']:
-            # Use gitlab registry
-            self._registry = os.environ['CI_REGISTRY']
-            self._registry_user_ro = os.getenv('CI_DEPLOY_USER', None)
-            self._registry_token_ro =  os.getenv('CI_DEPLOY_PASSWORD', None)
-            # Login registry
+        if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry']:
+
+            if opt['--use-aws-ecr'] or opt['maven'] or opt['docker']:
+                aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
+                # Use AWS ECR from k8s configuration on gitlab-runner deployment
+                login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email', dry_run=False)[0].strip())
+
+                self._registry = login_regex[0][2]
+                self._registry_user_ro = login_regex[0][0]
+                self._registry_token_ro = login_regex[0][1]
+
+                # Login AWS registry
+                self.__login(login_regex[0][2], login_regex[0][0], login_regex[0][1])
+
+            if opt['--use-custom-registry']:
+                self._registry = os.environ['CDP_CUSTOM_REGISTRY']
+                self._registry_user_ro = os.environ['CDP_CUSTOM_REGISTRY_USER']
+                self._registry_token_ro = os.environ['CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN']
+
+            if opt['--use-gitlab-registry']:
+                # Use gitlab registry
+                self._registry = os.environ['CI_REGISTRY']
+                self._registry_user_ro = os.getenv('CI_DEPLOY_USER', None)
+                self._registry_token_ro =  os.getenv('CI_DEPLOY_PASSWORD', None)
+
+
+            # Login custom registry
+            self.__login(os.getenv('CDP_CUSTOM_REGISTRY', None), os.getenv('CDP_CUSTOM_REGISTRY_USER', None), os.getenv('CDP_CUSTOM_REGISTRY_TOKEN', None))
+
+            # Login gitlab registry
             self.__login(os.getenv('CI_REGISTRY', None), os.getenv('CI_REGISTRY_USER', None), os.getenv('CI_JOB_TOKEN', None))
 
-        if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry']:
-            # Already connect on your cutom registry
-            self.__login(os.getenv('CDP_CUSTOM_REGISTRY', None), os.getenv('CDP_CUSTOM_REGISTRY_USER', None), os.getenv('CDP_CUSTOM_REGISTRY_TOKEN', None))
+
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']

@@ -415,13 +415,18 @@ class TestCliDriver(unittest.TestCase):
 
     def test_docker_usedocker_imagetagbranchname_usegitlabregistry_sleep_docker_host(self):
         # Create FakeCommand
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         sleep = 10
 
         docker_host = 'unix:///var/run/docker.sock'
 
         verif_cmd = [
-            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
+            {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
@@ -431,8 +436,14 @@ class TestCliDriver(unittest.TestCase):
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry(self):
         # Create FakeCommand
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
+            {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker build -t %s/%s:%s .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
             {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
@@ -448,6 +459,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'docker build -t %s/%s:%s .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
@@ -466,6 +478,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': ['test', 'test2']},
             {'cmd': 'ecr list-images --repository-name %s/test --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
@@ -488,6 +501,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': ['test', 'test2']},
             {'cmd': 'ecr list-images --repository-name %s/test --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'throw': ValueError, 'docker_image': TestCliDriver.image_name_aws},
