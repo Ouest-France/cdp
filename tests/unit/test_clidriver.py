@@ -110,12 +110,13 @@ class TestCliDriver(unittest.TestCase):
     ci_registry_user = 'gitlab-ci'
     ci_registry = 'registry.gitlab.com'
     ci_repository_url = 'https://gitlab-ci-token:iejdzkjziuiez7786@gitlab.com/HelloWorld/HelloWorld/helloworld.git'
-    ci_commit_ref_name = 'branch_helloworld_with_many.characters_because_helm_k8s_because_the_length_must_not_longer_than.53'
-    ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_53'
+    ci_commit_ref_name = 'branch_helloworld_with_many.characters_because_helm_k8s_because_the_length_must_not_longer_than.63'
+    ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_63'
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
     ci_project_id = '14'
     ci_project_name = 'hello-world'
-    ci_project_name_fisrt_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', ci_project_name)])
+    ci_project_name_first_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', ci_project_name)])
+    ci_pnfl_project_id_commit_ref_slug = '%s%s-%s' % (ci_project_name_first_letter, ci_project_id, ci_commit_ref_slug) 
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
     ci_deploy_user = 'gitlab+deploy-token-1'
@@ -145,7 +146,6 @@ class TestCliDriver(unittest.TestCase):
     image_name_aws = 'ouestfrance/cdp-aws:1.15.19'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.9.9'
     image_name_helm = 'ouestfrance/cdp-helm:2.9.1-1.9.9'
-    k8s_chart='%s%s-%s' % (ci_project_name_fisrt_letter, ci_project_id, ci_commit_ref_slug) 
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -580,7 +580,7 @@ class TestCliDriver(unittest.TestCase):
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
 
         # Create FakeCommand
-        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
         release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
@@ -625,7 +625,7 @@ class TestCliDriver(unittest.TestCase):
 
     def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self):
         # Create FakeCommand
-        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
         release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
@@ -829,11 +829,39 @@ class TestCliDriver(unittest.TestCase):
         self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
+    def test_k8s_releaseprojectbranchname_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self):
+        # Create FakeCommand
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+        namespace = TestCliDriver.ci_project_name
+        release = TestCliDriver.ci_pnfl_project_id_commit_ref_slug.replace('_', '-')[:63]
+        sleep = 10
+        verif_cmd = [
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
+            {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set-tiller-namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
+                % (release,
+                    namespace,
+                    namespace,
+                    TestCliDriver.ci_project_name,
+                    TestCliDriver.cdp_dns_subdomain,
+                    TestCliDriver.ci_commit_sha[:8],
+                    aws_host,
+                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_commit_sha,
+                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+            {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1'], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'rollout status deployments/package1 -n %s' % (namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
+        ]
+        self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name', '--tiller-namespace' },
+            verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test' })
 
     def test_validator_validateconfigurations_dockerhost(self):
         docker_host = 'unix:///var/run/docker.sock'
 
-        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
 
         url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
@@ -859,7 +887,7 @@ class TestCliDriver(unittest.TestCase):
         path = 'blockconfigurations'
         sleep = 10
 
-        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
 
         url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, path)
@@ -873,7 +901,7 @@ class TestCliDriver(unittest.TestCase):
 
 
     def test_validator_validateconfigurations_ko(self):
-        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
 
         url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')

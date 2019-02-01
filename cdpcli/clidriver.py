@@ -35,7 +35,7 @@ Usage:
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
-        [--tiller-namespace=<tiller_namespace_name>]
+        [--tiller-namespace]
         [--release-project-branch-name]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -79,7 +79,7 @@ Options:
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
-    --tiller-namespace=<tiller_namespace>                      Force the tiller namespace to be the same as the pod namespace
+    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace
     --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
@@ -317,12 +317,12 @@ class CLIDriver(object):
         namespace = self.__getNamespace()
         host = self.__getHost()
 
-        command = 'upgrade %s' % release[:53]
+        command = 'upgrade %s' % release[:63]
         command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
         command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
         command = '%s --set namespace=%s' % (command, namespace)
         if self._context.opt['--tiller-namespace']:
-            command = '%s --tiller-namespace=%s' % (command, namespace)
+            command = '%s --set-tiller-namespace=%s' % (command, namespace)
 
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
