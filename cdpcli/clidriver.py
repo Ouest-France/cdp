@@ -35,6 +35,8 @@ Usage:
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
+        [--tiller-namespace=<tiller_namespace_name>]
+        [--release-project-branch-name]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
         (--validate-configurations)
@@ -72,10 +74,12 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
+    --release-project-branch-name                              Force the release to be created with the project branch name.
     --sast                                                     Static Application Security Testing mode.
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
+    --tiller-namespace=<tiller_namespace>                      Force the tiller namespace to be the same as the pod namespace
     --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
@@ -307,14 +311,18 @@ class CLIDriver(object):
     def __k8s(self):
         kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
         helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
-
+        
+		# Use release name instead of the namespace name for release
+        release = self.__getRelease()
         namespace = self.__getNamespace()
         host = self.__getHost()
 
-        command = 'upgrade %s' % namespace[:53]
+        command = 'upgrade %s' % release[:53]
         command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
         command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
         command = '%s --set namespace=%s' % (command, namespace)
+        if self._context.opt['--tiller-namespace']:
+            command = '%s --tiller-namespace=%s' % (command, namespace)
 
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
@@ -373,7 +381,6 @@ class CLIDriver(object):
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
         command = '%s --force' % command
-
 
         # Instal or Upgrade environnement
         helm_cmd.run(command)
@@ -476,6 +483,17 @@ class CLIDriver(object):
             namespace = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
 
         return namespace.replace('_', '-')[:63]
+
+    # get release name based on given parameters
+    def __getRelease(self):
+        # Get helm release name
+        if self._context.opt['--release-project-branch-name']:
+            # Get first letter for each word
+            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
+            chart = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
+        else:
+            chart = os.environ['CI_PROJECT_NAME']
+        return chart.replace('_', '-')[:63]
 
     def __getHost(self):
         dns_subdomain = os.getenv('DNS_SUBDOMAIN', None) # Deprecated

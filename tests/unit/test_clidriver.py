@@ -22,7 +22,6 @@ class FakeCommand(object):
     def run(self, cmd, dry_run = None, timeout = None):
         print cmd
         try:
-
             try:
                 with_entrypoint_assert = self._verif_cmd[self._index]['with_entrypoint']
             except KeyError:
@@ -146,6 +145,7 @@ class TestCliDriver(unittest.TestCase):
     image_name_aws = 'ouestfrance/cdp-aws:1.15.19'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.9.9'
     image_name_helm = 'ouestfrance/cdp-helm:2.9.1-1.9.9'
+    k8s_chart='%s%s-%s' % (ci_project_name_fisrt_letter, ci_project_id, ci_commit_ref_slug) 
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -582,6 +582,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
+        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
@@ -593,7 +594,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
-                % (namespace[:53],
+                % (release,
                     namespace,
                     namespace,
                     TestCliDriver.cdp_dns_subdomain,
@@ -626,6 +627,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_fisrt_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
+        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
@@ -634,7 +636,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
-                % (namespace[:53],
+                % (release,
                     namespace,
                     namespace,
                     TestCliDriver.cdp_dns_subdomain_staging,
@@ -664,6 +666,7 @@ class TestCliDriver(unittest.TestCase):
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
+        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
         timeout = 180
         deploy_spec_dir = 'deploy'
         values = 'values.staging.yaml'
@@ -677,7 +680,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --debug -i --namespace=%s --force'
-                % (TestCliDriver.ci_project_name,
+                % (release,
                     deploy_spec_dir,
                     timeout,
                     namespace,
@@ -717,6 +720,7 @@ class TestCliDriver(unittest.TestCase):
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
+        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
         deploy_spec_dir = 'chart'
         sleep = 10
         sleep_override = 20
@@ -727,7 +731,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
             {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
-                % (TestCliDriver.ci_project_name,
+                % (release,
                     deploy_spec_dir,
                     namespace,
                     TestCliDriver.ci_project_name,
@@ -779,6 +783,7 @@ class TestCliDriver(unittest.TestCase):
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
+        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
         deploy_spec_dir = 'chart'
         sleep = 10
         verif_cmd = [
@@ -788,7 +793,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
             {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
-                % (TestCliDriver.ci_project_name,
+                % (release,
                     deploy_spec_dir,
                     namespace,
                     internal_port,
