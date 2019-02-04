@@ -4,7 +4,7 @@
 
 ## Usage
 
-```
+```python
 Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -39,6 +39,8 @@ Usage:
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
+        [--tiller-namespace]
+        [--release-project-branch-name]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
         (--validate-configurations)
@@ -76,10 +78,12 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
+    --release-project-branch-name                              Force the release to be created with the project branch name.
     --sast                                                     Static Application Security Testing mode.
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
+    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace
     --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
