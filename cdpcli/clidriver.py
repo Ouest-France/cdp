@@ -311,13 +311,13 @@ class CLIDriver(object):
     def __k8s(self):
         kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
         helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
-        
+
 		# Use release name instead of the namespace name for release
         release = self.__getRelease()
         namespace = self.__getNamespace()
         host = self.__getHost()
 
-        command = 'upgrade %s' % release[:63]
+        command = 'upgrade %s' % release
         command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
         command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
         command = '%s --set namespace=%s' % (command, namespace)
@@ -474,26 +474,25 @@ class CLIDriver(object):
         return os.environ['CI_COMMIT_SHA']
 
     def __getNamespace(self):
-        # Get k8s namespace
-        if self._context.opt['--namespace-project-name']:
-            namespace = os.environ['CI_PROJECT_NAME']
-        else:
-            # Get first letter for each word
-            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
-            namespace = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
-
-        return namespace.replace('_', '-')[:63]
+        condition = self._context.opt['--namespace-project-name']
+        return self.__getName(condition)[:63]
 
     # get release name based on given parameters
     def __getRelease(self):
-        # Get helm release name
-        if self._context.opt['--release-project-branch-name']:
+        condition = not self._context.opt['--release-project-branch-name']
+        # https://github.com/kubernetes/helm/issues/1528
+        return self.__getName(condition)[:53]
+
+    def __getName(self, condition):
+        # Get k8s namespace
+        if condition:
+            name = os.environ['CI_PROJECT_NAME']
+        else:
             # Get first letter for each word
             projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
-            chart = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
-        else:
-            chart = os.environ['CI_PROJECT_NAME']
-        return chart.replace('_', '-')[:63]
+            name = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
+
+        return name.replace('_', '-')
 
     def __getHost(self):
         dns_subdomain = os.getenv('DNS_SUBDOMAIN', None) # Deprecated

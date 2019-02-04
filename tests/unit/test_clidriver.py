@@ -116,7 +116,7 @@ class TestCliDriver(unittest.TestCase):
     ci_project_id = '14'
     ci_project_name = 'hello-world'
     ci_project_name_first_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', ci_project_name)])
-    ci_pnfl_project_id_commit_ref_slug = '%s%s-%s' % (ci_project_name_first_letter, ci_project_id, ci_commit_ref_slug) 
+    ci_pnfl_project_id_commit_ref_slug = '%s%s-%s' % (ci_project_name_first_letter, ci_project_id, ci_commit_ref_slug)
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
     ci_deploy_user = 'gitlab+deploy-token-1'
@@ -842,7 +842,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set-tiller-namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
-                % (release,
+                % (release[:53],
                     namespace,
                     namespace,
                     TestCliDriver.ci_project_name,
