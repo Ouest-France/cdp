@@ -482,9 +482,11 @@ class CLIDriver(object):
 
     # get release name based on given parameters
     def __getRelease(self):
-        condition = not self._context.opt['--release-project-branch-name']
-        # https://github.com/kubernetes/helm/issues/1528
-        return self.__getName(condition)[:53]
+        if self._context.opt['--release-project-branch-name']:
+            # https://github.com/kubernetes/helm/issues/1528
+            return self.__getName(False)[:53]
+        else:
+            return self.__getNamespace()[:53]
 
     def __getName(self, condition):
         # Get k8s namespace
