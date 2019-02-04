@@ -13,11 +13,11 @@ class CLICommand(object):
         LOG.setLevel(log_level)
         LOG.verbose('Dry-run init %s' % self._dry_run)
 
-    def run_command(self, command, dry_run = None, timeout = None):
+    def run_command(self, command, dry_run = None, timeout = None, raise_error = True):
         LOG.info('')
         LOG.info('******************** Run command ********************')
         LOG.info(command)
-        return self.run(command, dry_run, timeout)
+        return self.run(command, dry_run, timeout, raise_error)
 
     def run(self, command, dry_run = None, timeout = None, raise_error = True):
         start = timeit.default_timer()
