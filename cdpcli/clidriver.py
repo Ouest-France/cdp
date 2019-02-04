@@ -420,6 +420,9 @@ class CLIDriver(object):
             self._cmd.run_command('docker-compose build')
             self._cmd.run_command('docker-compose push')
         else:
+            # Hadolint
+            self._cmd.run_command('hadolint Dockerfile', raise_error = False)
+
             image_tag = self.__getImageTag(self.__getImageName(), tag)
             # Tag docker image
             self._cmd.run_command('docker build -t %s .' % (image_tag))
