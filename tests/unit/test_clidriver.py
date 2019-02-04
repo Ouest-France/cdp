@@ -590,7 +590,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
-        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
+        release = namespace[:53]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
@@ -635,7 +635,7 @@ class TestCliDriver(unittest.TestCase):
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
-        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
+        release = namespace[:53]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
