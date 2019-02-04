@@ -322,7 +322,7 @@ class CLIDriver(object):
         command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
         command = '%s --set namespace=%s' % (command, namespace)
         if self._context.opt['--tiller-namespace']:
-            command = '%s --set-tiller-namespace=%s' % (command, namespace)
+            command = '%s --tiller-namespace=%s' % (command, namespace)
 
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
