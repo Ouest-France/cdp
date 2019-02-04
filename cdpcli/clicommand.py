@@ -19,7 +19,7 @@ class CLICommand(object):
         LOG.info(command)
         return self.run(command, dry_run, timeout)
 
-    def run(self, command, dry_run = None, timeout = None):
+    def run(self, command, dry_run = None, timeout = None, raise_error = True):
         start = timeit.default_timer()
         self._process = None
         self._output = []
@@ -55,7 +55,7 @@ class CLICommand(object):
         LOG.verbose('---------- CLICommand output: %s' % self._output)
         LOG.verbose('')
 
-        if self._process is not None and self._process.returncode != 0:
+        if raise_error and self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
             raise ValueError('Error code %s' % self._process.returncode)
 

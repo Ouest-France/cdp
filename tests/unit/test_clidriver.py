@@ -16,12 +16,17 @@ class FakeCommand(object):
         self._index = 0
         self._tc = unittest.TestCase('__init__')
 
-    def run_command(self, cmd, dry_run = None, timeout = None):
-        return self.run(cmd, dry_run, timeout)
+    def run_command(self, cmd, dry_run = None, timeout = None, raise_error = True):
+        return self.run(cmd, dry_run, timeout, raise_error)
 
-    def run(self, cmd, dry_run = None, timeout = None):
+    def run(self, cmd, dry_run = None, timeout = None, raise_error = True):
         print cmd
         try:
+            try:
+                self._tc.assertEquals(raise_error, self._verif_cmd[self._index]['verif_raise_error'])
+            except KeyError:
+                self._tc.assertEquals(raise_error, True)
+
             try:
                 with_entrypoint_assert = self._verif_cmd[self._index]['with_entrypoint']
             except KeyError:
@@ -427,6 +432,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
+            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
@@ -444,6 +450,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
+            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': 'docker build -t %s/%s:%s .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
             {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
@@ -462,6 +469,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': 'docker build -t %s/%s:%s .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
             {'cmd': 'docker push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
