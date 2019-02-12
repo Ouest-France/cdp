@@ -604,7 +604,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
-                    namespace,
+                    release,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.ci_registry,
@@ -627,7 +627,7 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (namespace, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (release, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
 
@@ -646,7 +646,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
-                    namespace,
+                    release,
                     TestCliDriver.cdp_dns_subdomain_staging,
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.cdp_custom_registry,
@@ -674,7 +674,7 @@ class TestCliDriver(unittest.TestCase):
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
-        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
+        release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
         timeout = 180
         deploy_spec_dir = 'deploy'
         values = 'values.staging.yaml'
@@ -692,7 +692,7 @@ class TestCliDriver(unittest.TestCase):
                     deploy_spec_dir,
                     timeout,
                     namespace,
-                    TestCliDriver.ci_project_name,
+                    release,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
@@ -728,7 +728,7 @@ class TestCliDriver(unittest.TestCase):
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
-        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
+        release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
         deploy_spec_dir = 'chart'
         sleep = 10
         sleep_override = 20
@@ -742,7 +742,7 @@ class TestCliDriver(unittest.TestCase):
                 % (release,
                     deploy_spec_dir,
                     namespace,
-                    TestCliDriver.ci_project_name,
+                    release,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
@@ -771,7 +771,7 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (release, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
@@ -791,7 +791,7 @@ class TestCliDriver(unittest.TestCase):
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
-        release = TestCliDriver.ci_project_name.replace('_', '-')[:63]
+        release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
         deploy_spec_dir = 'chart'
         sleep = 10
         verif_cmd = [
@@ -805,7 +805,7 @@ class TestCliDriver(unittest.TestCase):
                     deploy_spec_dir,
                     namespace,
                     internal_port,
-                    TestCliDriver.ci_project_name,
+                    release,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
@@ -834,7 +834,7 @@ class TestCliDriver(unittest.TestCase):
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain))
+        self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (release, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
     def test_k8s_releaseprojectbranchname_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self):
@@ -842,7 +842,7 @@ class TestCliDriver(unittest.TestCase):
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
-        release = TestCliDriver.ci_pnfl_project_id_commit_ref_slug.replace('_', '-')[:63]
+        release = TestCliDriver.ci_pnfl_project_id_commit_ref_slug.replace('_', '-')[:53]
         sleep = 10
         verif_cmd = [
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
@@ -850,10 +850,10 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --tiller-namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
-                % (release[:53],
+                % (release,
                     namespace,
                     namespace,
-                    TestCliDriver.ci_project_name,
+                    release,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
@@ -871,8 +871,9 @@ class TestCliDriver(unittest.TestCase):
 
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
 
-        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, release, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
@@ -897,8 +898,9 @@ class TestCliDriver(unittest.TestCase):
 
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
 
-        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, path)
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, release, TestCliDriver.cdp_dns_subdomain, path)
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
@@ -911,8 +913,9 @@ class TestCliDriver(unittest.TestCase):
     def test_validator_validateconfigurations_ko(self):
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
 
-        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, namespace, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, release, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
