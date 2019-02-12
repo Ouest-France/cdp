@@ -41,6 +41,7 @@ Usage:
         [--volume-from=<host_type>]
         [--tiller-namespace]
         [--release-project-branch-name]
+        [--image-pull-secret]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
         (--validate-configurations)
@@ -67,6 +68,7 @@ Options:
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
+    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.

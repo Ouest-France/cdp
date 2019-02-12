@@ -37,6 +37,7 @@ Usage:
         [--volume-from=<host_type>]
         [--tiller-namespace]
         [--release-project-branch-name]
+        [--image-pull-secret]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
         (--validate-configurations)
@@ -63,6 +64,7 @@ Options:
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
+    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -364,13 +366,17 @@ class CLIDriver(object):
         command = '%s --set image.repository=%s' % (command, self._context.repository)
         command = '%s --set image.tag=%s' % (command, tag)
         command = '%s --set image.pullPolicy=%s' % (command, pullPolicy)
-
+        
         # Need to add secret file for docker registry
         if not self._context.opt['--use-aws-ecr']:
             # Copy secret file on k8s deploy dir
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
             command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
+
+        if self._context.opt['--image-pull-secret']:
+            command = '%s --set image.imagePullSecrets=cdp-%s' % (command, self._context.registry)
+            command = '%s --wait' % (command)
 
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
@@ -393,29 +399,30 @@ class CLIDriver(object):
 
         ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
 
-        # Patch
-        for ressource in ressources:
-            if not self._context.opt['--use-aws-ecr']:
-                deployment_resource = ressource.replace('/', ' ')
-                # Verify if pull secrets already exists
-                try:
-                    deployment_json = ''.join(kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace)))
-                    already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s")' % self._context.registry, json.loads(deployment_json)))
-                except Exception, e:
-                    # Not present
-                    LOG.verbose(str(e))
-                    already_patch = 0
-
-                if already_patch == 0:
-                    # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
-                    # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
-                    kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
-                        % (deployment_resource,  self._context.registry, namespace))
-
-        # Rollout
-        for ressource in ressources:
-            # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
-            kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
+        if not self._context.opt['--image-pull-secret']:
+            # Patch
+            for ressource in ressources:
+                if not self._context.opt['--use-aws-ecr']:
+                    deployment_resource = ressource.replace('/', ' ')
+                    # Verify if pull secrets already exists
+                    try:
+                        deployment_json = ''.join(kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace)))
+                        already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s")' % self._context.registry, json.loads(deployment_json)))
+                    except Exception, e:
+                        # Not present
+                        LOG.verbose(str(e))
+                        already_patch = 0
+        
+                    if already_patch == 0:
+                        # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
+                        # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
+                        kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
+                            % (deployment_resource,  self._context.registry, namespace))
+        
+            # Rollout
+            for ressource in ressources:
+                # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
+                kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
 
         self.__update_environment()
 
@@ -514,7 +521,7 @@ class CLIDriver(object):
             dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_DEFAULT', None)
 
         # Get k8s namespace
-        return '%s.%s' % (self.__getNamespace(), dns_subdomain)
+        return '%s.%s' % (self.__getRelease(), dns_subdomain)
 
 
     def __simulate_merge_on(self, force_git_config = False):
