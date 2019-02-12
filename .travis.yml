@@ -24,5 +24,7 @@ jobs:
         - if [ "$TRAVIS_BRANCH" == "master" ] || [ "$DOCKER_TAG_LATEST" == 1 ]; then
           docker tag $DOCKER_REPO:$TRAVIS_BRANCH $DOCKER_REPO:latest;
           docker tag $DOCKER_REPO:$TRAVIS_BRANCH $DOCKER_REPO:$TRAVIS_BUILD_NUMBER;
+          else
+          docker tag $DOCKER_REPO:$TRAVIS_BRANCH $DOCKER_REPO:$TRAVIS_BRANCH-$TRAVIS_BUILD_NUMBER;
           fi
         - docker push $DOCKER_REPO
