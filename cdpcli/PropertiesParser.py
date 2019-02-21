@@ -1,8 +1,9 @@
 #!/usr/bin/env python2.7
 
-import ConfigParser, StringIO
+import configparser
+from io import StringIO
 
-class PropertiesParser(ConfigParser.ConfigParser, object):
+class PropertiesParser(configparser.ConfigParser, object):
 
     def read(self, filename):
         try:
@@ -10,7 +11,7 @@ class PropertiesParser(ConfigParser.ConfigParser, object):
         except IOError:
             pass
         else:
-            file = StringIO.StringIO("[shell]\n" + text)
+            file = io.StringIO("[shell]\n" + text)
             self.readfp(file, filename)
 
     def get(self, prop):
