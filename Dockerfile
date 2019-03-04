@@ -50,5 +50,5 @@ RUN apk -v --no-cache add python3=$VERSION_PYTHON \
     && pip install --upgrade wheel==$VERSION_WHEEL docker-compose==$VERSION_DOCKER_COMPOSE \
     && pip install -r requirements.txt \
     && python setup.py install \
-    && apk -v --purge del py-pip autoconf automake libtool build-base libgit2-dev python3-dev \
+    && apk -v --no-cache --purge del py-pip autoconf automake libtool build-base libgit2-dev python3-dev \
     && rm -rf /var/lib/apt/lists/*
