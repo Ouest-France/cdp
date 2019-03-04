@@ -14,7 +14,7 @@ ARG VERSION_LIBGIT2_DEV="0.25.1-r4"
 ARG VERSION_AUTOCONF="2.69-r0"
 ARG VERSION_AUTOMAKE="1.15.1-r0"
 ARG VERSION_LIBTOOL="2.4.6-r4"
-ARG VERSION_JQ="2.3.1-r0"
+ARG VERSION_JQ="1.5-r5"
 
 ARG VERSION_WHEEL="0.33.1"
 ARG VERSION_DOCKER_COMPOSE="1.23.2"
@@ -38,11 +38,12 @@ RUN apk -v --no-cache add python3=$VERSION_PYTHON \
       automake=$VERSION_AUTOMAKE \
       libtool=$VERSION_LIBTOOL \
       docker=$VERSION_DOCKER \
+      jq=$VERSION_JQ \
     && chmod +x /bin/hadolint \
     && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi \
     && python -m ensurepip \
     && if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi \
-    && pip install --upgrade pip setuptools pyjq \
+    && pip install --upgrade pip setuptools \
     && rm -r /root/.cache \
     && ln -s /usr/lib/libcurl.so.4 /usr/lib/libcurl-gnutls.so.4 \
     && rc-update add docker boot \
