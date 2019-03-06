@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 
+from __future__ import print_function
 import unittest
 import os, sys, re
 import datetime
@@ -20,12 +21,12 @@ class FakeCommand(object):
         return self.run(cmd, dry_run, timeout, raise_error)
 
     def run(self, cmd, dry_run = None, timeout = None, raise_error = True):
-        print cmd
+        print(cmd)
         try:
             try:
-                self._tc.assertEquals(raise_error, self._verif_cmd[self._index]['verif_raise_error'])
+                self._tc.assertEqual(raise_error, self._verif_cmd[self._index]['verif_raise_error'])
             except KeyError:
-                self._tc.assertEquals(raise_error, True)
+                self._tc.assertEqual(raise_error, True)
 
             try:
                 with_entrypoint_assert = self._verif_cmd[self._index]['with_entrypoint']
@@ -61,7 +62,7 @@ class FakeCommand(object):
             try:
                 env_vars = self._verif_cmd[self._index]['env_vars']
                 for key, value in env_vars.items():
-                    self._tc.assertEquals(os.environ[key], value)
+                    self._tc.assertEqual(os.environ[key], value)
             except KeyError:
                 pass
 
@@ -574,7 +575,7 @@ class TestCliDriver(unittest.TestCase):
             raise ValueError('Previous command must return error.')
         except ValueError as e:
             # Ok beacause previous command return error.
-             print e
+             print(e)
         finally:
             os.environ['CI_DEPLOY_USER'] = TestCliDriver.ci_deploy_user
             os.environ['CI_DEPLOY_PASSWORD'] = TestCliDriver.ci_deploy_password
@@ -716,7 +717,7 @@ class TestCliDriver(unittest.TestCase):
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
     @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
     @patch('cdpcli.clidriver.os.makedirs')
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     @patch("cdpcli.clidriver.yaml.dump")
     def test_k8s_createdefaulthelm_imagetagsha1_useawsecr_namespaceprojectname_overridesleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
         env_name = 'review/test'
@@ -778,7 +779,7 @@ class TestCliDriver(unittest.TestCase):
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
     @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
     @patch('cdpcli.clidriver.os.makedirs')
-    @patch("__builtin__.open")
+    @patch("builtins.open")
     @patch("cdpcli.clidriver.yaml.dump")
     def test_k8s_createdefaulthelmwithspecificport_imagetagsha1_useawsecr_namespaceprojectname_sleep(self, mock_dump, mock_open, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
         env_name = 'review/test'
@@ -926,7 +927,7 @@ class TestCliDriver(unittest.TestCase):
             raise ValueError('Previous command must return error.')
         except ValueError as e:
             # Ok beacause previous command return error.
-             print e
+             print(e)
 
     def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock', env_vars = {}):
         cdp_docker_host_internal = '172.17.0.1'
@@ -939,9 +940,9 @@ class TestCliDriver(unittest.TestCase):
             cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
             cli.main()
         except BaseException as e:
-            print '************************** ERROR *******************************'
-            print e
-            print '****************************************************************'
+            print('************************** ERROR *******************************')
+            print(e)
+            print('****************************************************************')
             raise e
         finally:
             try:

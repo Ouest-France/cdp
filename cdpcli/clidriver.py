@@ -91,20 +91,21 @@ Options:
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker or k8s [default: k8s]
 """
+from __future__ import absolute_import
 
-import ConfigParser
+import configparser
 import sys, os, re
 import logging, verboselogs
 import time, datetime
 import yaml, json
 import gitlab
 import pyjq
-from Context import Context
-from clicommand import CLICommand
+from .Context import Context
+from .clicommand import CLICommand
 from cdpcli import __version__
-from dockercommand import DockerCommand
+from .dockercommand import DockerCommand
 from docopt import docopt, DocoptExit
-from PropertiesParser import PropertiesParser
+from .PropertiesParser import PropertiesParser
 
 LOG = verboselogs.VerboseLogger('clidriver')
 LOG.addHandler(logging.StreamHandler())
@@ -408,7 +409,7 @@ class CLIDriver(object):
                     try:
                         deployment_json = ''.join(kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace)))
                         already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s")' % self._context.registry, json.loads(deployment_json)))
-                    except Exception, e:
+                    except Exception as e:
                         # Not present
                         LOG.verbose(str(e))
                         already_patch = 0

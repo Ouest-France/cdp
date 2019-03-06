@@ -24,7 +24,7 @@ def find_version(*file_paths):
 
 
 requires = ['docopt==0.6.2',
-            'python-gitlab==1.4.0',
+            'python-gitlab==1.8.0',
             'verboselogs==1.7',
             'pyyaml==4.2b2']
 
@@ -49,7 +49,7 @@ setup_options = dict(
                              'topics/*.json']},
     install_requires=requires,
     extras_require={
-        ':python_version=="2.6"': [
+        ':python_version=="3.6"': [
             'argparse>=1.1',
         ]
     },
