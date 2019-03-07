@@ -370,10 +370,15 @@ class CLIDriver(object):
         
         # Need to add secret file for docker registry
         if not self._context.opt['--use-aws-ecr']:
-            # Copy secret file on k8s deploy dir
-            self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-            command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
-            command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
+            
+            try:
+                secret_json = kubectl_cmd.run('get secret cdp-%s -n %s -o json' % (self._context.registry, namespace)
+                secret_name = len(pyjq.first('.metadata.name ' , json.loads(secret_json)))
+            except Exception as e:
+               # Copy secret file on k8s deploy dir
+               self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+               command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
+               command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
 
         if self._context.opt['--image-pull-secret']:
             command = '%s --set image.imagePullSecrets=cdp-%s' % (command, self._context.registry)
