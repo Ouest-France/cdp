@@ -324,9 +324,21 @@ class CLIDriver(object):
         command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
         command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
         command = '%s --set namespace=%s' % (command, namespace)
+        
+        #Deprecated, we will detect if tiller is available in our namespace or in kube-system
         if self._context.opt['--tiller-namespace']:
             command = '%s --tiller-namespace=%s' % (command, namespace)
-
+        
+        tiller_length = 0
+        tiller_json = ''
+        try:
+            if not self._context.opt['--tiller-namespace']:
+                tiller_json = ''.join(kubectl_cmd.run('get svc --namespace %s -l name="tiller" -o json --ignore-not-found=false' % ( namespace )))
+                tiller_length = pyjq.first('.metadata.labels | select(.name == "tiller")' % (self._context.registry), json.loads(tiller_json))
+                command = '%s --tiller-namespace=%s' % (command, namespace)
+        except Exception as e:
+            # Not present
+            LOG.verbose(str(e))
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
             # Check that the chart dir no exists
@@ -370,15 +382,21 @@ class CLIDriver(object):
         
         # Need to add secret file for docker registry
         if not self._context.opt['--use-aws-ecr']:
-            
+            secret_length = 0
+            secret_json = ''
             try:
-                secret_json = kubectl_cmd.run('get secret cdp-%s -n %s -o json' % (self._context.registry, namespace)
-                secret_name = len(pyjq.first('.metadata.name ' , json.loads(secret_json)))
+                secret_json = ''.join(kubectl_cmd.run('get secret cdp-%s -n %s -o json' % (self._context.registry, namespace)))
+                secret_length = pyjq.first('.metadata | select(.name == "cdp-%s")' % (self._context.registry), json.loads(secret_json))
             except Exception as e:
-               # Copy secret file on k8s deploy dir
-               self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-               command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
-               command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
+                # Not present
+                LOG.error('exception: %s' % (str(e)))
+                secret_length = 0
+
+            if secret_length == 0:
+                # Add secret (Only if secret is not exist )
+                self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+                command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
+                command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
 
         if self._context.opt['--image-pull-secret']:
             command = '%s --set image.imagePullSecrets=cdp-%s' % (command, self._context.registry)
@@ -482,6 +500,9 @@ class CLIDriver(object):
 
     def __getTagBranchName(self):
         return os.environ['CI_COMMIT_REF_NAME']
+
+    def __getEnvironmentName(self):
+        return os.environ['CI_ENVIRONMENT_NAME']
 
     def __getTagLatest(self):
         return 'latest'
