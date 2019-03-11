@@ -333,8 +333,9 @@ class CLIDriver(object):
         tiller_json = ''
         try:
             if not self._context.opt['--tiller-namespace']:
-                tiller_json = ''.join(kubectl_cmd.run('get svc --namespace %s -l name="tiller" -o json --ignore-not-found=false' % ( namespace )))
-                tiller_length = pyjq.first('.metadata.labels | select(.name == "tiller")' % (self._context.registry), json.loads(tiller_json))
+                tiller_json = ''.join(kubectl_cmd.run('get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % ( namespace )))
+                LOG.error(str(tiller_json))
+                tiller_length = len(pyjq.first('.items[] | .metadata.labels.name', json.loads(tiller_json)))
                 command = '%s --tiller-namespace=%s' % (command, namespace)
         except Exception as e:
             # Not present
@@ -386,7 +387,7 @@ class CLIDriver(object):
             secret_json = ''
             try:
                 secret_json = ''.join(kubectl_cmd.run('get secret cdp-%s -n %s -o json' % (self._context.registry, namespace)))
-                secret_length = pyjq.first('.metadata | select(.name == "cdp-%s")' % (self._context.registry), json.loads(secret_json))
+                secret_length = len(pyjq.first('.metadata | select(.name == "cdp-%s")' % (self._context.registry), json.loads(secret_json)))
             except Exception as e:
                 # Not present
                 LOG.error('exception: %s' % (str(e)))

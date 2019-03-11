@@ -239,13 +239,30 @@ class TestCliDriver(unittest.TestCase):
       "type": "Opaque"
   }"""
     tiller_not_found = """{
-    "apiVersion": "v1",
-    "items": [],
-    "kind": "List",
-    "metadata": {
-        "resourceVersion": "",
-        "selfLink": ""
-    }
+      "apiVersion": "v1",
+      "items": [],
+      "kind": "List",
+      "metadata": {
+          "resourceVersion": "",
+          "selfLink": ""
+      }
+  }"""
+  
+    tiller_found = """{
+      "apiVersion": "v1",
+      "items": [
+          {
+              "apiVersion": "v1",
+              "kind": "Pod",
+              "metadata": {
+                  "labels": {
+                      "app": "helm",
+                      "name": "tiller"
+                  },
+                  "name": "tiller-deploy-758ccd65c6-cpp87"
+              }
+          }
+      ]
   }"""
 
     @classmethod
@@ -591,7 +608,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-            {'cmd': 'get svc --namespace %s -l name="tiller" -o json --ignore-not-found=false' % TestCliDriver.image_name_kubectl, 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'get secret cdp-%s -n %s -o json' % (TestCliDriver.ci_registry,namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.registry_secret_json ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --debug -i --namespace=%s --force'
                 % (release,
@@ -630,7 +647,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-            {'cmd': 'get svc --namespace %s -l name="tiller" -o json --ignore-not-found=false' % TestCliDriver.image_name_kubectl, 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'get secret cdp-%s -n %s -o json' % (TestCliDriver.cdp_custom_registry,namespace), 'volume_from' : 'k8s', 'output': 'Error from server (NotFound): secrets "test" not found', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
@@ -674,7 +691,7 @@ class TestCliDriver(unittest.TestCase):
         verif_cmd = [
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-            {'cmd': 'get svc --namespace %s -l name="tiller" -o json --ignore-not-found=false' % TestCliDriver.image_name_kubectl, 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'get secret cdp-%s -n %s -o json' % (TestCliDriver.cdp_custom_registry,namespace), 'volume_from' : 'k8s', 'output': 'Error from server (NotFound): secrets "test" not found', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
@@ -721,7 +738,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-            {'cmd': 'get svc --namespace %s -l name="tiller" -o json --ignore-not-found=false' % TestCliDriver.image_name_kubectl, 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --debug -i --namespace=%s --force'
                 % (release,
                     deploy_spec_dir,
@@ -772,7 +789,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-            {'cmd': 'get svc --namespace %s -l name="tiller" -o json --ignore-not-found=false' % TestCliDriver.image_name_kubectl, 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
             {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
                 % (release,
@@ -835,7 +852,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-            {'cmd': 'get svc --namespace %s -l name="tiller" -o json --ignore-not-found=false' % TestCliDriver.image_name_kubectl, 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
             {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
                 % (release,
@@ -903,6 +920,36 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name', '--tiller-namespace' },
             verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test' })
 
+    def test_k8s_releaseprojectbranchname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self):
+        # Create FakeCommand
+        aws_host = 'ecr.amazonaws.com'
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+        namespace = TestCliDriver.ci_project_name
+        release = TestCliDriver.ci_pnfl_project_id_commit_ref_slug.replace('_', '-')[:53]
+        sleep = 10
+        verif_cmd = [
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
+            {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
+            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --tiller-namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
+                % (release,
+                    namespace,
+                    namespace,
+                    release,
+                    TestCliDriver.cdp_dns_subdomain,
+                    TestCliDriver.ci_commit_sha[:8],
+                    aws_host,
+                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_commit_sha,
+                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+            {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1'], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'rollout status deployments/package1 -n %s' % (namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
+        ]
+        self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name' },
+            verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test' })
+            
     def test_validator_validateconfigurations_dockerhost(self):
         docker_host = 'unix:///var/run/docker.sock'
 
