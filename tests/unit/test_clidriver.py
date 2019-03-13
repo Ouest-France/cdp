@@ -225,19 +225,6 @@ class TestCliDriver(unittest.TestCase):
       }
   }"""
 
-    registry_secret_json = """{
-      "apiVersion": "v1",
-      "data": {
-          "SECRET": "xxxxxxxxxxxxxxxxxxxxxxx"
-      },
-      "kind": "Secret",
-      "metadata": {
-          "creationTimestamp": "2000-01-24T00:00:00Z",
-          "name": "cdp-registry.gitlab.com",
-          "namespace": "test"
-      },
-      "type": "Opaque"
-  }"""
     tiller_not_found = """{
       "apiVersion": "v1",
       "items": [],
@@ -599,35 +586,6 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'artifactory', '--delete=%s' % upload_file }, verif_cmd)
 
-    def test_k8s_usegitlabregistry_secret_already_exists(self):
-        # Create FakeCommand
-        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
-        namespace = namespace.replace('_', '-')[:63]
-        release = namespace[:53]
-
-        verif_cmd = [
-            {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
-            {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'get secret cdp-%s -n %s -o json' % (TestCliDriver.ci_registry,namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.registry_secret_json ], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --debug -i --namespace=%s --force'
-                % (release,
-                    namespace,
-                    release,
-                    TestCliDriver.cdp_dns_subdomain,
-                    TestCliDriver.ci_commit_sha[:8],
-                    TestCliDriver.ci_registry,
-                    TestCliDriver.ci_project_path.lower(),
-                    TestCliDriver.ci_commit_ref_name,
-                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-            {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1','deployments/package2'], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'get deployments package1 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_with_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'get deployments package2 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_with_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package1 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package1', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package2 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package2', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
-        ]
-        self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name' }, verif_cmd)
-
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     def test_k8s_usegitlabregistry_namespaceprojectbranchname_values_dockerhost(self, mock_Gitlab):
         env_name = 'production'
@@ -648,7 +606,6 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'get secret cdp-%s -n %s -o json' % (TestCliDriver.cdp_custom_registry,namespace), 'volume_from' : 'k8s', 'output': 'Error from server (NotFound): secrets "test" not found', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,
@@ -692,7 +649,6 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'get secret cdp-%s -n %s -o json' % (TestCliDriver.cdp_custom_registry,namespace), 'volume_from' : 'k8s', 'output': 'Error from server (NotFound): secrets "test" not found', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
             {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,

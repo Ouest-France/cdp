@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3.6
 
 """
 Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
@@ -91,7 +91,6 @@ Options:
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker or k8s [default: k8s]
 """
-from __future__ import absolute_import
 
 import configparser
 import sys, os, re
@@ -383,21 +382,10 @@ class CLIDriver(object):
         
         # Need to add secret file for docker registry
         if not self._context.opt['--use-aws-ecr']:
-            secret_length = 0
-            secret_json = ''
-            try:
-                secret_json = ''.join(kubectl_cmd.run('get secret cdp-%s -n %s -o json' % (self._context.registry, namespace)))
-                secret_length = len(pyjq.first('.metadata | select(.name == "cdp-%s")' % (self._context.registry), json.loads(secret_json)))
-            except Exception as e:
-                # Not present
-                LOG.error('exception: %s' % (str(e)))
-                secret_length = 0
-
-            if secret_length == 0:
-                # Add secret (Only if secret is not exist )
-                self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-                command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
-                command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
+            # Add secret (Only if secret is not exist )
+            self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+            command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
+            command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
 
         if self._context.opt['--image-pull-secret']:
             command = '%s --set image.imagePullSecrets=cdp-%s' % (command, self._context.registry)
