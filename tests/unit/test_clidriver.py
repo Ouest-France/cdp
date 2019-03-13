@@ -593,7 +593,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s'
                 % (TestCliDriver.cdp_artifactory_path,
                     TestCliDriver.ci_project_path.lower(),
-                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_commit_ref_slug,
                     upload_file,
                     TestCliDriver.cdp_artifactory_token), 'output': 'unnecessary'}
         ]
