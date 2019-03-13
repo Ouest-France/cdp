@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3.6
 
 from __future__ import print_function
 import unittest
@@ -115,7 +115,7 @@ class TestCliDriver(unittest.TestCase):
     ci_registry_user = 'gitlab-ci'
     ci_registry = 'registry.gitlab.com'
     ci_repository_url = 'https://gitlab-ci-token:iejdzkjziuiez7786@gitlab.com/HelloWorld/HelloWorld/helloworld.git'
-    ci_commit_ref_name = 'branch_helloworld_with_many.characters_because_helm_k8s_because_the_length_must_not_longer_than.63'
+    ci_commit_ref_name = 'branch_helloworld_with_many.characters/because_helm_k8s_because_the_length_must_not_longer_than.63'
     ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_63'
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
     ci_project_id = '14'
@@ -225,6 +225,19 @@ class TestCliDriver(unittest.TestCase):
       }
   }"""
 
+    registry_secret_json = """{
+      "apiVersion": "v1",
+      "data": {
+          "SECRET": "xxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "kind": "Secret",
+      "metadata": {
+          "creationTimestamp": "2000-01-24T00:00:00Z",
+          "name": "cdp-registry.gitlab.com",
+          "namespace": "test"
+      },
+      "type": "Opaque"
+  }"""
     tiller_not_found = """{
       "apiVersion": "v1",
       "items": [],
@@ -417,7 +430,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.ci_project_path_slug,
-                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_commit_ref_slug,
                     TestCliDriver.ci_project_path_slug), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_sonar_scanner},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
@@ -438,7 +451,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     TestCliDriver.ci_commit_ref_name,
                     TestCliDriver.ci_project_path_slug,
-                    TestCliDriver.ci_commit_ref_name), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_sonar_scanner}
+                    TestCliDriver.ci_commit_ref_slug), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_sonar_scanner}
         ]
         self.__run_CLIDriver({ 'sonar', '--publish', '--sast' }, verif_cmd)
         mock_isfile.assert_called_with('sonar-project.properties')
@@ -459,8 +472,8 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_name), 'output': 'unnecessary'},
+            {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s:%s' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--sleep=%s' % sleep },
@@ -615,7 +628,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.ci_registry,
                     TestCliDriver.ci_project_path.lower(),
-                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_commit_ref_slug,
                     TestCliDriver.ci_deploy_user,
                     TestCliDriver.ci_deploy_password,
                     staging_file,
@@ -658,7 +671,7 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.cdp_custom_registry,
                     TestCliDriver.ci_project_path.lower(),
-                    TestCliDriver.ci_commit_ref_name,
+                    TestCliDriver.ci_commit_ref_slug,
                     TestCliDriver.cdp_custom_registry_user,
                     TestCliDriver.cdp_custom_registry_read_only_token,
                     staging_file,
