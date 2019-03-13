@@ -488,10 +488,10 @@ class CLIDriver(object):
         return '%s:%s' %  (image_name, tag)
 
     def __getTagBranchName(self):
-        return os.environ['CI_COMMIT_REF_NAME']
+        return os.environ['CI_COMMIT_REF_SLUG']
 
     def __getEnvironmentName(self):
-        return os.environ['CI_ENVIRONMENT_NAME']
+        return os.environ['CI_ENVIRONMENT_NAME'][:128]
 
     def __getTagLatest(self):
         return 'latest'
