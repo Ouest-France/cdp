@@ -400,13 +400,16 @@ class CLIDriver(object):
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
         command = '%s --force' % command
+        
+        if self._context.opt['--delete-labels']:
+            now = datetime.datetime.utcnow()
+            date_format = '%Y-%m-%dT%H%M%S'
+            command = '%s --description="deletionTimestamp=%sZ"' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format))
 
         # Instal or Upgrade environnement
         helm_cmd.run(command)
 
         if self._context.opt['--delete-labels']:
-            now = datetime.datetime.utcnow()
-            date_format = '%Y-%m-%dT%H%M%S'
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
 

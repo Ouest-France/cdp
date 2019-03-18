@@ -1,11 +1,11 @@
-# SIPA/Ouest-France - Continous Delivery Pipeline (CDP) for Gitlab CI
+# SIPA/Ouest-France - Continuous Delivery Pipeline (CDP) for Gitlab CI
 
 [![Build Status](https://travis-ci.org/Ouest-France/cdp.svg?branch=master)](https://travis-ci.org/Ouest-France/cdp) ![extra](https://img.shields.io/badge/actively%20maintained-yes-ff69b4.svg?)
 
 ## Usage
 
 ```python
-Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
+Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>) (--command=<cmd>)
@@ -85,7 +85,7 @@ Options:
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
-    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace
+    --tiller-namespace                                         (DEPRECATED) we are looking if tiller is in the namespace if not using default tiller
     --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
@@ -110,10 +110,13 @@ maven:
     - CDP_REPOSITORY_USERNAME – Username for read/write in maven repository
     - CDP_REPOSITORY_PASSWORD – Password
     - CDP_REPOSITORY_URL – URL of maven repository
+    - CDP_PLUGINREPOSITORY_URL – URL of maven plugin repository
  --deploy=snapshot:
     - CDP_REPOSITORY_MAVEN_SNAPSHOT – Repository for snapshot (example libs-snapshot-local)
+    - CDP_PLUGINREPOSITORY_MAVEN_SNAPSHOT – Plugin repository for snapshot (example libs-snapshot-local)
  --deploy=release:
     - CDP_REPOSITORY_MAVEN_RELEASE – Repository for release (example libs-release-local)
+    - CDP_PLUGINREPOSITORY_MAVEN_RELEASE – Plugin repository for release (example libs-release-local)
 
 sonar:
  - CDP_SONAR_LOGIN – Sonar access token (scope Administer Quality Profiles / Administer Quality Gates).
@@ -250,13 +253,14 @@ services:
 When you use the `docker k8s` command, you may need information from the CDP context. Below, the variables made available by the CDP for use in the helm context.
 
 ```yaml
-namespace:           Name of kubernetes namespace, based on the following options: [ --namespace-project-branch-name | --namespace-project-name ]
-ingress.host:        Ingress, based on the following options : [ --namespace-project-branch-name | --namespace-project-name ]
-image.commit.sha:    First 8 characters of sha1 corresponding to the current commit.
-image.registry:      Docker image registry, based on the following options: [ --use-gitlab-registry | --use-aws-ecr | --use-custom-registry ]
-image.repository:    Name of the repository corresponding to the CI_PROJECT_PATH environment variable in lowercase.
-image.tag:           Docker image tag, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
-image.pullPolicy:    Docker pull policy, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
+namespace:               Name of kubernetes namespace, based on the following options: [ --namespace-project-branch-name | --namespace-project-name ]
+ingress.host:            Ingress, based on the following options : [ --namespace-project-branch-name | --namespace-project-name ]
+image.commit.sha:        First 8 characters of sha1 corresponding to the current commit.
+image.registry:          Docker image registry, based on the following options: [ --use-gitlab-registry | --use-aws-ecr | --use-custom-registry ]
+image.repository:        Name of the repository corresponding to the CI_PROJECT_PATH environment variable in lowercase.
+image.tag:               Docker image tag, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
+image.pullPolicy:        Docker pull policy, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
+image.imagePullSecrets:  If --image-pull-secret option is set, we add this value to be used in the chart to avoid patch + rollout.
 ```
 
 #### charts/deployment.yaml sample
@@ -281,8 +285,8 @@ spec:
 
 ### Prerequisites
 
-- python 2.7
-- pip 2.7
+- python 3.6
+- pip 18.1
 
 ### Tests
 

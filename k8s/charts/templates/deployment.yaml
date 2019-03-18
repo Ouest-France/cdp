@@ -17,6 +17,10 @@ spec:
         app: {{ template "project.name" . }}
         release: {{ .Release.Name }}
     spec:
+      {{- if .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+      - name: {{ .Values.image.imagePullSecrets }}
+      {{- end }}
       containers:
         - name: {{ template "project.name" . }}-{{ .Values.image.commit.sha }}
           image: {{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
