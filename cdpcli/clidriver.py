@@ -404,7 +404,7 @@ class CLIDriver(object):
         if self._context.opt['--delete-labels']:
             now = datetime.datetime.utcnow()
             date_format = '%Y-%m-%dT%H%M%S'
-            command = '%s --description="deletionTimestamp=%sZ"' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format))
+            command = '%s --description "deletionTimestamp=%sZ"' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format))
 
         # Instal or Upgrade environnement
         helm_cmd.run(command)
