@@ -333,7 +333,6 @@ class CLIDriver(object):
         try:
             if not self._context.opt['--tiller-namespace']:
                 tiller_json = ''.join(kubectl_cmd.run('get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % ( namespace )))
-                LOG.error(str(tiller_json))
                 tiller_length = len(pyjq.first('.items[] | .metadata.labels.name', json.loads(tiller_json)))
                 command = '%s --tiller-namespace=%s' % (command, namespace)
         except Exception as e:
@@ -389,7 +388,7 @@ class CLIDriver(object):
             command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
 
         if self._context.is_image_pull_secret:
-            command = '%s --set image.imagePullSecrets=cdp-%s' % (command, self._context.registry)
+            command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (command, self._context.registry,release)
             command = '%s --wait' % (command)
 
         if self._context.opt['--values']:
