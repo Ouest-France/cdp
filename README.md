@@ -135,6 +135,7 @@ k8s:
     - Helm and k8s files to configure the deployment. Must be present in the directory configured by the --deploy-spec-dir=<dir> option.
 
 docker|k8s:
+  - CDP_DNS_SUBDOMAIN – Specify the subdomain of k8s cluster (set by environment variable in runner).
   - CDP_IMAGE_PULL_SECRET – Add the imagePullSecret value to use the helm --wait option instead of patch and rollout.
   - CDP_NAMESPACE – if value = 'project-name', force usage of project name to create k8s namespace.
   --use-aws-ecr:
@@ -204,26 +205,22 @@ package:
     - cdp artifactory --image-tag-branch-name --put=conf/example.yaml
 
 deploy_review:
-  variables:
-    DNS_SUBDOMAIN: { ingress.k8s }
   image: ouestfrance/cdp:latest
   stage: deploy
   script:
     - cdp k8s --use-gitlab-registry --namespace-project-branch-name --image-tag-branch-name
   environment:
     name: review/$CI_COMMIT_REF_NAME
-    url: https://$CI_COMMIT_REF_SLUG.$CI_PROJECT_NAME.$DNS_SUBDOMAIN
+    url: https://$CI_COMMIT_REF_SLUG.$CI_PROJECT_NAME.$CDP_DNS_SUBDOMAIN
 
 deploy_staging:
-  variables:
-    DNS_SUBDOMAIN: { ingress.k8s }
   image: ouestfrance/cdp:latest
   stage: deploy
   script:
     - cdp k8s --use-gitlab-registry --namespace-project-name --image-tag-sha1 --values=values.staging.yaml
   environment:
     name: staging
-    url: https://$CI_PROJECT_NAME.$DNS_SUBDOMAIN
+    url: https://$CI_PROJECT_NAME.$CDP_DNS_SUBDOMAIN
 ```
 
 ### Environment variables set by the CDP
@@ -257,6 +254,7 @@ When you use the `docker k8s` command, you may need information from the CDP con
 ```yaml
 namespace:               Name of kubernetes namespace, based on the following options: [ --namespace-project-branch-name | --namespace-project-name ]
 ingress.host:            Ingress, based on the following options : [ --namespace-project-branch-name | --namespace-project-name ]
+ingress.subdomain:       Only DNS subdomain, based on this environment variable CDP_DNS_SUBDOMAIN
 image.commit.sha:        First 8 characters of sha1 corresponding to the current commit.
 image.registry:          Docker image registry, based on the following options: [ --use-gitlab-registry | --use-aws-ecr | --use-custom-registry ]
 image.repository:        Name of the repository corresponding to the CI_PROJECT_PATH environment variable in lowercase.
