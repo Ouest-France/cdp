@@ -64,7 +64,7 @@ Options:
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
-    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout
+    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -81,7 +81,7 @@ Options:
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
-    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace
+    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace (deprecated)
     --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
@@ -323,11 +323,11 @@ class CLIDriver(object):
         command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
         command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
         command = '%s --set namespace=%s' % (command, namespace)
-        
+
         #Deprecated, we will detect if tiller is available in our namespace or in kube-system
         if self._context.opt['--tiller-namespace']:
             command = '%s --tiller-namespace=%s' % (command, namespace)
-        
+
         tiller_length = 0
         tiller_json = ''
         try:
@@ -379,7 +379,7 @@ class CLIDriver(object):
         command = '%s --set image.repository=%s' % (command, self._context.repository)
         command = '%s --set image.tag=%s' % (command, tag)
         command = '%s --set image.pullPolicy=%s' % (command, pullPolicy)
-        
+
         # Need to add secret file for docker registry
         if not self._context.opt['--use-aws-ecr']:
             # Add secret (Only if secret is not exist )
@@ -387,7 +387,7 @@ class CLIDriver(object):
             command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
             command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
 
-        if self._context.opt['--image-pull-secret']:
+        if self._context.is_image_pull_secret:
             command = '%s --set image.imagePullSecrets=cdp-%s' % (command, self._context.registry)
             command = '%s --wait' % (command)
 
@@ -400,7 +400,7 @@ class CLIDriver(object):
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
         command = '%s --force' % command
-        
+
         if self._context.opt['--delete-labels']:
             now = datetime.datetime.utcnow()
             date_format = '%Y-%m-%dT%H%M%S'
@@ -413,9 +413,10 @@ class CLIDriver(object):
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
 
-        ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
 
-        if not self._context.opt['--image-pull-secret']:
+        if not self._context.is_image_pull_secret:
+            ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
+            
             # Patch
             for ressource in ressources:
                 if not self._context.opt['--use-aws-ecr']:
@@ -428,13 +429,13 @@ class CLIDriver(object):
                         # Not present
                         LOG.verbose(str(e))
                         already_patch = 0
-        
+
                     if already_patch == 0:
                         # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
                         # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
                         kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
                             % (deployment_resource,  self._context.registry, namespace))
-        
+
             # Rollout
             for ressource in ressources:
                 # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
@@ -503,8 +504,7 @@ class CLIDriver(object):
         return os.environ['CI_COMMIT_SHA']
 
     def __getNamespace(self):
-        condition = self._context.opt['--namespace-project-name']
-        return self.__getName(condition)[:63]
+        return self.__getName(self._context.is_namespace_project_name)[:63]
 
     # get release name based on given parameters
     def __getRelease(self):

@@ -72,6 +72,22 @@ class Context(object):
     def repository(self):
         return self._repository
 
+    @property
+    def is_namespace_project_name(self):
+        namespace =  os.getenv('CDP_NAMESPACE', None)
+        if namespace is not None:
+            return True if namespace == 'project-name' else False
+        else:
+            return self._opt['--namespace-project-name']
+
+    @property
+    def is_image_pull_secret(self):
+        image_pull_secret =  os.getenv('CDP_IMAGE_PULL_SECRET', None)
+        if image_pull_secret is not None:
+            return True if image_pull_secret == 'true' else False
+        else:
+            return self.opt['--image-pull-secret']
+
     def __verif_attr(self, attr):
         if attr is None:
             raise ValueError('Compatible with gitlab >= 10.8 or deploy token with the name gitlab-deploy-token and the scope read_registry must be created in this project.')

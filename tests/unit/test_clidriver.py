@@ -247,7 +247,7 @@ class TestCliDriver(unittest.TestCase):
           "selfLink": ""
       }
   }"""
-  
+
     tiller_found = """{
       "apiVersion": "v1",
       "items": [
@@ -688,6 +688,38 @@ class TestCliDriver(unittest.TestCase):
         self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
             env_vars = {'CI_RUNNER_TAGS': 'test, staging'})
 
+    def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values(self):
+        # Create FakeCommand
+        namespace = TestCliDriver.ci_project_name
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        verif_cmd = [
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
+            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s --wait --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+                % (release,
+                    namespace,
+                    release,
+                    TestCliDriver.cdp_dns_subdomain_staging,
+                    TestCliDriver.ci_commit_sha[:8],
+                    TestCliDriver.cdp_custom_registry,
+                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_commit_ref_slug,
+                    TestCliDriver.cdp_custom_registry_user,
+                    TestCliDriver.cdp_custom_registry_read_only_token,
+                    TestCliDriver.cdp_custom_registry,
+                    staging_file,
+                    int_file,
+                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
+        ]
+        self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
+            env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true'})
+
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self):
         # Create FakeCommand
@@ -920,7 +952,7 @@ class TestCliDriver(unittest.TestCase):
         ]
         self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name' },
             verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test' })
-            
+
     def test_validator_validateconfigurations_dockerhost(self):
         docker_host = 'unix:///var/run/docker.sock'
 
