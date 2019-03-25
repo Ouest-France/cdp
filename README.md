@@ -5,7 +5,7 @@
 ## Usage
 
 ```python
-Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
+Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>) (--command=<cmd>)
@@ -68,7 +68,7 @@ Options:
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
-    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout
+    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -85,7 +85,7 @@ Options:
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
-    --tiller-namespace                                         (DEPRECATED) we are looking if tiller is in the namespace if not using default tiller
+    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace (deprecated)
     --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
@@ -135,6 +135,8 @@ k8s:
     - Helm and k8s files to configure the deployment. Must be present in the directory configured by the --deploy-spec-dir=<dir> option.
 
 docker|k8s:
+  - CDP_IMAGE_PULL_SECRET – Add the imagePullSecret value to use the helm --wait option instead of patch and rollout.
+  - CDP_NAMESPACE – if value = 'project-name', force usage of project name to create k8s namespace.
   --use-aws-ecr:
     - AWS_ACCESS_KEY_ID (Gitlab-runner env var) – AWS access key.
     - AWS_SECRET_ACCESS_KEY (Gitlab-runner env var) – AWS secret key. Access and secret key variables override credentials stored in credential and config files.
@@ -286,18 +288,20 @@ spec:
 ### Prerequisites
 
 - python 3.6
-- pip 18.1
+- python3-setuptools
+- python3-pip
 
 ### Tests
 
 ```sh
-python setup.py test
+python3 -m pip install -r requirements.txt
+python3 setup.py test
 ```
 ### Installations
 
 ```sh
-pip install -r requirements.txt
-sudo python setup.py install
+python3 -m pip install -r requirements.txt
+sudo python3 setup.py install
 
 cdp --help
 ```
