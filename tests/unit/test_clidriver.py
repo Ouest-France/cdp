@@ -265,8 +265,7 @@ class TestCliDriver(unittest.TestCase):
       ]
   }"""
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
         os.environ['CI_REGISTRY_USER'] = TestCliDriver.ci_registry_user
@@ -281,9 +280,7 @@ class TestCliDriver(unittest.TestCase):
         os.environ['CI_PROJECT_PATH_SLUG'] = TestCliDriver.ci_project_path_slug
         os.environ['CI_DEPLOY_USER'] = TestCliDriver.ci_deploy_user
         os.environ['CI_DEPLOY_PASSWORD'] = TestCliDriver.ci_deploy_password
-        os.environ['CDP_DNS_SUBDOMAIN_DEFAULT'] = TestCliDriver.cdp_dns_subdomain
-        os.environ['CDP_DNS_SUBDOMAIN_PROD'] = TestCliDriver.cdp_dns_subdomain
-        os.environ['CDP_DNS_SUBDOMAIN_STAGING'] = TestCliDriver.cdp_dns_subdomain_staging
+        os.environ['CDP_DNS_SUBDOMAIN'] = TestCliDriver.cdp_dns_subdomain
         os.environ['GITLAB_TOKEN'] = TestCliDriver.gitlab_token
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
         os.environ['GITLAB_USER_NAME'] = TestCliDriver.gitlab_user_name
@@ -620,10 +617,11 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
                     release,
+                    TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.ci_registry,
@@ -663,10 +661,11 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
                     release,
+                    TestCliDriver.cdp_dns_subdomain_staging,
                     TestCliDriver.cdp_dns_subdomain_staging,
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.cdp_custom_registry,
@@ -686,7 +685,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'rollout status deployments/package2 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package2', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
         ]
         self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
-            env_vars = {'CI_RUNNER_TAGS': 'test, staging'})
+            env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
 
     def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values(self):
         # Create FakeCommand
@@ -701,10 +700,11 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s --wait --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s --wait --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
                     release,
+                    TestCliDriver.cdp_dns_subdomain_staging,
                     TestCliDriver.cdp_dns_subdomain_staging,
                     TestCliDriver.ci_commit_sha[:8],
                     TestCliDriver.cdp_custom_registry,
@@ -718,7 +718,7 @@ class TestCliDriver(unittest.TestCase):
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
         ]
         self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
-            env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true'})
+            env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
 
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self):
@@ -742,12 +742,13 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s %s --timeout %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --debug -i --namespace=%s --force'
                 % (release,
                     deploy_spec_dir,
                     timeout,
                     namespace,
                     release,
+                    TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
@@ -794,11 +795,12 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
                 % (release,
                     deploy_spec_dir,
                     namespace,
                     release,
+                    TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
@@ -857,12 +859,13 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s %s --timeout 600 --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
                 % (release,
                     deploy_spec_dir,
                     namespace,
                     internal_port,
                     release,
+                    TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
@@ -906,11 +909,12 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --tiller-namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --tiller-namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
                     namespace,
                     release,
+                    TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,
@@ -936,11 +940,12 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --tiller-namespace=%s --set ingress.host=%s.%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --tiller-namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
                     namespace,
                     release,
+                    TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.cdp_dns_subdomain,
                     TestCliDriver.ci_commit_sha[:8],
                     aws_host,

@@ -374,6 +374,7 @@ class CLIDriver(object):
             pullPolicy = 'Always'
 
         command = '%s --set ingress.host=%s' % (command, host)
+        command = '%s --set ingress.subdomain=%s' % (command, os.getenv('CDP_DNS_SUBDOMAIN', None))
         command = '%s --set image.commit.sha=sha-%s' % (command, os.environ['CI_COMMIT_SHA'][:8])
         command = '%s --set image.registry=%s' % (command,  self._context.registry)
         command = '%s --set image.repository=%s' % (command, self._context.repository)
@@ -416,7 +417,7 @@ class CLIDriver(object):
 
         if not self._context.is_image_pull_secret:
             ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
-            
+
             # Patch
             for ressource in ressources:
                 if not self._context.opt['--use-aws-ecr']:
@@ -526,7 +527,8 @@ class CLIDriver(object):
         return name.replace('_', '-')
 
     def __getHost(self):
-        dns_subdomain = os.getenv('DNS_SUBDOMAIN', None) # Deprecated
+        dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN', None)
+        # Deprecated
         if dns_subdomain is None:
             ci_runner_tags = os.getenv('CI_RUNNER_TAGS', None)
             if ci_runner_tags is not None:
@@ -538,6 +540,7 @@ class CLIDriver(object):
 
         if dns_subdomain is None:
             dns_subdomain = os.getenv('CDP_DNS_SUBDOMAIN_DEFAULT', None)
+        # /Deprecated
 
         # Get k8s namespace
         return '%s.%s' % (self.__getRelease(), dns_subdomain)
