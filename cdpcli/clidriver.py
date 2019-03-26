@@ -433,8 +433,8 @@ class CLIDriver(object):
                     if already_patch == 0:
                         # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
                         # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
-                        kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s"}]}}}}\' -n %s'
-                            % (deployment_resource,  self._context.registry, namespace))
+                        kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s-%s"}]}}}}\' -n %s'
+                            % (deployment_resource,  self._context.registry, release, namespace))
 
             # Rollout
             for ressource in ressources:
