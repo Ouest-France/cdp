@@ -150,7 +150,7 @@ class TestCliDriver(unittest.TestCase):
     image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:3.1.0'
     image_name_aws = 'ouestfrance/cdp-aws:1.15.19'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.9.9'
-    image_name_helm = 'ouestfrance/cdp-helm:2.9.1-1.9.9'
+    image_name_helm = 'ouestfrance/cdp-helm:2.13.1'
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -617,7 +617,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s-%s --wait --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
                     release,
@@ -629,6 +629,8 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_ref_slug,
                     TestCliDriver.ci_deploy_user,
                     TestCliDriver.ci_deploy_password,
+                    TestCliDriver.ci_registry,
+                    release,
                     staging_file,
                     int_file,
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
@@ -661,7 +663,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s-%s --wait --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
                     release,
@@ -673,6 +675,8 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_ref_slug,
                     TestCliDriver.cdp_custom_registry_user,
                     TestCliDriver.cdp_custom_registry_read_only_token,
+                    TestCliDriver.cdp_custom_registry,
+                    release,
                     staging_file,
                     int_file,
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
