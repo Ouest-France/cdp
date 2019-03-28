@@ -197,7 +197,7 @@ class TestCliDriver(unittest.TestCase):
               "spec": {
                   "imagePullSecrets": [
                       {
-                          "name": "cdp-registry.gitlab.com"
+                          "name": "cdp-registry.gitlab.com-hw14-branch-helloworld-with-many-characters-because-h"
                       },
                       {
                           "name": "custom"
