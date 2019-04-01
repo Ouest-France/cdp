@@ -660,7 +660,7 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
             {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s-%s --wait --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
                 % (release,
                     namespace,
                     release,
@@ -756,8 +756,7 @@ class TestCliDriver(unittest.TestCase):
                     release,
                     staging_file,
                     int_file,
-                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-            {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': [], 'docker_image': TestCliDriver.image_name_kubectl},
+                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
         ]
         self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
             env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
