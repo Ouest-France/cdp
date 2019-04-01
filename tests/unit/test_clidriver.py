@@ -197,7 +197,7 @@ class TestCliDriver(unittest.TestCase):
               "spec": {
                   "imagePullSecrets": [
                       {
-                          "name": "cdp-registry.gitlab.com"
+                          "name": "cdp-registry.gitlab.com-hw14-branch-helloworld-with-many-characters-because-h"
                       },
                       {
                           "name": "custom"
@@ -637,8 +637,6 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1','deployments/package2'], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'get deployments package1 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_with_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'get deployments package2 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_with_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package1 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package1', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package2 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package2', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
         ]
         self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values },
             verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST': docker_host, 'CI_ENVIRONMENT_NAME': env_name})
@@ -649,6 +647,44 @@ class TestCliDriver(unittest.TestCase):
         self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (release, TestCliDriver.cdp_dns_subdomain))
         mock_env2.save.assert_called_with()
 
+    def test_k8s_usegitlabregistry_namespaceprojectbranchname_onDeploymentHasSecret_values(self):
+        # Create FakeCommand
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        verif_cmd = [
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
+            {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+            {'cmd': 'upgrade %s charts --timeout 600 --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s-%s --wait --values charts/%s --values charts/%s --debug -i --namespace=%s --force'
+                % (release,
+                    namespace,
+                    release,
+                    TestCliDriver.cdp_dns_subdomain_staging,
+                    TestCliDriver.cdp_dns_subdomain_staging,
+                    TestCliDriver.ci_commit_sha[:8],
+                    TestCliDriver.ci_registry,
+                    TestCliDriver.ci_project_path.lower(),
+                    TestCliDriver.ci_commit_ref_slug,
+                    TestCliDriver.ci_deploy_user,
+                    TestCliDriver.ci_deploy_password,
+                    TestCliDriver.ci_registry,
+                    release,
+                    staging_file,
+                    int_file,
+                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+            {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1','deployments/package2'], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get deployments package1 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_with_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'get deployments package2 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_without_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s-%s"}]}}}}\' -n %s' % (TestCliDriver.ci_registry, release, namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'rollout status deployments/package2 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package2', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
+        ]
+        self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
+            env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
 
     def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self):
         # Create FakeCommand
@@ -683,9 +719,9 @@ class TestCliDriver(unittest.TestCase):
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1','deployments/package2'], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'get deployments package1 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_without_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'patch deployments package1 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, release, namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+            {'cmd': 'rollout status deployments/package1 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package1', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'get deployments package2 -n %s -o json' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.deployment_json_without_secret ], 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'patch deployments package2 -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s-%s"}]}}}}\' -n %s' % (TestCliDriver.cdp_custom_registry, release, namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package1 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package1', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'rollout status deployments/package2 -n %s' % namespace, 'volume_from' : 'k8s', 'output': 'deployments/package2', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
         ]
         self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
@@ -720,7 +756,8 @@ class TestCliDriver(unittest.TestCase):
                     release,
                     staging_file,
                     int_file,
-                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
+                    namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+            {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': [], 'docker_image': TestCliDriver.image_name_kubectl},
         ]
         self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
             env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
@@ -769,7 +806,6 @@ class TestCliDriver(unittest.TestCase):
                     date_delete.strftime(date_format),
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1'], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package1 -n %s' % (namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'timeout': str(timeout), 'docker_image': TestCliDriver.image_name_kubectl}
         ]
         self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes}, verif_cmd,
             env_vars = {'CI_RUNNER_TAGS': 'test, test2'})
@@ -814,7 +850,6 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1'], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package1 -n %s' % (namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'sleep %s' % sleep_override, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
@@ -879,7 +914,6 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1'], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package1 -n %s' % (namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--internal-port=%s' % internal_port, '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
@@ -928,7 +962,6 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1'], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package1 -n %s' % (namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
         ]
         self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name', '--tiller-namespace' },
             verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test' })
@@ -959,7 +992,6 @@ class TestCliDriver(unittest.TestCase):
                     TestCliDriver.ci_commit_sha,
                     namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
             {'cmd': 'get deployments -n %s -o name' % (namespace), 'volume_from' : 'k8s', 'output': ['deployments/package1'], 'docker_image': TestCliDriver.image_name_kubectl},
-            {'cmd': 'rollout status deployments/package1 -n %s' % (namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'timeout': '600', 'docker_image': TestCliDriver.image_name_kubectl}
         ]
         self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name' },
             verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test' })
