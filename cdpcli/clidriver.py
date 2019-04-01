@@ -387,6 +387,7 @@ class CLIDriver(object):
             command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
             command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
             command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (command, self._context.registry,release)
+        else:
             command = '%s --wait' % (command)
 
         if self._context.opt['--values']:
@@ -412,27 +413,26 @@ class CLIDriver(object):
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
 
 
-        if not self._context.is_image_pull_secret:
+        if not self._context.opt['--use-aws-ecr'] and not self._context.is_image_pull_secret:
             ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
 
             # Patch
             for ressource in ressources:
-                if not self._context.opt['--use-aws-ecr']:
-                    deployment_resource = ressource.replace('/', ' ')
-                    # Verify if pull secrets already exists
-                    try:
-                        deployment_json = ''.join(kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace)))
-                        already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s")' % self._context.registry, json.loads(deployment_json)))
-                    except Exception as e:
-                        # Not present
-                        LOG.verbose(str(e))
-                        already_patch = 0
+                deployment_resource = ressource.replace('/', ' ')
+                # Verify if pull secrets already exists
+                try:
+                    deployment_json = ''.join(kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace)))
+                    already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s")' % self._context.registry, json.loads(deployment_json)))
+                except Exception as e:
+                    # Not present
+                    LOG.verbose(str(e))
+                    already_patch = 0
 
-                    if already_patch == 0:
-                        # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
-                        # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
-                        kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s-%s"}]}}}}\' -n %s'
-                            % (deployment_resource,  self._context.registry, release, namespace))
+                if already_patch == 0:
+                    # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
+                    # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
+                    kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s-%s"}]}}}}\' -n %s'
+                        % (deployment_resource,  self._context.registry, release, namespace))
 
             # Rollout
             for ressource in ressources:
