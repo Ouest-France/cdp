@@ -416,13 +416,12 @@ class CLIDriver(object):
         if not self._context.opt['--use-aws-ecr'] and not self._context.is_image_pull_secret:
             ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
 
-            # Patch
             for ressource in ressources:
                 deployment_resource = ressource.replace('/', ' ')
                 # Verify if pull secrets already exists
                 try:
                     deployment_json = ''.join(kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace)))
-                    already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s")' % self._context.registry, json.loads(deployment_json)))
+                    already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s-%s")' % (self._context.registry,release) , json.loads(deployment_json)))
                 except Exception as e:
                     # Not present
                     LOG.verbose(str(e))
@@ -433,11 +432,7 @@ class CLIDriver(object):
                     # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
                     kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s-%s"}]}}}}\' -n %s'
                         % (deployment_resource,  self._context.registry, release, namespace))
-
-            # Rollout
-            for ressource in ressources:
-                # Issue on --request-timeout option ? https://github.com/kubernetes/kubernetes/issues/51952
-                kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
+                    kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
 
         self.__update_environment()
 
