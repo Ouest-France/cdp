@@ -387,6 +387,7 @@ class CLIDriver(object):
             command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
             command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
             command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (command, self._context.registry,release)
+        else:
             command = '%s --wait' % (command)
 
         if self._context.opt['--values']:
@@ -412,10 +413,9 @@ class CLIDriver(object):
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
 
 
-        ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
+        if not self._context.opt['--use-aws-ecr'] and not self._context.is_image_pull_secret:
+            ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
 
-        # Patch
-        if not self._context.opt['--use-aws-ecr']:
             for ressource in ressources:
                 deployment_resource = ressource.replace('/', ' ')
                 # Verify if pull secrets already exists
