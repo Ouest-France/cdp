@@ -320,6 +320,27 @@ class CLIDriver(object):
         namespace = self.__getNamespace()
         host = self.__getHost()
 
+        # Need to create default helm charts
+        if self._context.opt['--create-default-helm']:
+            # Check that the chart dir no exists
+            if os.path.isdir('%s/templates' % self._context.opt['--deploy-spec-dir']):
+                raise ValueError('Directory %s/templates already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
+            elif os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
+                raise ValueError('File %s/values.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
+            elif os.path.isfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']):
+                raise ValueError('File %s/Chart.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
+            else:
+                os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'])
+                self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
+                with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], 'w') as outfile:
+                    data = dict(
+                        apiVersion = 'v1',
+                        description = 'A Helm chart for Kubernetes',
+                        name = os.environ['CI_PROJECT_NAME'],
+                        version = '0.1.0'
+                    )
+                    yaml.dump(data, outfile, default_flow_style=False)
+
         final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
         final_template_deploy_spec_dir = '%s/templates' % final_deploy_spec_dir
         try:
@@ -349,26 +370,7 @@ class CLIDriver(object):
             LOG.verbose(str(e))
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
-            # Check that the chart dir no exists
-            if os.path.isdir('%s/templates' % self._context.opt['--deploy-spec-dir']):
-                raise ValueError('Directory %s/templates already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
-            elif os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
-                raise ValueError('File %s/values.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
-            elif os.path.isfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']):
-                raise ValueError('File %s/Chart.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
-            else:
-                os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'])
-                self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
-                with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], 'w') as outfile:
-                    data = dict(
-                        apiVersion = 'v1',
-                        description = 'A Helm chart for Kubernetes',
-                        name = os.environ['CI_PROJECT_NAME'],
-                        version = '0.1.0'
-                    )
-                    yaml.dump(data, outfile, default_flow_style=False)
-
-                set_command = '%s --set service.internalPort=%s' % (set_command, self._context.opt['--internal-port'])
+            set_command = '%s --set service.internalPort=%s' % (set_command, self._context.opt['--internal-port'])
 
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
