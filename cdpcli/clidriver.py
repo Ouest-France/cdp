@@ -424,18 +424,23 @@ class CLIDriver(object):
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.safe_load_all(stream))
             for doc in docs:
-                LOG.verbose(doc)
-                if 'kind' in doc and doc['kind'] == 'Deployment' and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
-                    find_image_pull_secret = False
-                    if 'imagePullSecrets' in doc['spec']['template']['spec'] and doc['spec']['template']['spec']['imagePullSecrets']:
-                        for image_pull_secret in doc['spec']['template']['spec']['imagePullSecrets']:
-                            if image_pull_secret['name'] == '%s' % image_pull_secret_value:
-                                find_image_pull_secret = True
-                    if not find_image_pull_secret:
-                        if 'imagePullSecrets' in doc['spec']['template']['spec']:
-                            doc['spec']['template']['spec']['imagePullSecrets'].append({ 'name' : '%s' % image_pull_secret_value })
-                        else:
-                            doc['spec']['template']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
+                if doc is not None:
+                    LOG.verbose(doc)
+                    if 'kind' in doc and doc['kind'] == 'Deployment' and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
+                        find_image_pull_secret = False
+                        if 'imagePullSecrets' in doc['spec']['template']['spec'] and doc['spec']['template']['spec']['imagePullSecrets']:
+                            for image_pull_secret in doc['spec']['template']['spec']['imagePullSecrets']:
+                                if image_pull_secret['name'] == '%s' % image_pull_secret_value:
+                                    find_image_pull_secret = True
+                        if not find_image_pull_secret:
+                            if 'imagePullSecrets' in doc['spec']['template']['spec']:
+                                doc['spec']['template']['spec']['imagePullSecrets'].append({ 'name' : '%s' % image_pull_secret_value })
+                                LOG.info('Append image pull secret %s' % image_pull_secret_value)
+                            else:
+                                doc['spec']['template']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
+                                LOG.info('Add image pull secret %s' % image_pull_secret_value)
+
+                            LOG.info('Updated %s: %s' % (doc['kind'], doc))
 
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             yaml.dump_all(docs, outfile, default_flow_style=False)
