@@ -419,6 +419,7 @@ class CLIDriver(object):
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
             template_command = '%s %s' % (template_command, values)
 
+        template_command = '%s --name=%s' % (template_command, release)
         template_command = '%s --namespace=%s' % (template_command, namespace)
         template_command = '%s > %s' % (template_command, tmp_templating_file)
         helm_cmd.run(template_command)
