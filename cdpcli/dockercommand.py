@@ -28,6 +28,8 @@ class DockerCommand(object):
             run_docker_cmd = '%s --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}")' % (run_docker_cmd)
         elif self._volume_from == 'docker':
             run_docker_cmd = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % (run_docker_cmd)
+        elif self._volume_from == 'local':
+            run_docker_cmd = '%s -v $PWD:$PWD' % (run_docker_cmd)
 
         run_docker_cmd = '%s -w ${PWD}' % (run_docker_cmd)
         run_docker_cmd = '%s %s' % (run_docker_cmd, self._docker_image)

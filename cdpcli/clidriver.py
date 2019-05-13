@@ -89,7 +89,7 @@ Options:
     --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --volume-from=<host_type>                                  Volume type of sources - docker or k8s [default: k8s]
+    --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
 """
 
 import configparser
@@ -99,6 +99,7 @@ import time, datetime
 import yaml, json
 import gitlab
 import pyjq
+import shutil
 from .Context import Context
 from .clicommand import CLICommand
 from cdpcli import __version__
@@ -319,10 +320,18 @@ class CLIDriver(object):
         namespace = self.__getNamespace()
         host = self.__getHost()
 
+        final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
+        final_template_deploy_spec_dir = '%s/templates' % final_deploy_spec_dir
+        try:
+            os.makedirs(final_template_deploy_spec_dir)
+            shutil.copyfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], '%s/Chart.yaml' % final_deploy_spec_dir)
+        except OSError as e:
+            LOG.error(str(e))
+
         command = 'upgrade %s' % release
-        command = '%s %s' % (command, self._context.opt['--deploy-spec-dir'])
+        command = '%s %s' % (command, final_deploy_spec_dir)
         command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
-        command = '%s --set namespace=%s' % (command, namespace)
+        set_command = '--set namespace=%s' % namespace
 
         #Deprecated, we will detect if tiller is available in our namespace or in kube-system
         if self._context.opt['--tiller-namespace']:
@@ -359,8 +368,7 @@ class CLIDriver(object):
                     )
                     yaml.dump(data, outfile, default_flow_style=False)
 
-                command = '%s --set service.internalPort=%s' % (command, self._context.opt['--internal-port'])
-
+                set_command = '%s --set service.internalPort=%s' % (set_command, self._context.opt['--internal-port'])
 
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
@@ -372,67 +380,72 @@ class CLIDriver(object):
             tag = self.__getTagBranchName()
             pullPolicy = 'Always'
 
-        command = '%s --set ingress.host=%s' % (command, host)
-        command = '%s --set ingress.subdomain=%s' % (command, os.getenv('CDP_DNS_SUBDOMAIN', None))
-        command = '%s --set image.commit.sha=sha-%s' % (command, os.environ['CI_COMMIT_SHA'][:8])
-        command = '%s --set image.registry=%s' % (command,  self._context.registry)
-        command = '%s --set image.repository=%s' % (command, self._context.repository)
-        command = '%s --set image.tag=%s' % (command, tag)
-        command = '%s --set image.pullPolicy=%s' % (command, pullPolicy)
+        set_command = '%s --set ingress.host=%s' % (set_command, host)
+        set_command = '%s --set ingress.subdomain=%s' % (set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
+        set_command = '%s --set image.commit.sha=sha-%s' % (set_command, os.environ['CI_COMMIT_SHA'][:8])
+        set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
+        set_command = '%s --set image.repository=%s' % (set_command, self._context.repository)
+        set_command = '%s --set image.tag=%s' % (set_command, tag)
+        set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
 
         # Need to add secret file for docker registry
         if not self._context.opt['--use-aws-ecr']:
             # Add secret (Only if secret is not exist )
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-            command = '%s --set image.credentials.username=%s' % (command, self._context.registry_user_ro)
-            command = '%s --set image.credentials.password=%s' % (command, self._context.registry_token_ro)
-            command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (command, self._context.registry,release)
-        else:
-            command = '%s --wait' % (command)
-
-        if self._context.opt['--values']:
-            valuesFiles = self._context.opt['--values'].strip().split(',')
-            values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
-            command = '%s %s' % (command, values)
+            set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
+            set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.registry_token_ro)
+            set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry,release)
 
         command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
         command = '%s --force' % command
+        command = '%s --wait' % command
 
         now = datetime.datetime.utcnow()
         date_format = '%Y-%m-%dT%H%M%S'
         if self._context.opt['--delete-labels']:
             command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format))
 
-        # Instal or Upgrade environnement
+        # Template charts for secret
+        tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
+        template_command = 'template %s' % self._context.opt['--deploy-spec-dir']
+        template_command = '%s %s' % (template_command, set_command)
+
+        if self._context.opt['--values']:
+            valuesFiles = self._context.opt['--values'].strip().split(',')
+            values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
+            template_command = '%s %s' % (template_command, values)
+
+        template_command = '%s > %s' % (template_command, tmp_templating_file)
+        helm_cmd.run(template_command)
+
+        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
+        with open(tmp_templating_file, 'r') as stream:
+            docs = list(yaml.safe_load_all(stream))
+            for doc in docs:
+                LOG.verbose(doc)
+                if 'kind' in doc and doc['kind'] == 'Deployment' and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
+                    find_image_pull_secret = False
+                    if 'imagePullSecrets' in doc['spec']['template']['spec'] and doc['spec']['template']['spec']['imagePullSecrets']:
+                        for image_pull_secret in doc['spec']['template']['spec']['imagePullSecrets']:
+                            if image_pull_secret['name'] == '%s' % image_pull_secret_value:
+                                find_image_pull_secret = True
+                    if not find_image_pull_secret:
+                        if 'imagePullSecrets' in doc['spec']['template']['spec']:
+                            doc['spec']['template']['spec']['imagePullSecrets'].append({ 'name' : '%s' % image_pull_secret_value })
+                        else:
+                            doc['spec']['template']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
+
+        with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
+            yaml.dump_all(docs, outfile, default_flow_style=False)
+
+        # Install or Upgrade environnement
         helm_cmd.run(command)
 
         if self._context.opt['--delete-labels']:
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
-
-
-        if not self._context.opt['--use-aws-ecr'] and not self._context.is_image_pull_secret:
-            ressources = kubectl_cmd.run('get deployments -n %s -o name' % (namespace))
-
-            for ressource in ressources:
-                deployment_resource = ressource.replace('/', ' ')
-                # Verify if pull secrets already exists
-                try:
-                    deployment_json = ''.join(kubectl_cmd.run('get %s -n %s -o json' % (deployment_resource, namespace)))
-                    already_patch = len(pyjq.first('.spec.template.spec.imagePullSecrets[] | select(.name == "cdp-%s-%s")' % (self._context.registry,release) , json.loads(deployment_json)))
-                except Exception as e:
-                    # Not present
-                    LOG.verbose(str(e))
-                    already_patch = 0
-
-                if already_patch == 0:
-                    # Patch secret on deployment (Only deployment imagePullSecrets patch is possible. It's forbidden for pods)
-                    # Forbidden: pod updates may not change fields other than `containers[*].image` or `spec.activeDeadlineSeconds` or `spec.tolerations` (only additions to existing tolerations)
-                    kubectl_cmd.run('patch %s -p \'{"spec":{"template":{"spec":{"imagePullSecrets": [{"name": "cdp-%s-%s"}]}}}}\' -n %s'
-                        % (deployment_resource,  self._context.registry, release, namespace))
-                    kubectl_cmd.run('rollout status %s -n %s' % (ressource, namespace), timeout=self._context.opt['--timeout'])
 
         self.__update_environment()
 
