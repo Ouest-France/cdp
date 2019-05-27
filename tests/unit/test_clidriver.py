@@ -4,13 +4,13 @@ from __future__ import print_function
 import unittest
 import os, sys, re
 import datetime
+import yaml
 
 from cdpcli.clicommand import CLICommand
 from cdpcli.clidriver import CLIDriver, __doc__
 from docopt import docopt, DocoptExit
 from freezegun import freeze_time
 from mock import call, patch, Mock, MagicMock, mock_open
-from ruamel import yaml
 
 class FakeCommand(object):
     def __init__(self, verif_cmd):

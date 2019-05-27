@@ -26,7 +26,7 @@ def find_version(*file_paths):
 requires = ['docopt==0.6.2',
             'python-gitlab==1.8.0',
             'verboselogs==1.7',
-            'ruamel.yaml==0.15.96']
+            'pyyaml==4.2b2']
 
 
 if sys.version_info[:2] == (2, 6):
