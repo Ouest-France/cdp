@@ -4,13 +4,13 @@ from __future__ import print_function
 import unittest
 import os, sys, re
 import datetime
-import yaml
 
 from cdpcli.clicommand import CLICommand
 from cdpcli.clidriver import CLIDriver, __doc__
 from docopt import docopt, DocoptExit
 from freezegun import freeze_time
 from mock import call, patch, Mock, MagicMock, mock_open
+from ruamel import yaml
 
 class FakeCommand(object):
     def __init__(self, verif_cmd):
@@ -358,8 +358,10 @@ spec:
           - path: /
             backend:
               serviceName: helloworld
-              servicePort: 80"""
-
+              servicePort: 80
+---
+# Source: helloworld/templates/secret.yaml
+"""
     def setUp(self):
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
@@ -1051,7 +1053,7 @@ spec:
                 name = TestCliDriver.ci_project_name,
                 version = '0.1.0'
             )
-            mock_dump.assert_called_with(data, mock_chart_yaml.return_value.__enter__.return_value, default_flow_style=False)
+            mock_dump.assert_called_with(data, mock_chart_yaml.return_value.__enter__.return_value)
 
             mock_makedirs.assert_has_calls([call('%s/templates' % deploy_spec_dir), call('%s/templates' % final_deploy_spec_dir)])
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
@@ -1130,7 +1132,7 @@ spec:
                 name = TestCliDriver.ci_project_name,
                 version = '0.1.0'
             )
-            mock_dump.assert_called_with(data, mock_chart_yaml.return_value.__enter__.return_value, default_flow_style=False)
+            mock_dump.assert_called_with(data, mock_chart_yaml.return_value.__enter__.return_value)
 
             mock_makedirs.assert_has_calls([call('%s/templates' % deploy_spec_dir), call('%s/templates' % final_deploy_spec_dir)])
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
@@ -1158,7 +1160,6 @@ spec:
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
         with patch("builtins.open", m):
-
             verif_cmd = [
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
                 {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
