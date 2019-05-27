@@ -345,7 +345,7 @@ class CLIDriver(object):
                         name = os.environ['CI_PROJECT_NAME'],
                         version = '0.1.0'
                     )
-                    yaml.dump(data, outfile, default_flow_style=False)
+                    yaml.dump(data, outfile)
 
         final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
         final_template_deploy_spec_dir = '%s/templates' % final_deploy_spec_dir
@@ -433,9 +433,11 @@ class CLIDriver(object):
         image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
+            final_docs = []
             for doc in docs:
                 if doc is not None:
                     LOG.verbose(doc)
+                    final_docs.append(doc)
                     if 'kind' in doc and doc['kind'] == 'Deployment' and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
                         find_image_pull_secret = False
                         if 'imagePullSecrets' in doc['spec']['template']['spec'] and doc['spec']['template']['spec']['imagePullSecrets']:
@@ -451,8 +453,8 @@ class CLIDriver(object):
                                 LOG.info('Add image pull secret %s' % image_pull_secret_value)
 
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
-            LOG.info(yaml.dump_all(docs))
-            yaml.dump_all(docs, outfile)
+            LOG.info(yaml.dump_all(final_docs))
+            yaml.dump_all(final_docs, outfile)
 
         # Install or Upgrade environnement
         helm_cmd.run(command)
