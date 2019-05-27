@@ -96,7 +96,7 @@ import configparser
 import sys, os, re
 import logging, verboselogs
 import time, datetime
-import yaml, json
+import json
 import gitlab
 import pyjq
 import shutil
@@ -106,9 +106,15 @@ from cdpcli import __version__
 from .dockercommand import DockerCommand
 from docopt import docopt, DocoptExit
 from .PropertiesParser import PropertiesParser
+from .Yaml import Yaml
 
 LOG = verboselogs.VerboseLogger('clidriver')
 LOG.addHandler(logging.StreamHandler())
+LOG.setLevel(logging.INFO)
+
+yaml = Yaml()
+yaml.preserve_quotes = True
+yaml.explicit_start = True
 
 def main():
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
@@ -426,7 +432,7 @@ class CLIDriver(object):
 
         image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
         with open(tmp_templating_file, 'r') as stream:
-            docs = list(yaml.safe_load_all(stream))
+            docs = list(yaml.load_all(stream))
             for doc in docs:
                 if doc is not None:
                     LOG.verbose(doc)
@@ -444,10 +450,9 @@ class CLIDriver(object):
                                 doc['spec']['template']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
                                 LOG.info('Add image pull secret %s' % image_pull_secret_value)
 
-                            LOG.info('Updated %s: %s' % (doc['kind'], doc))
-
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
-            yaml.dump_all(docs, outfile, default_flow_style=False)
+            LOG.info(yaml.dump_all(docs))
+            yaml.dump_all(docs, outfile)
 
         # Install or Upgrade environnement
         helm_cmd.run(command)
