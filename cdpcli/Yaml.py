@@ -3,11 +3,11 @@ from ruamel.yaml import YAML
 from ruamel.yaml.compat import StringIO
 
 class Yaml(YAML):
-    def dump_all(self, data, stream=None, **kw):
+    def dump_all(self, data, stream=None, _kw=None, transform=None):
         inefficient = False
         if stream is None:
             inefficient = True
             stream = StringIO()
-        YAML.dump_all(self, data, stream, **kw)
+        YAML.dump_all(self, data, stream, _kw=_kw, transform=transform)
         if inefficient:
             return stream.getvalue()
