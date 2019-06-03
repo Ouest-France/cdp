@@ -743,7 +743,7 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait'
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
@@ -802,7 +802,7 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait'
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
@@ -856,7 +856,7 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait'
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
@@ -910,7 +910,7 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait'
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
@@ -968,7 +968,7 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout %s --debug -i --namespace=%s --force --wait --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout %s --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         timeout,
@@ -1035,7 +1035,7 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait'
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
@@ -1114,7 +1114,7 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait'
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
@@ -1178,7 +1178,7 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait'
+                {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1227,7 +1227,7 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait'
+                {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,

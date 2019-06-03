@@ -409,6 +409,7 @@ class CLIDriver(object):
         command = '%s --namespace=%s' % (command, namespace)
         command = '%s --force' % command
         command = '%s --wait' % command
+        command = '%s --atomic' % command
 
         now = datetime.datetime.utcnow()
         date_format = '%Y-%m-%dT%H%M%S'
