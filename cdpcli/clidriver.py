@@ -574,7 +574,8 @@ class CLIDriver(object):
 
             git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
             git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_NAME'])
-
+            git_cmd.run('fetch')
+            
             if force_git_config:
                 git_cmd.run('checkout %s' % os.environ['CI_COMMIT_REF_NAME'])
 
