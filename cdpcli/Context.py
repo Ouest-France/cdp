@@ -17,7 +17,7 @@ class Context(object):
             if opt['--use-aws-ecr'] or opt['maven'] or opt['docker']:
                 aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
                 # Use AWS ECR from k8s configuration on gitlab-runner deployment
-                login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --debug', dry_run=False)[0].strip())
+                login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', dry_run=False)[0].strip())
 
                 self._registry = login_regex[0][2]
                 self._registry_user_ro = login_regex[0][0]
