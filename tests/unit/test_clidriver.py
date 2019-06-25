@@ -113,6 +113,7 @@ class TestCliDriver(unittest.TestCase):
 
     ci_job_token = 'gitlab-ci'
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
+    ci_environment_slug = 'staging'
     ci_registry_user = 'gitlab-ci'
     ci_registry = 'registry.gitlab.com'
     ci_repository_url = 'https://gitlab-ci-token:iejdzkjziuiez7786@gitlab.com/HelloWorld/HelloWorld/helloworld.git'
@@ -123,6 +124,7 @@ class TestCliDriver(unittest.TestCase):
     ci_project_name = 'hello-world'
     ci_project_name_first_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', ci_project_name)])
     ci_pnfl_project_id_commit_ref_slug = '%s%s-%s' % (ci_project_name_first_letter, ci_project_id, ci_commit_ref_slug)
+    ci_pnfl_project_id_env_slug = '%s%s-env-%s' % (ci_project_name_first_letter, ci_project_id, ci_environment_slug)
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
     ci_deploy_user = 'gitlab+deploy-token-1'
@@ -377,6 +379,7 @@ spec:
         os.environ['CI_PROJECT_PATH_SLUG'] = TestCliDriver.ci_project_path_slug
         os.environ['CI_DEPLOY_USER'] = TestCliDriver.ci_deploy_user
         os.environ['CI_DEPLOY_PASSWORD'] = TestCliDriver.ci_deploy_password
+        os.environ['CI_ENVIRONMENT_SLUG'] = TestCliDriver.ci_environment_slug
         os.environ['CDP_DNS_SUBDOMAIN'] = TestCliDriver.cdp_dns_subdomain
         os.environ['GITLAB_TOKEN'] = TestCliDriver.gitlab_token
         os.environ['GITLAB_USER_EMAIL'] = TestCliDriver.gitlab_user_email
@@ -702,6 +705,7 @@ spec:
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
     def test_k8s_usegitlabregistry_namespaceprojectbranchname_values_dockerhost(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
         env_name = 'production'
 
@@ -718,7 +722,11 @@ spec:
         docker_host = 'unix:///var/run/docker.sock'
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-
+        date_now = datetime.datetime.utcnow()
+        date_format = '%Y-%m-%dT%H%M%SZ'
+        deleteDuration=240
+        date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
+        
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
@@ -748,10 +756,16 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
-                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
+                        namespace,
+                        date_delete.strftime(date_format)), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                {'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
+                    % (namespace,
+                        date_now.strftime(date_format),
+                        date_delete.strftime(date_format),
+                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
             self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values },
                 verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST': docker_host, 'CI_ENVIRONMENT_NAME': env_name})
@@ -767,6 +781,7 @@ spec:
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
     def test_k8s_usegitlabregistry_namespaceprojectbranchname_onDeploymentHasSecret_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
@@ -777,6 +792,10 @@ spec:
         values = ','.join([staging_file, int_file])
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+        date_now = datetime.datetime.utcnow()
+        date_format = '%Y-%m-%dT%H%M%SZ'
+        deleteDuration=240
+        date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -807,10 +826,17 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
-                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
+                        namespace,
+                        date_delete.strftime(date_format)),
+                        'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                {'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
+                    % (namespace,
+                        date_now.strftime(date_format),
+                        date_delete.strftime(date_format),
+                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
             self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
@@ -821,6 +847,7 @@ spec:
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
     def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
@@ -831,7 +858,11 @@ spec:
         values = ','.join([staging_file, int_file])
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-
+        date_now = datetime.datetime.utcnow()
+        date_format = '%Y-%m-%dT%H%M%SZ'
+        deleteDuration=240
+        date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
+        
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
@@ -861,10 +892,17 @@ spec:
                         release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
-                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
+                        namespace,
+                        date_delete.strftime(date_format))
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                {'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
+                    % (namespace,
+                        date_now.strftime(date_format),
+                        date_delete.strftime(date_format),
+                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
             self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
@@ -875,6 +913,7 @@ spec:
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
     def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
         # Create FakeCommand
         namespace = TestCliDriver.ci_project_name
@@ -885,7 +924,11 @@ spec:
         values = ','.join([staging_file, int_file])
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-
+        date_now = datetime.datetime.utcnow()
+        date_format = '%Y-%m-%dT%H%M%SZ'
+        deleteDuration=240
+        date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
+        
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
@@ -918,7 +961,8 @@ spec:
                 {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
-                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
+                        namespace)
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
             ]
             self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
@@ -1019,7 +1063,7 @@ spec:
             final_deploy_spec_dir = '%s_final' % deploy_spec_dir
             sleep = 10
             sleep_override = 20
-
+            
             verif_cmd = [
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
                 {'cmd': 'ecr get-login --no-include-email', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
@@ -1043,7 +1087,8 @@ spec:
                 {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
-                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        namespace)
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
                 {'cmd': 'sleep %s' % sleep_override, 'output': 'unnecessary'}
             ]
             self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
@@ -1198,12 +1243,13 @@ spec:
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
-    def test_k8s_releaseprojectbranchname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self, mock_dump_all, mock_copyfile, mock_makedirs):
+    @freeze_time("2018-02-14 11:55:27")
+    def test_k8s_releaseprojectenvname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self, mock_dump_all, mock_copyfile, mock_makedirs):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
-        release = TestCliDriver.ci_pnfl_project_id_commit_ref_slug.replace('_', '-')[:53]
+        release = TestCliDriver.ci_pnfl_project_id_env_slug.replace('_', '-')[:53]
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         sleep = 10
@@ -1238,7 +1284,7 @@ spec:
                         namespace,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
             ]
-            self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name' },
+            self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-env-name' },
                 verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test' })
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)

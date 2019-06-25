@@ -36,7 +36,7 @@ Usage:
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
         [--tiller-namespace]
-        [--release-project-branch-name]
+        [--release-project-branch-name | --release-project-env-name ]
         [--image-pull-secret]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -77,6 +77,7 @@ Options:
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
     --release-project-branch-name                              Force the release to be created with the project branch name.
+    --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
@@ -415,6 +416,8 @@ class CLIDriver(object):
         date_format = '%Y-%m-%dT%H%M%S'
         if self._context.opt['--delete-labels']:
             command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format))
+        elif namespace[:53] == self.__getName(False)[:53]:
+            command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(240))).strftime(date_format))
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
@@ -463,9 +466,11 @@ class CLIDriver(object):
         if self._context.opt['--delete-labels']:
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
+        elif not self._context.opt['--delete-labels'] and namespace[:53] == self.__getName(False)[:53]:
+            kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
+                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(240))).strftime(date_format), namespace))
 
         self.__update_environment()
-
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
         if self._context.opt['--use-docker-compose']:
@@ -518,7 +523,7 @@ class CLIDriver(object):
         return os.environ['CI_COMMIT_REF_SLUG']
 
     def __getEnvironmentName(self):
-        return os.environ['CI_ENVIRONMENT_NAME'][:128]
+        return os.environ['CI_ENVIRONMENT_SLUG'][:128]
 
     def __getTagLatest(self):
         return 'latest'
@@ -534,6 +539,8 @@ class CLIDriver(object):
         if self._context.opt['--release-project-branch-name']:
             # https://github.com/kubernetes/helm/issues/1528
             return self.__getName(False)[:53]
+        elif self._context.opt['--release-project-env-name']:
+            return self.__getEnvName()[:53]
         else:
             return self.__getNamespace()[:53]
 
@@ -545,6 +552,17 @@ class CLIDriver(object):
             # Get first letter for each word
             projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
             name = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
+
+        return name.replace('_', '-')
+
+    def __getEnvName(self):
+        # Get k8s namespace
+        if(self.__getEnvironmentName() is not None):
+            # Get first letter for each word
+            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
+            name = '%s%s-env-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], self.__getEnvironmentName())    # Get deployment host
+        elif(self.__getEnvironmentName() is None):
+            LOG.err('can not use environnement release because env is not defined in gitlab job.')
 
         return name.replace('_', '-')
 
