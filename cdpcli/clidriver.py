@@ -523,7 +523,7 @@ class CLIDriver(object):
         return os.environ['CI_COMMIT_REF_SLUG']
 
     def __getEnvironmentName(self):
-        return os.environ['CI_ENVIRONMENT_SLUG'][:128]
+        return os.environ['CI_ENVIRONMENT_NAME'].replace('_', '/').replace('_', '-')[:128]
 
     def __getTagLatest(self):
         return 'latest'
@@ -562,7 +562,7 @@ class CLIDriver(object):
             projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
             name = '%s%s-env-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], self.__getEnvironmentName())    # Get deployment host
         elif(self.__getEnvironmentName() is None):
-            LOG.err('can not use environnement release because env is not defined in gitlab job.')
+            LOG.err('can not use environnement release option because environment is not defined in gitlab job.')
 
         return name.replace('_', '-')
 
