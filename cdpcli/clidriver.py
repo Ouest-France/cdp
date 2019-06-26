@@ -403,7 +403,7 @@ class CLIDriver(object):
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
             set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.registry_token_ro)
-            set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry,release)
+            set_command = '%s --set image.imagePullSecrets=cdp-%s-%s'.replace('_', ':') % (set_command, self._context.registry,release)
 
         command = '%s --debug' % command
         command = '%s -i' % command
