@@ -434,7 +434,7 @@ class CLIDriver(object):
         template_command = '%s > %s' % (template_command, tmp_templating_file)
         helm_cmd.run(template_command)
 
-        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
+        image_pull_secret_value = 'cdp-%s-%s'.replace('_', ':') % (self._context.registry, release)
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
             final_docs = []
