@@ -403,7 +403,7 @@ class CLIDriver(object):
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
             set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.registry_token_ro)
-            set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '_'),release)
+            set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
         command = '%s --debug' % command
         command = '%s -i' % command
@@ -434,8 +434,8 @@ class CLIDriver(object):
         template_command = '%s > %s' % (template_command, tmp_templating_file)
         helm_cmd.run(template_command)
 
-        image_pull_secret_value = 'cdp-%s-%s'.replace(':', '_') % (self._context.registry, release)
-        image_pull_secret_value = image_pull_secret_value.replace(':', '_')
+        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
+        image_pull_secret_value = image_pull_secret_value.replace(':', '-')
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
             final_docs = []
@@ -524,7 +524,7 @@ class CLIDriver(object):
         return os.environ['CI_COMMIT_REF_SLUG']
 
     def __getEnvironmentName(self):
-        return os.environ['CI_ENVIRONMENT_NAME'].replace('_', '/').replace('_', '-')[:128]
+        return os.environ['CI_ENVIRONMENT_NAME'].replace('/', '-').replace('_', '-')[:128]
 
     def __getTagLatest(self):
         return 'latest'
