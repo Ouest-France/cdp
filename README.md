@@ -40,7 +40,7 @@ Usage:
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
         [--tiller-namespace]
-        [--release-project-branch-name]
+        [--release-project-branch-name | --release-project-env-name]
         [--image-pull-secret]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -81,6 +81,7 @@ Options:
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
     --release-project-branch-name                              Force the release to be created with the project branch name.
+    --release-project-env-name                                 Force the release to be created with the job env name defined in gitlab.
     --sast                                                     Static Application Security Testing mode.
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
