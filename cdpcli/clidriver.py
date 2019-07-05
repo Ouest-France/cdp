@@ -323,7 +323,7 @@ class CLIDriver(object):
         helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
 
 		# Use release name instead of the namespace name for release
-        release = self.__getRelease()
+        release = self.__getRelease().replace('/', '-')
         namespace = self.__getNamespace()
         host = self.__getHost()
 
@@ -561,7 +561,7 @@ class CLIDriver(object):
         if(self.__getEnvironmentName() is not None):
             # Get first letter for each word
             projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
-            name = '%s%s-env-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], self.__getEnvironmentName())    # Get deployment host
+            name = '%s%s-env-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], self.__getEnvironmentName().replace('/', '-'))    # Get deployment host
         elif(self.__getEnvironmentName() is None):
             LOG.err('can not use environnement release option because environment is not defined in gitlab job.')
 
