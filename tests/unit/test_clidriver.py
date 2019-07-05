@@ -882,7 +882,7 @@ spec:
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_custom_registry_user,
                         TestCliDriver.cdp_custom_registry_read_only_token,
-                        TestCliDriver.cdp_custom_registry.replace(':', '_'),
+                        TestCliDriver.cdp_custom_registry.replace(':', '-'),
                         release,
                         staging_file,
                         int_file,
@@ -948,7 +948,7 @@ spec:
                         TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_custom_registry_user,
                         TestCliDriver.cdp_custom_registry_read_only_token,
-                        TestCliDriver.cdp_custom_registry.replace(':', '_'),
+                        TestCliDriver.cdp_custom_registry.replace(':', '-'),
                         release,
                         staging_file,
                         int_file,
@@ -1264,7 +1264,7 @@ spec:
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
-        release = '%s%s-env-%s'.replace('_', '-')[:53] % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, env_name)
+        release = '%s%s-env-%s'[:53] % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, env_name.replace('/', '-'))
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         sleep = 10

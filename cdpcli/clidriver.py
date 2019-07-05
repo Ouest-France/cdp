@@ -323,7 +323,7 @@ class CLIDriver(object):
         helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
 
 		# Use release name instead of the namespace name for release
-        release = self.__getRelease()
+        release = self.__getRelease().replace('/', '-')
         namespace = self.__getNamespace()
         host = self.__getHost()
 
@@ -403,7 +403,7 @@ class CLIDriver(object):
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
             set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.registry_token_ro)
-            set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '_'),release)
+            set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
         command = '%s --debug' % command
         command = '%s -i' % command
@@ -434,8 +434,8 @@ class CLIDriver(object):
         template_command = '%s > %s' % (template_command, tmp_templating_file)
         helm_cmd.run(template_command)
 
-        image_pull_secret_value = 'cdp-%s-%s'.replace(':', '_') % (self._context.registry, release)
-        image_pull_secret_value = image_pull_secret_value.replace(':', '_')
+        image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
+        image_pull_secret_value = image_pull_secret_value.replace(':', '-')
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
             final_docs = []
@@ -524,7 +524,7 @@ class CLIDriver(object):
         return os.environ['CI_COMMIT_REF_SLUG']
 
     def __getEnvironmentName(self):
-        return os.environ['CI_ENVIRONMENT_NAME'].replace('_', '/').replace('_', '-')[:128]
+        return os.environ['CI_ENVIRONMENT_NAME'].replace('/', '-').replace('_', '-')[:128]
 
     def __getTagLatest(self):
         return 'latest'
@@ -561,7 +561,7 @@ class CLIDriver(object):
         if(self.__getEnvironmentName() is not None):
             # Get first letter for each word
             projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
-            name = '%s%s-env-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], self.__getEnvironmentName())    # Get deployment host
+            name = '%s%s-env-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], self.__getEnvironmentName().replace('/', '-'))    # Get deployment host
         elif(self.__getEnvironmentName() is None):
             LOG.err('can not use environnement release option because environment is not defined in gitlab job.')
 
