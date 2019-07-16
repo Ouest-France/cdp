@@ -149,7 +149,7 @@ class TestCliDriver(unittest.TestCase):
     cdp_bp_validator_host = 'https://validator-server.com'
     image_name_git = 'ouestfrance/cdp-git:2.15.0'
     image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:3.1.0'
-    image_name_aws = 'ouestfrance/cdp-aws:1.15.19'
+    image_name_aws = 'ouestfrance/cdp-aws:1.16.198'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.9.9'
     image_name_helm = 'ouestfrance/cdp-helm:2.13.1'
 
