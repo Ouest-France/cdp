@@ -5,7 +5,7 @@
 ## Usage
 
 ```python
-Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
+Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>) (--command=<cmd>)
@@ -16,7 +16,7 @@ Usage:
         [--maven-release-plugin=<version>]
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
-        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
+        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
@@ -25,14 +25,15 @@ Usage:
         [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
-        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
+        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
+        [--login-registry=<registry_name>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry)
+        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
@@ -59,9 +60,9 @@ Options:
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.15.19].
+    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.16.198].
     --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.15.0].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.9.1-1.9.9].
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.13.1].
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.9.9].
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
@@ -73,6 +74,7 @@ Options:
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
+    --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
@@ -81,20 +83,21 @@ Options:
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
     --release-project-branch-name                              Force the release to be created with the project branch name.
-    --release-project-env-name                                 Force the release to be created with the job env name defined in gitlab.
+    --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace (deprecated)
-    --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
-    --use-custom-registry                                      Use custom registry for pull/push docker image.
+    --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
+    --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image.
-    --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default].
+    --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
+    --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --volume-from=<host_type>                                  Volume type of sources - docker or k8s [default: k8s]
+    --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
 ```
 
 ### Prerequisites
@@ -130,6 +133,11 @@ docker:
     - File Dockerfile required at the root of the project.
  --use-docker-compose:
     - File docker-compose.yml required at the root of the project.
+ --login-registry=<registry_name>:
+    - CDP_<REGISTRY_NAME>_REGISTRY (Gitlab-runner env var) – docker registry (host:port).
+    - CDP_<REGISTRY_NAME>_REGISTRY_TOKEN (Gitlab-runner env var) – Access token used for authentication on docker registry.
+    - CDP_<REGISTRY_NAME>_REGISTRY_TOKEN_READ_ONLY (Gitlab-runner env var) – Read only access token used for authentication on docker registry.
+    - CDP_<REGISTRY_NAME>_REGISTRY_USER (Gitlab-runner env var) – User used for authentication on docker registry.
 
 k8s:
   without: --create-default-helm:
@@ -139,17 +147,17 @@ docker|k8s:
   - CDP_DNS_SUBDOMAIN – Specify the subdomain of k8s cluster (set by environment variable in runner).
   - CDP_IMAGE_PULL_SECRET – Add the imagePullSecret value to use the helm --wait option instead of patch and rollout.
   - CDP_NAMESPACE – if value = 'project-name', force usage of project name to create k8s namespace.
-  --use-aws-ecr:
+  --use-registry=aws-ecr:
     - AWS_ACCESS_KEY_ID (Gitlab-runner env var) – AWS access key.
     - AWS_SECRET_ACCESS_KEY (Gitlab-runner env var) – AWS secret key. Access and secret key variables override credentials stored in credential and config files.
     - AWS_DEFAULT_REGION – The region to use. Overrides config/env settings.
-  --use-custom-registry:
-    - CDP_CUSTOM_REGISTRY (Gitlab-runner env var) – Custom docker registry (host:port).
-    - CDP_CUSTOM_REGISTRY_TOKEN (Gitlab-runner env var) – Access token used for authentication on custom docker registry.
-    - CDP_CUSTOM_REGISTRY_TOKEN_READ_ONLY (Gitlab-runner env var) – Read only access token used for authentication on custom docker registry.
-    - CDP_CUSTOM_REGISTRY_USER (Gitlab-runner env var) – User used for authentication on custom docker registry.
-  --use-gitlab-registry:
+  --use-registry=gitlab:
     - Deploy token with the name gitlab-deploy-token and the scope read_registry must be created for each project.
+  --use-registry=<registry_name>:
+    - CDP_<REGISTRY_NAME>_REGISTRY (Gitlab-runner env var) – Custom docker registry (host:port).
+    - CDP_<REGISTRY_NAME>_REGISTRY_TOKEN (Gitlab-runner env var) – Access token used for authentication on custom docker registry.
+    - CDP_<REGISTRY_NAME>_REGISTRY_TOKEN_READ_ONLY (Gitlab-runner env var) – Read only access token used for authentication on custom docker registry.
+    - CDP_<REGISTRY_NAME>_REGISTRY_USER (Gitlab-runner env var) – User used for authentication on custom docker registry.
 
 artifactory:
   --put=<file>|--delete=<file>:
@@ -202,14 +210,14 @@ package:
   image: ouestfrance/cdp:latest
   stage: package
   script:
-    - cdp docker --image-tag-branch-name --use-gitlab-registry
+    - cdp docker --image-tag-branch-name --use-registry=gitlab
     - cdp artifactory --image-tag-branch-name --put=conf/example.yaml
 
 deploy_review:
   image: ouestfrance/cdp:latest
   stage: deploy
   script:
-    - cdp k8s --use-gitlab-registry --namespace-project-branch-name --image-tag-branch-name
+    - cdp k8s --use-registry=gitlab --namespace-project-branch-name --image-tag-branch-name
   environment:
     name: review/$CI_COMMIT_REF_NAME
     url: https://$CI_COMMIT_REF_SLUG.$CI_PROJECT_NAME.$CDP_DNS_SUBDOMAIN
@@ -218,7 +226,7 @@ deploy_staging:
   image: ouestfrance/cdp:latest
   stage: deploy
   script:
-    - cdp k8s --use-gitlab-registry --namespace-project-name --image-tag-sha1 --values=values.staging.yaml
+    - cdp k8s --use-registry=gitlab --namespace-project-name --image-tag-sha1 --values=values.staging.yaml
   environment:
     name: staging
     url: https://$CI_PROJECT_NAME.$CDP_DNS_SUBDOMAIN
@@ -229,7 +237,7 @@ deploy_staging:
 When you use the `docker build --use-docker-compose` command, you may need information from the CDP context. Below, the environment variables made available by the CDP for use in the docker-compose.yml.
 
 ```yaml
-CDP_REGISTRY:        --use-gitlab-registry: env['CI_REGISTRY'] | --use-aws-ecr: result from 'aws ecr get-login ...' command | --use-custom-registry: env['CDP_CUSTOM_REGISTRY'] + '/' + env['CI_PROJECT_PATH'].lower()
+CDP_REGISTRY:        --use-registry=gitlab: env['CI_REGISTRY'] | --use-registry=aws-ecr: result from 'aws ecr get-login ...' command | --use-registry=harbor: env['CDP_HARBOR_REGISTRY'] + '/' + env['CI_PROJECT_PATH'].lower()
 CDP_TAG:             --image-tag-branch-name: env['CI_COMMIT_REF_NAME'] | --image-tag-latest: 'latest'| --image-tag-sha1:  env['CI_COMMIT_SHA']
 ```
 
@@ -257,7 +265,7 @@ namespace:               Name of kubernetes namespace, based on the following op
 ingress.host:            Ingress, based on the following options : [ --namespace-project-branch-name | --namespace-project-name ]
 ingress.subdomain:       Only DNS subdomain, based on this environment variable CDP_DNS_SUBDOMAIN
 image.commit.sha:        First 8 characters of sha1 corresponding to the current commit.
-image.registry:          Docker image registry, based on the following options: [ --use-gitlab-registry | --use-aws-ecr | --use-custom-registry ]
+image.registry:          Docker image registry, based on the following options: [ --use-registry=gitlab | --use-registry=aws-ecr | --use-registry=<registry_name> ]
 image.repository:        Name of the repository corresponding to the CI_PROJECT_PATH environment variable in lowercase.
 image.tag:               Docker image tag, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
 image.pullPolicy:        Docker pull policy, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
