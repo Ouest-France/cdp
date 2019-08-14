@@ -35,6 +35,7 @@ Usage:
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
+        [--create-vault-secret]
         [--tiller-namespace]
         [--release-project-branch-name | --release-project-env-name ]
         [--image-pull-secret]
@@ -51,6 +52,7 @@ Options:
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --create-default-helm                                      Create default helm for simple project (One docker image).
+    --create-vault-secret                                      Create a secret from vault based on gitlab project path
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
@@ -61,6 +63,7 @@ Options:
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.9.9].
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
+    --docker-image-vault=<image_name_git>                      Docker image which execute vault command [default: vault:1.13.0].
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
@@ -405,6 +408,11 @@ class CLIDriver(object):
             set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.registry_token_ro)
             set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
+        if self._context.opt['--create-vault-secret']:
+            self._cmd.run_command('echo "  secret: value" >> /cdp/k8s/secret/cdp-vault-secret.yaml' % self._context.opt['--deploy-spec-dir'])
+            self._cmd.run_command('cp /cdp/k8s/secret/cdp-vault-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+
+            
         command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
