@@ -409,9 +409,8 @@ class CLIDriver(object):
             set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
         if self._context.opt['--create-vault-secret']:
-            self._cmd.run_command('echo "  secret: value" >> /cdp/k8s/secret/cdp-vault-secret.yaml')
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-vault-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-
+            self._cmd.run_command('echo "  secret: value" >> %s/templates/cdp-vault-secret.yaml' % self._context.opt['--deploy-spec-dir'])
             
         command = '%s --debug' % command
         command = '%s -i' % command
