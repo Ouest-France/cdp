@@ -409,12 +409,15 @@ class CLIDriver(object):
             set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
         if self._context.opt['--create-gitlab-secret']:
-            secretEnvPattern = 'CDP_SECRET_'
+            if os.getenv('CI_ENVIRONMENT_NAME', None) = None :
+              LOG.err('Can not use gitlab secret because environment is not defined in gitlab job.')
+            secretEnvPattern = 'CDP_SECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+            self._cmd.run_command('echo "  #Environnement: %s" >> %s/templates/cdp-gitlab-secret.yaml' % (os.getenv('CI_ENVIRONMENT_NAME', None),self._context.opt['--deploy-spec-dir']))
             for envVar, envValue in dict(os.environ).items():
-                if envVar.startswith(secretEnvPattern,0) :
+                if envVar.startswith(secretEnvPattern.upper(),0) :
                   self._cmd.run_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-secret.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir']))
-            
+        
         command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
