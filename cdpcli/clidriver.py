@@ -409,7 +409,7 @@ class CLIDriver(object):
             set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
         if self._context.opt['--create-gitlab-secret']:
-            secretEnvPattern := 'CDP_SECRET_'
+            secretEnvPattern = 'CDP_SECRET_'
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             for envVar, envValue in dict(os.environ).items():
                 if envVar.startswith(secretEnvPattern,0) :
