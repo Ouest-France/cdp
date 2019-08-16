@@ -410,6 +410,7 @@ class CLIDriver(object):
 
         if self._context.opt['--create-vault-secret']:
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-vault-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+            self._cmd.run_command('echo "get secret from vault or whatever')
             self._cmd.run_command('echo "  secret: value" >> %s/templates/cdp-vault-secret.yaml' % self._context.opt['--deploy-spec-dir'])
             
         command = '%s --debug' % command
