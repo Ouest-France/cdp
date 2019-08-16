@@ -35,7 +35,7 @@ Usage:
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
-        [--create-vault-secret]
+        [--create-gitlab-secret]
         [--tiller-namespace]
         [--release-project-branch-name | --release-project-env-name ]
         [--image-pull-secret]
@@ -52,7 +52,7 @@ Options:
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --create-default-helm                                      Create default helm for simple project (One docker image).
-    --create-vault-secret                                      Create a secret from vault based on gitlab project path
+    --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
@@ -408,10 +408,12 @@ class CLIDriver(object):
             set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.registry_token_ro)
             set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
-        if self._context.opt['--create-vault-secret']:
-            self._cmd.run_command('cp /cdp/k8s/secret/cdp-vault-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-            self._cmd.run_command('echo "get secret from vault or whatever')
-            self._cmd.run_command('echo "  secret: value" >> %s/templates/cdp-vault-secret.yaml' % self._context.opt['--deploy-spec-dir'])
+        if self._context.opt['--create-gitlab-secret']:
+            secretEnvPattern := 'CDP_SECRET_'
+            self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+            for envVar, envValue in dict(os.environ).items():
+                if envVar.startswith(secretEnvPattern,0) :
+                  self._cmd.run_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-secret.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir']))
             
         command = '%s --debug' % command
         command = '%s -i' % command
