@@ -414,16 +414,16 @@ class CLIDriver(object):
               LOG.err('Can not use gitlab secret because environment is not defined in gitlab job.')
             secretEnvPattern = 'CDP_SECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
             secretFileCreated = False
-            LOG.info('Looking for environnement variables starting with : %s' % secretEnvPattern)
+            #LOG.info('Looking for environnement variables starting with : %s' % secretEnvPattern)
             for envVar, envValue in dict(os.environ).items():
                 if envVar.startswith(secretEnvPattern.upper(),0) :
                   if not secretFileCreated :
-                    LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
+                    #LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
                     #Get the secret templates if we envVar to transform into secret
                     self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
                     secretFileCreated = True
                   #For each envVar of the right environnement we had a line in the secret
-                  self._cmd.run_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-secret.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir']))
+                  self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-secret.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir']))
         
         command = '%s --debug' % command
         command = '%s -i' % command
