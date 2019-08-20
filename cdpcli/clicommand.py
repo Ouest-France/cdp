@@ -19,6 +19,9 @@ class CLICommand(object):
         LOG.info(command)
         return self.run(command, dry_run, timeout, raise_error)
 
+    def run_secret_command(self, command, dry_run = None, timeout = None, raise_error = True):
+        return self.run(command, dry_run, timeout, raise_error)
+        
     def run(self, command, dry_run = None, timeout = None, raise_error = True):
         start = timeit.default_timer()
         self._process = None
