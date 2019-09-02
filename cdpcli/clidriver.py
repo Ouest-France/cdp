@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.6
 
 """
-Universal Command Line Environment for Continous Delivery Pipeline on Gitlab-CI.
+Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>) (--command=<cmd>)
@@ -12,7 +12,7 @@ Usage:
         [--maven-release-plugin=<version>]
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
-        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
+        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
@@ -21,14 +21,15 @@ Usage:
         [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
-        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry]
+        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
+        [--login-registry=<registry_name>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry)
+        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
         [--values=<files>]
         [--delete-labels=<minutes>]
@@ -38,7 +39,7 @@ Usage:
         [--volume-from=<host_type>]
         [--create-gitlab-secret]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name ]
+        [--release-project-branch-name | --release-project-env-name]
         [--image-pull-secret]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -73,6 +74,7 @@ Options:
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
+    --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
@@ -87,11 +89,12 @@ Options:
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace (deprecated)
-    --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image.
-    --use-custom-registry                                      Use custom registry for pull/push docker image.
+    --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
+    --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image.
-    --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default].
+    --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
+    --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
@@ -275,7 +278,7 @@ class CLIDriver(object):
         sonar_scanner_cmd.run(command)
 
     def __docker(self):
-        if self._context.opt['--use-aws-ecr']:
+        if self._context.opt['--use-aws-ecr'] or self._context.opt['--use-registry'] == 'aws-ecr':
             aws_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-aws'], None, True)
 
             repos = []
@@ -402,7 +405,7 @@ class CLIDriver(object):
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
 
         # Need to add secret file for docker registry
-        if not self._context.opt['--use-aws-ecr']:
+        if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr':
             # Add secret (Only if secret is not exist )
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
@@ -463,7 +466,7 @@ class CLIDriver(object):
                 if doc is not None:
                     LOG.verbose(doc)
                     final_docs.append(doc)
-                    if not self._context.opt['--use-aws-ecr'] and 'kind' in doc and doc['kind'] == 'Deployment' and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
+                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and doc['kind'] == 'Deployment' and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
                         find_image_pull_secret = False
                         if 'imagePullSecrets' in doc['spec']['template']['spec'] and doc['spec']['template']['spec']['imagePullSecrets']:
                             for image_pull_secret in doc['spec']['template']['spec']['imagePullSecrets']:
@@ -614,7 +617,7 @@ class CLIDriver(object):
             git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
             git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_NAME'])
             git_cmd.run('fetch')
-            
+
             if force_git_config:
                 git_cmd.run('checkout %s' % os.environ['CI_COMMIT_REF_NAME'])
 
