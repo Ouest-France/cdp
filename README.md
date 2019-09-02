@@ -1,3 +1,4 @@
+
 # SIPA/Ouest-France - Continuous Delivery Pipeline (CDP) for Gitlab CI
 
 [![Build Status](https://travis-ci.org/Ouest-France/cdp.svg?branch=master)](https://travis-ci.org/Ouest-France/cdp) ![extra](https://img.shields.io/badge/actively%20maintained-yes-ff69b4.svg?)
@@ -34,6 +35,7 @@ Usage:
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
+        [(--create-gitlab-secret)]
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
@@ -56,6 +58,7 @@ Options:
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --create-default-helm                                      Create default helm for simple project (One docker image).
+    --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
@@ -100,7 +103,7 @@ Options:
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
 ```
 
-### Prerequisites
+### _Prerequisites_
 
 Gitlab >= 10.8
 
@@ -232,7 +235,7 @@ deploy_staging:
     url: https://$CI_PROJECT_NAME.$CDP_DNS_SUBDOMAIN
 ```
 
-### Environment variables set by the CDP
+### _Environment variables set by the CDP_
 
 When you use the `docker build --use-docker-compose` command, you may need information from the CDP context. Below, the environment variables made available by the CDP for use in the docker-compose.yml.
 
@@ -256,7 +259,7 @@ services:
 ```
 
 
-### Helm charts
+### _Helm charts_
 
 When you use the `docker k8s` command, you may need information from the CDP context. Below, the variables made available by the CDP for use in the helm context.
 
@@ -271,7 +274,6 @@ image.tag:               Docker image tag, based on the following options: [ --i
 image.pullPolicy:        Docker pull policy, based on the following options: [ --image-tag-branch | --image-tag-latest | --image-tag-sha1 ]
 image.imagePullSecrets:  If --image-pull-secret option is set, we add this value to be used in the chart to avoid patch + rollout.
 ```
-
 #### charts/deployment.yaml sample
 
 ```yaml
@@ -290,6 +292,45 @@ spec:
 ...
 ```
 
+### _Gitlab secret usage sample_
+
+#### 1 - Create a job with environnement using the --create-gitlab-secret option
+```.gitlab-ci.yml
+deploy_staging:
+  image: $CDP_IMAGE
+  stage: deploy
+  script:
+    - cdp k8s --use-aws-ecr --namespace-project-name --image-tag-sha1 --create-gitlab-secret
+  environment:
+    name: staging
+  only:
+    - develop
+  tags:
+    - staging
+```
+cdp will search every variable with the pattern CDP_SECRET_STAGING_* and put them in a secret.
+
+#### 2 - Create secret as project variable
+Adding CDP_SECRET_STAGING_MY_SECRET_KEY as a project variable in gitlab
+
+#### 3 - Updating the chart
+```yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+        - name: {{ template "nginx.name" . }}-{{ .Values.image.commit.sha }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-nginx-project-name:{{ .Values.image.tag }}"
+        env:
+        -name: "MY_GITLAB_SECRET"
+         valueFrom:
+           secretKeyRef:
+             name: cdp-gitlab-secret-{{ .Release.Name  | trunc 35}}
+             key: MY_SECRET_KEY
+...
+```
 ## Development
 
 ### Prerequisites
