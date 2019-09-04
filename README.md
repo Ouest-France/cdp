@@ -43,7 +43,7 @@ Usage:
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name]
+        [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
         [--image-pull-secret]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -85,6 +85,7 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
+    --release-custom-name=<release_name>                       Force to use custom Helm release name
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
