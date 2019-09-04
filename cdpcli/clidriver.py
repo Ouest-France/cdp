@@ -39,7 +39,7 @@ Usage:
         [--volume-from=<host_type>]
         [--create-gitlab-secret]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name]
+        [--release-project-branch-name | --release-project-env-name | --release-custom-name=<value>]
         [--image-pull-secret]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -82,6 +82,7 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
+    --release-custom-name=<release_name>                       Customize release name with namepsace-name-<value>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
@@ -565,6 +566,8 @@ class CLIDriver(object):
             return self.__getName(False)[:53]
         elif self._context.opt['--release-project-env-name']:
             return self.__getEnvName()[:53]
+        elif self._context.opt['--release-custom-name']:
+            return  self.__getNamespace()[:53]+'-'+self._context.opt['--release-custom-name']
         else:
             return self.__getNamespace()[:53]
 
@@ -574,7 +577,7 @@ class CLIDriver(object):
             name = os.environ['CI_PROJECT_NAME']
         else:
             # Get first letter for each word
-            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
+            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', os.environ['CI_PROJECT_NAME'])])
             name = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
 
         return name.replace('_', '-')
@@ -583,7 +586,7 @@ class CLIDriver(object):
         # Get k8s namespace
         if(self.__getEnvironmentName() is not None):
             # Get first letter for each word
-            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', os.environ['CI_PROJECT_NAME'])])
+            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', os.environ['CI_PROJECT_NAME'])])
             name = '%s%s-env-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], self.__getEnvironmentName().replace('/', '-'))    # Get deployment host
         elif(self.__getEnvironmentName() is None):
             LOG.err('can not use environnement release option because environment is not defined in gitlab job.')
