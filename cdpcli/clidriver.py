@@ -39,7 +39,7 @@ Usage:
         [--volume-from=<host_type>]
         [--create-gitlab-secret]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
+        [--release-project-branch-name | --release-project-env-name | --release-custom-name=<value>]
         [--image-pull-secret]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
