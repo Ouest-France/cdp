@@ -82,8 +82,8 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
+    --release-custom-name=<release_name>                       Force to use custom Helm release name
     --release-project-branch-name                              Force the release to be created with the project branch name.
-    --release-project-custom=<release_name>                    Force to use custom Helm release name
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
@@ -566,8 +566,8 @@ class CLIDriver(object):
             return self.__getName(False)[:53]
         elif self._context.opt['--release-project-env-name']:
             return self.__getEnvName()[:53]
-        elif self._context.opt['--release-project-custom']:
-            return self._context.opt['--release-project-custom']
+        elif self._context.opt['--release-custom-name']:
+            return  self.__getNamespace()[:53]+'-'+self._context.opt['--release-custom-name']
         else:
             return self.__getNamespace()[:53]
 
