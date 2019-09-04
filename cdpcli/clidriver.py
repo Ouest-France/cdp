@@ -39,7 +39,7 @@ Usage:
         [--volume-from=<host_type>]
         [--create-gitlab-secret]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name]
+        [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
         [--image-pull-secret]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -564,8 +564,8 @@ class CLIDriver(object):
         if self._context.opt['--release-project-branch-name']:
             # https://github.com/kubernetes/helm/issues/1528
             return self.__getName(False)[:53]
-        elif self._context.opt['--release-project-env-name']:
-            return self.__getEnvName()[:53]
+        elif self._context.opt['--release-project-env-name']
+ :           return self.__getEnvName()[:53]
         elif self._context.opt['--release-custom-name']:
             return  self.__getNamespace()[:53]+'-'+self._context.opt['--release-custom-name']
         else:
