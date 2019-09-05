@@ -467,7 +467,7 @@ class CLIDriver(object):
                 if doc is not None:
                     LOG.verbose(doc)
                     final_docs.append(doc)
-                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and (doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet'or doc['kind'] == '')  and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
+                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and (doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet')  and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
                         find_image_pull_secret = False
                         if 'imagePullSecrets' in doc['spec']['template']['spec'] and doc['spec']['template']['spec']['imagePullSecrets']:
                             for image_pull_secret in doc['spec']['template']['spec']['imagePullSecrets']:
