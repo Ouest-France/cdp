@@ -467,6 +467,7 @@ class CLIDriver(object):
                 if doc is not None:
                     LOG.verbose(doc)
                     final_docs.append(doc)
+                    #Manage Deployement and StatefullSate
                     if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and (doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet')  and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
                         find_image_pull_secret = False
                         if 'imagePullSecrets' in doc['spec']['template']['spec'] and doc['spec']['template']['spec']['imagePullSecrets']:
@@ -480,7 +481,20 @@ class CLIDriver(object):
                             else:
                                 doc['spec']['template']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
                                 LOG.info('Add image pull secret %s' % image_pull_secret_value)
-
+                    #Manage CronJob
+                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and doc['kind'] == 'CronJob'  and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
+                        find_image_pull_secret = False
+                        if 'imagePullSecrets' in doc['spec']['jobTemplate']['spec']['template']['spec'] and doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets']:
+                            for image_pull_secret in doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets']:
+                                if image_pull_secret['name'] == '%s' % image_pull_secret_value:
+                                    find_image_pull_secret = True
+                        if not find_image_pull_secret:
+                            if 'imagePullSecrets' in doc['spec']['jobTemplate']['spec']['template']['spec']:
+                                doc['spec']['template']['jobTemplate']['spec']['spec']['imagePullSecrets'].append({ 'name' : '%s' % image_pull_secret_value })
+                                LOG.info('Append image pull secret %s' % image_pull_secret_value)
+                            else:
+                                doc['spec']['template']['jobTemplate']['spec']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
+                                LOG.info('Add image pull secret %s' % image_pull_secret_value)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
