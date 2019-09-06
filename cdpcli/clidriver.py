@@ -490,10 +490,10 @@ class CLIDriver(object):
                                     find_image_pull_secret = True
                         if not find_image_pull_secret:
                             if 'imagePullSecrets' in doc['spec']['jobTemplate']['spec']['template']['spec']:
-                                doc['spec']['template']['jobTemplate']['spec']['spec']['imagePullSecrets'].append({ 'name' : '%s' % image_pull_secret_value })
+                                doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'].append({ 'name' : '%s' % image_pull_secret_value })
                                 LOG.info('Append image pull secret %s' % image_pull_secret_value)
                             else:
-                                doc['spec']['template']['jobTemplate']['spec']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
+                                doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
                                 LOG.info('Add image pull secret %s' % image_pull_secret_value)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
