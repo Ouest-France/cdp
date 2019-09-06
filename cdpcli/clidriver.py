@@ -482,7 +482,7 @@ class CLIDriver(object):
                                 doc['spec']['template']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
                                 LOG.info('Add image pull secret %s' % image_pull_secret_value)
                     #Manage CronJob
-                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and doc['kind'] == 'CronJob'  and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
+                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and doc['kind'] == 'CronJob'  and 'spec' in doc and 'jobTemplate' in doc['spec'] and 'spec' in doc['spec']['jobTemplate']:
                         find_image_pull_secret = False
                         if 'imagePullSecrets' in doc['spec']['jobTemplate']['spec']['template']['spec'] and doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets']:
                             for image_pull_secret in doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets']:
