@@ -474,7 +474,7 @@ class CLIDriver(object):
                           yaml_doc=doc['spec']['template']['spec']
                        if doc['kind'] == 'CronJob':
                           yaml_doc=doc['spec']['jobTemplate']['spec']['template']['spec']
-                       if not self.__findImageSecret(yaml_doc,image_pull_secret_value):
+                       if not self.__findImagePullSecret(yaml_doc,image_pull_secret_value):
                            if 'imagePullSecrets' in yaml_doc:
                                yaml_doc['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
                                LOG.info('Append image pull secret %s on %s' % (image_pull_secret_value, doc['kind']))
@@ -497,7 +497,7 @@ class CLIDriver(object):
 
         self.__update_environment()
 
-    def __findImageSecret(self,doc,image_pull_secret_value):
+    def __findImagePullSecret(self,doc,image_pull_secret_value):
         find_image_pull_secret = False
         if 'imagePullSecrets' in doc and doc['imagePullSecrets']:
             for image_pull_secret in doc['imagePullSecrets']:
