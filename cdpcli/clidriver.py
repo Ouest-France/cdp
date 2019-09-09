@@ -468,7 +468,7 @@ class CLIDriver(object):
                     LOG.verbose(doc)
                     final_docs.append(doc)
                     #Manage Deployement and StatefullSate
-                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and 'template' in doc['spec']:
+                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
                        yaml_doc = ""
                        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
                           yaml_doc=doc['spec']['template']['spec']
