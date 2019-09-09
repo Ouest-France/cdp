@@ -469,19 +469,18 @@ class CLIDriver(object):
                     final_docs.append(doc)
                     #Manage Deployement and StatefullSate
                     if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and 'template' in doc['spec']:
+                       yaml_doc = ""
                        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
                           yaml_doc=doc['spec']['template']['spec']
                        if doc['kind'] == 'CronJob':
                           yaml_doc=doc['spec']['jobTemplate']['spec']['template']['spec']
-                       if not self.__fndImageSecret(yaml_doc,image_pull_secret_value):
+                       if not self.__findImageSecret(yaml_doc,image_pull_secret_value):
                            if 'imagePullSecrets' in yaml_doc:
                                yaml_doc['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
                                LOG.info('Append image pull secret %s' % image_pull_secret_value)
                            else:
                                yaml_doc['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
                                LOG.info('Add image pull secret %s' % image_pull_secret_value)
-
-
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
@@ -498,7 +497,7 @@ class CLIDriver(object):
 
         self.__update_environment()
 
-    def __fndImageSecret(self,doc,image_pull_secret_value):
+    def __findImageSecret(self,doc,image_pull_secret_value):
         find_image_pull_secret = False
         if 'imagePullSecrets' in doc and doc['imagePullSecrets']:
             for image_pull_secret in doc['imagePullSecrets']:
