@@ -477,10 +477,10 @@ class CLIDriver(object):
                        if not self.__findImageSecret(yaml_doc,image_pull_secret_value):
                            if 'imagePullSecrets' in yaml_doc:
                                yaml_doc['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
-                               LOG.info('Append image pull secret %s' % image_pull_secret_value)
+                               LOG.info('Append image pull secret %s on %s' % (image_pull_secret_value, doc['kind']))
                            else:
                                yaml_doc['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
-                               LOG.info('Add image pull secret %s' % image_pull_secret_value)
+                               LOG.info('Add image pull secret %s on %s' % (image_pull_secret_value, doc['kind']))
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
