@@ -503,13 +503,6 @@ class CLIDriver(object):
             for image_pull_secret in doc['imagePullSecrets']:
                 if image_pull_secret['name'] == '%s' % image_pull_secret_value:
                     find_image_pull_secret = True
-        if not find_image_pull_secret:
-            if 'imagePullSecrets' in doc:
-                doc['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
-                LOG.info('Append image pull secret %s' % image_pull_secret_value)
-            else:
-                doc['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
-                LOG.info('Add image pull secret %s' % image_pull_secret_value)
         return find_image_pull_secret
 
 
