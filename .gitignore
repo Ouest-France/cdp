@@ -8,4 +8,3 @@ build
 .idea/
 venv/
 settings.json
-local/

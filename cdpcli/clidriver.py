@@ -140,8 +140,6 @@ def main():
     return driver.main()
 
 class CLIDriver(object):
-    def __init__(self):
-        None
     def __init__(self, cmd=None, opt=None):
         if cmd is None:
             raise ValueError('TODO')
