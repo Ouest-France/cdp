@@ -498,16 +498,21 @@ class CLIDriver(object):
                         LOG.info('Append image pull secret %s' % image_pull_secret_value)
             else:
                 doc['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
-        if doc['kind'] == 'CronJob':
+                LOG.info('Add imagePullSecret')
+
+        elif doc['kind'] == 'CronJob':
             yaml_doc = doc['spec']['jobTemplate']['spec']['template']['spec']
             if 'imagePullSecrets' in yaml_doc and yaml_doc['imagePullSecrets']:
+                LOG.info('Find imagepullsecret')
                 for image_pull_secret in yaml_doc['imagePullSecrets']:
                     if image_pull_secret['name'] == '%s' % image_pull_secret_value:
+                        LOG.info('secret name find')
                         if (image_pull_secret['name'] != '%s' % image_pull_secret_value):
                             doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
                             LOG.info('Append image pull secret %s' % image_pull_secret_value)
-                    else:
-                        doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
+            else:
+                 doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
+                 LOG.info('Add imagePullSecret')
         return doc
 
 

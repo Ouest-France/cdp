@@ -1622,16 +1622,17 @@ status:
         docs = []
         for raw_doc in TestCliDriver.cronjob_yaml_without_secret.split('\n---'):
             docs.append(yaml.safe_load(raw_doc))
-        LOG.info(docs)
         docs_target=[]
         for raw_doc in TestCliDriver.cronjob_yaml_with_secret.split('\n---'):
             docs_target.append(yaml.safe_load(raw_doc))
         LOG.info(docs_target)
+        output=[]
         for doc in docs:
-            output = CLIDriver.addImageSecret(doc,imagePullSecret)
-            LOG.info(doc)
-            if(docs != docs_target) :
-               raise Exception("Cronjob Output are not identical")
+            output.append(CLIDriver.addImageSecret(doc,imagePullSecret))
+
+        LOG.info(output)
+        if(output != docs_target) :
+           raise Exception("Cronjob Output are not identical")
 
 
     def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock', env_vars = {}):
