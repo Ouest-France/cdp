@@ -15,7 +15,7 @@ ARG VERSION_AUTOCONF="2.69-r2"
 ARG VERSION_AUTOMAKE="1.16.1-r0"
 ARG VERSION_LIBTOOL="2.4.6-r5"
 ARG VERSION_JQ="1.6-r0"
-
+ARG VERSION_GIT="2.20.1-r0"
 ARG VERSION_WHEEL="0.33.1"
 ARG VERSION_DOCKER_COMPOSE="1.23.2"
 
@@ -39,6 +39,7 @@ RUN apk -v --no-cache add python3=$VERSION_PYTHON \
       libtool=$VERSION_LIBTOOL \
       docker=$VERSION_DOCKER \
       jq=$VERSION_JQ \
+      git=$VERSION_GIT \
     && chmod +x /bin/hadolint \
     && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi \
     && python -m ensurepip \
