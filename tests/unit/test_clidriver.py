@@ -12,6 +12,14 @@ from freezegun import freeze_time
 from mock import call, patch, Mock, MagicMock, mock_open
 from ruamel import yaml
 
+import logging, verboselogs
+
+from cdpcli import __version__
+LOG = verboselogs.VerboseLogger('clidriver')
+LOG.addHandler(logging.StreamHandler())
+LOG.setLevel(logging.INFO)
+
+
 class FakeCommand(object):
     def __init__(self, verif_cmd):
         self._verif_cmd = verif_cmd
@@ -163,7 +171,58 @@ class TestCliDriver(unittest.TestCase):
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
-
+    cronjob_yaml_without_secret = """---
+    kind: CronJob
+    apiVersion: batch/v1beta1
+    metadata:
+      name: configuration-docker-zabbix-sender
+      labels:
+        app: configuration-docker-zabbix-sender
+        chart: configuration-docker-zabbix-sender-0.1.0
+        release: cdzs950-test-cdp
+    spec:
+      schedule: "*/5 * * * *"
+      concurrencyPolicy: Forbid
+      suspend: false
+      jobTemplate:
+        metadata: {}
+        spec:
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - {}
+              schedulerName: default-scheduler
+      successfulJobsHistoryLimit: 3
+      failedJobsHistoryLimit: 1
+    """
+    cronjob_yaml_with_secret = """---
+    kind: CronJob
+    apiVersion: batch/v1beta1
+    metadata:
+      name: configuration-docker-zabbix-sender
+      labels:
+        app: configuration-docker-zabbix-sender
+        chart: configuration-docker-zabbix-sender-0.1.0
+        release: cdzs950-test-cdp
+    spec:
+      schedule: "*/5 * * * *"
+      concurrencyPolicy: Forbid
+      suspend: false
+      jobTemplate:
+        metadata: {}
+        spec:
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - {}
+              imagePullSecrets:
+              - name: cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp
+              schedulerName: default-scheduler
+      successfulJobsHistoryLimit: 3
+      failedJobsHistoryLimit: 1
+    """
     deployment_json_without_secret = """{
       "apiVersion": "extensions/v1beta1",
       "kind": "Deployment",
@@ -369,6 +428,37 @@ spec:
               servicePort: 80
 ---
 # Source: helloworld/templates/secret.yaml
+"""
+    cronjob_yaml = """---
+kind: CronJob
+apiVersion: batch/v1beta1
+metadata:
+spec:
+  schedule: '*/5 * * * *'
+  concurrencyPolicy: Forbid
+  suspend: false
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          restartPolicy: Never
+          activeDeadlineSeconds: 500
+          serviceAccountName: ldap-group-syncer
+          schedulerName: default-scheduler
+          terminationGracePeriodSeconds: 30
+          securityContext: {}
+          containers:
+            - name: cronjob-ldap-group-sync
+              image: 'bastienbalaud/openshift-client-docker:v3.11'
+          dnsPolicy: ClusterFirst
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+status:
+  lastScheduleTime: '2019-09-10T09:50:00Z'
 """
     def setUp(self):
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
@@ -1527,6 +1617,23 @@ spec:
             # Ok beacause previous command return error.
              print(e)
 
+    def test_function_AddImagePullSecret_Cronjob(self):
+        imagePullSecret = "cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp"
+        docs = []
+        for raw_doc in TestCliDriver.cronjob_yaml_without_secret.split('\n---'):
+            docs.append(yaml.safe_load(raw_doc))
+        LOG.info(docs)
+        docs_target=[]
+        for raw_doc in TestCliDriver.cronjob_yaml_with_secret.split('\n---'):
+            docs_target.append(yaml.safe_load(raw_doc))
+        LOG.info(docs_target)
+        for doc in docs:
+            output = CLIDriver.addImageSecret(doc,imagePullSecret)
+            LOG.info(doc)
+            if(docs != docs_target) :
+               raise Exception("Cronjob Output are not identical")
+
+
     def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock', env_vars = {}):
         cdp_docker_host_internal = '172.17.0.1'
         try:
@@ -1570,3 +1677,5 @@ spec:
         mock_Gitlab.return_value.projects = mock_projects
 
         return mock_projects, mock_environments, mock_env1, mock_env2
+
+

@@ -140,7 +140,8 @@ def main():
     return driver.main()
 
 class CLIDriver(object):
-
+    def __init__(self):
+        None
     def __init__(self, cmd=None, opt=None):
         if cmd is None:
             raise ValueError('TODO')
@@ -469,18 +470,7 @@ class CLIDriver(object):
                     final_docs.append(doc)
                     #Manage Deployement and StatefullSate
                     if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
-                       yaml_doc = ""
-                       if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
-                          yaml_doc=doc['spec']['template']['spec']
-                       if doc['kind'] == 'CronJob':
-                          yaml_doc=doc['spec']['jobTemplate']['spec']['template']['spec']
-                       if not self.__findImagePullSecret(yaml_doc,image_pull_secret_value):
-                           if 'imagePullSecrets' in yaml_doc:
-                               yaml_doc['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
-                               LOG.info('Append image pull secret %s on %s' % (image_pull_secret_value, doc['kind']))
-                           else:
-                               yaml_doc['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
-                               LOG.info('Add image pull secret %s on %s' % (image_pull_secret_value, doc['kind']))
+                           doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
@@ -497,13 +487,29 @@ class CLIDriver(object):
 
         self.__update_environment()
 
-    def __findImagePullSecret(self,doc,image_pull_secret_value):
-        find_image_pull_secret = False
-        if 'imagePullSecrets' in doc and doc['imagePullSecrets']:
-            for image_pull_secret in doc['imagePullSecrets']:
-                if image_pull_secret['name'] == '%s' % image_pull_secret_value:
-                    find_image_pull_secret = True
-        return find_image_pull_secret
+    @staticmethod
+    def addImageSecret(doc,image_pull_secret_value):
+        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
+            yaml_doc = doc['spec']['template']['spec']
+            if 'imagePullSecrets' in yaml_doc and yaml_doc['imagePullSecrets']:
+                for image_pull_secret in yaml_doc['imagePullSecrets']:
+                    if (image_pull_secret['name'] != '%s' % image_pull_secret_value):
+                        doc['spec']['template']['spec']['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
+                        LOG.info('Append image pull secret %s' % image_pull_secret_value)
+            else:
+                doc['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
+        if doc['kind'] == 'CronJob':
+            yaml_doc = doc['spec']['jobTemplate']['spec']['template']['spec']
+            if 'imagePullSecrets' in yaml_doc and yaml_doc['imagePullSecrets']:
+                for image_pull_secret in yaml_doc['imagePullSecrets']:
+                    if image_pull_secret['name'] == '%s' % image_pull_secret_value:
+                        if (image_pull_secret['name'] != '%s' % image_pull_secret_value):
+                            doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
+                            LOG.info('Append image pull secret %s' % image_pull_secret_value)
+                    else:
+                        doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
+        return doc
+
 
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
