@@ -1661,10 +1661,10 @@ status:
         output=[]
         for doc in docs:
             output.append(CLIDriver.addImageSecret(doc,imagePullSecret))
-
         LOG.info(output)
         if(output != docs_target) :
            raise Exception("Cronjob Output are not identical")
+
     def test_function_AddImagePullSecret_Deployement(self):
         imagePullSecret = "cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp"
         docs = []
@@ -1677,7 +1677,6 @@ status:
         output=[]
         for doc in docs:
             output.append(CLIDriver.addImageSecret(doc,imagePullSecret))
-
         LOG.info(output)
         if(output != docs_target) :
            raise Exception("Deployement Output are not identical")
@@ -1725,5 +1724,3 @@ status:
         mock_Gitlab.return_value.projects = mock_projects
 
         return mock_projects, mock_environments, mock_env1, mock_env2
-
-

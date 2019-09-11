@@ -515,8 +515,6 @@ class CLIDriver(object):
                  LOG.info('Add imagePullSecret')
         return doc
 
-
-
     def __buildTagAndPushOnDockerRegistry(self, tag):
         if self._context.opt['--use-docker-compose']:
             os.environ['CDP_TAG'] = tag
@@ -532,7 +530,6 @@ class CLIDriver(object):
             self._cmd.run_command('docker build -t %s .' % (image_tag))
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
-
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb is 'PUT':
@@ -553,7 +550,6 @@ class CLIDriver(object):
 
         LOG.info('---------- Failed mode ----------')
         self._cmd.run_command('curl -sf --output /dev/null %s' % url_validator)
-
 
     def __getImageName(self):
         # Configure docker registry
@@ -632,7 +628,6 @@ class CLIDriver(object):
         # Get k8s namespace
         return '%s.%s' % (self.__getRelease(), dns_subdomain)
 
-
     def __simulate_merge_on(self, force_git_config = False):
         if force_git_config or self._context.opt['--simulate-merge-on']:
             git_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-git'], self._context.opt['--volume-from'], True)
@@ -670,7 +665,6 @@ class CLIDriver(object):
                 if environment.name == os.getenv('CI_ENVIRONMENT_NAME', None):
                     env = environment
                     break
-
             return env
 
     def __update_environment(self):
