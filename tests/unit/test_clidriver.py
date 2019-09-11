@@ -12,6 +12,14 @@ from freezegun import freeze_time
 from mock import call, patch, Mock, MagicMock, mock_open
 from ruamel import yaml
 
+import logging, verboselogs
+
+from cdpcli import __version__
+LOG = verboselogs.VerboseLogger('clidriver')
+LOG.addHandler(logging.StreamHandler())
+LOG.setLevel(logging.INFO)
+
+
 class FakeCommand(object):
     def __init__(self, verif_cmd):
         self._verif_cmd = verif_cmd
@@ -124,7 +132,7 @@ class TestCliDriver(unittest.TestCase):
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
     ci_project_id = '14'
     ci_project_name = 'hello-world'
-    ci_project_name_first_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z\d]', ci_project_name)])
+    ci_project_name_first_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', ci_project_name)])
     ci_pnfl_project_id_commit_ref_slug = '%s%s-%s' % (ci_project_name_first_letter, ci_project_id, ci_commit_ref_slug)
     ci_project_path = 'HelloWorld/HelloWorld'
     ci_project_path_slug = 'helloworld-helloworld'
@@ -163,76 +171,159 @@ class TestCliDriver(unittest.TestCase):
 
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
+    cronjob_yaml_without_secret = """---
+    kind: CronJob
+    apiVersion: batch/v1beta1
+    metadata:
+      name: configuration-docker-zabbix-sender
+      labels:
+        app: configuration-docker-zabbix-sender
+        chart: configuration-docker-zabbix-sender-0.1.0
+        release: cdzs950-test-cdp
+    spec:
+      schedule: "*/5 * * * *"
+      concurrencyPolicy: Forbid
+      suspend: false
+      jobTemplate:
+        metadata: {}
+        spec:
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - {}
+              schedulerName: default-scheduler
+      successfulJobsHistoryLimit: 3
+      failedJobsHistoryLimit: 1
+    """
+    cronjob_yaml_with_secret = """---
+    kind: CronJob
+    apiVersion: batch/v1beta1
+    metadata:
+      name: configuration-docker-zabbix-sender
+      labels:
+        app: configuration-docker-zabbix-sender
+        chart: configuration-docker-zabbix-sender-0.1.0
+        release: cdzs950-test-cdp
+    spec:
+      schedule: "*/5 * * * *"
+      concurrencyPolicy: Forbid
+      suspend: false
+      jobTemplate:
+        metadata: {}
+        spec:
+          template:
+            metadata: {}
+            spec:
+              containers:
+              - {}
+              imagePullSecrets:
+              - name: cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp
+              schedulerName: default-scheduler
+      successfulJobsHistoryLimit: 3
+      failedJobsHistoryLimit: 1
+    """
+    deployment_yaml_without_secret = """---
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    metadata:
+      name: helloworld
+      labels:
+        app: helloworld
+        chart: helloworld-0.1.0
+        release: release-name
+        heritage: Tiller
+    spec:
+      replicas: 2
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 2
+      minReadySeconds: 60
+      revisionHistoryLimit: 2
+      template:
+        metadata:
+          labels:
+            app: helloworld
+            release: release-name
+        spec:
+          containers:
+            - name: helloworld-sha-01234567
+              image: registry.gitlab.com/helloworld/helloworld:0123456789abcdef0123456789abcdef01234567
+              imagePullPolicy: IfNotPresent
+              ports:
+                - containerPort: 8080
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 60
+              readinessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 20
+              resources:
+                limits:
+                  cpu: 1
+                  memory: 1Gi
+                requests:
+                  cpu: 0.25
+                  memory: 1Gi
+    """
 
-    deployment_json_without_secret = """{
-      "apiVersion": "extensions/v1beta1",
-      "kind": "Deployment",
-      "metadata": {
-      },
-      "spec": {
-          "revisionHistoryLimit": 1,
-          "template": {
-              "spec": {
-              }
-          }
-      },
-      "status": {
-          "availableReplicas": 3,
-          "conditions": [
-              {
-                  "lastTransitionTime": "2018-09-26T11:33:39Z",
-                  "lastUpdateTime": "2018-09-26T11:33:39Z",
-                  "message": "Deployment has minimum availability.",
-                  "reason": "MinimumReplicasAvailable",
-                  "status": "True",
-                  "type": "Available"
-              }
-          ],
-          "observedGeneration": 2,
-          "readyReplicas": 3,
-          "replicas": 3,
-          "updatedReplicas": 3
-      }
-  }"""
-
-    deployment_json_with_secret = """{
-      "apiVersion": "extensions/v1beta1",
-      "kind": "Deployment",
-      "metadata": {
-      },
-      "spec": {
-          "revisionHistoryLimit": 1,
-          "template": {
-              "spec": {
-                  "imagePullSecrets": [
-                      {
-                          "name": "cdp-registry.gitlab.com-hw14-branch-helloworld-with-many-characters-because-h"
-                      },
-                      {
-                          "name": "custom"
-                      }
-                  ]
-              }
-          }
-      },
-      "status": {
-          "availableReplicas": 3,
-          "conditions": [
-              {
-                  "lastTransitionTime": "2018-09-26T11:33:39Z",
-                  "lastUpdateTime": "2018-09-26T11:33:39Z",
-                  "message": "Deployment has minimum availability.",
-                  "reason": "MinimumReplicasAvailable",
-                  "status": "True",
-                  "type": "Available"
-              }
-          ],
-          "observedGeneration": 2,
-          "readyReplicas": 3,
-          "replicas": 3,
-          "updatedReplicas": 3
-      }
-  }"""
+    deployment_yaml_with_secret = """---
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    metadata:
+      name: helloworld
+      labels:
+        app: helloworld
+        chart: helloworld-0.1.0
+        release: release-name
+        heritage: Tiller
+    spec:
+      replicas: 2
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 2
+      minReadySeconds: 60
+      revisionHistoryLimit: 2
+      template:
+        metadata:
+          labels:
+            app: helloworld
+            release: release-name
+        spec:
+          containers:
+            - name: helloworld-sha-01234567
+              image: registry.gitlab.com/helloworld/helloworld:0123456789abcdef0123456789abcdef01234567
+              imagePullPolicy: IfNotPresent
+              ports:
+                - containerPort: 8080
+              livenessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 60
+              readinessProbe:
+                httpGet:
+                  path: /
+                  port: 8080
+                initialDelaySeconds: 20
+              resources:
+                limits:
+                  cpu: 1
+                  memory: 1Gi
+                requests:
+                  cpu: 0.25
+                  memory: 1Gi
+          imagePullSecrets:
+           - name: cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp
+    """
 
     registry_secret_json = """{
       "apiVersion": "v1",
@@ -369,6 +460,37 @@ spec:
               servicePort: 80
 ---
 # Source: helloworld/templates/secret.yaml
+"""
+    cronjob_yaml = """---
+kind: CronJob
+apiVersion: batch/v1beta1
+metadata:
+spec:
+  schedule: '*/5 * * * *'
+  concurrencyPolicy: Forbid
+  suspend: false
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          restartPolicy: Never
+          activeDeadlineSeconds: 500
+          serviceAccountName: ldap-group-syncer
+          schedulerName: default-scheduler
+          terminationGracePeriodSeconds: 30
+          securityContext: {}
+          containers:
+            - name: cronjob-ldap-group-sync
+              image: 'bastienbalaud/openshift-client-docker:v3.11'
+          dnsPolicy: ClusterFirst
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+status:
+  lastScheduleTime: '2019-09-10T09:50:00Z'
 """
     def setUp(self):
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
@@ -1526,6 +1648,38 @@ spec:
         except ValueError as e:
             # Ok beacause previous command return error.
              print(e)
+
+    def test_function_AddImagePullSecret_Cronjob(self):
+        imagePullSecret = "cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp"
+        docs = []
+        for raw_doc in TestCliDriver.cronjob_yaml_without_secret.split('\n---'):
+            docs.append(yaml.safe_load(raw_doc))
+        docs_target=[]
+        for raw_doc in TestCliDriver.cronjob_yaml_with_secret.split('\n---'):
+            docs_target.append(yaml.safe_load(raw_doc))
+        LOG.info(docs_target)
+        output=[]
+        for doc in docs:
+            output.append(CLIDriver.addImageSecret(doc,imagePullSecret))
+        LOG.info(output)
+        if(output != docs_target) :
+           raise Exception("Cronjob Output are not identical")
+
+    def test_function_AddImagePullSecret_Deployement(self):
+        imagePullSecret = "cdp-registry-gitlab.ouest-france.fr-cdzs950-test-cdp"
+        docs = []
+        for raw_doc in TestCliDriver.deployment_yaml_without_secret.split('\n---'):
+            docs.append(yaml.safe_load(raw_doc))
+        docs_target=[]
+        for raw_doc in TestCliDriver.deployment_yaml_with_secret.split('\n---'):
+            docs_target.append(yaml.safe_load(raw_doc))
+        LOG.info(docs_target)
+        output=[]
+        for doc in docs:
+            output.append(CLIDriver.addImageSecret(doc,imagePullSecret))
+        LOG.info(output)
+        if(output != docs_target) :
+           raise Exception("Deployement Output are not identical")
 
     def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock', env_vars = {}):
         cdp_docker_host_internal = '172.17.0.1'

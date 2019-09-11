@@ -140,7 +140,6 @@ def main():
     return driver.main()
 
 class CLIDriver(object):
-
     def __init__(self, cmd=None, opt=None):
         if cmd is None:
             raise ValueError('TODO')
@@ -330,7 +329,7 @@ class CLIDriver(object):
         kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
         helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
 
-		# Use release name instead of the namespace name for release
+        # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
         namespace = self.__getNamespace()
         host = self.__getHost()
@@ -467,20 +466,9 @@ class CLIDriver(object):
                 if doc is not None:
                     LOG.verbose(doc)
                     final_docs.append(doc)
-                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and doc['kind'] == 'Deployment' and 'spec' in doc and 'template' in doc['spec'] and 'spec' in doc['spec']['template']:
-                        find_image_pull_secret = False
-                        if 'imagePullSecrets' in doc['spec']['template']['spec'] and doc['spec']['template']['spec']['imagePullSecrets']:
-                            for image_pull_secret in doc['spec']['template']['spec']['imagePullSecrets']:
-                                if image_pull_secret['name'] == '%s' % image_pull_secret_value:
-                                    find_image_pull_secret = True
-                        if not find_image_pull_secret:
-                            if 'imagePullSecrets' in doc['spec']['template']['spec']:
-                                doc['spec']['template']['spec']['imagePullSecrets'].append({ 'name' : '%s' % image_pull_secret_value })
-                                LOG.info('Append image pull secret %s' % image_pull_secret_value)
-                            else:
-                                doc['spec']['template']['spec']['imagePullSecrets'] = [ { 'name' : '%s' % image_pull_secret_value } ]
-                                LOG.info('Add image pull secret %s' % image_pull_secret_value)
-
+                    #Manage Deployement and StatefullSate
+                    if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
+                           doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
@@ -497,6 +485,34 @@ class CLIDriver(object):
 
         self.__update_environment()
 
+    @staticmethod
+    def addImageSecret(doc,image_pull_secret_value):
+        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
+            yaml_doc = doc['spec']['template']['spec']
+            if 'imagePullSecrets' in yaml_doc and yaml_doc['imagePullSecrets']:
+                for image_pull_secret in yaml_doc['imagePullSecrets']:
+                    if (image_pull_secret['name'] != '%s' % image_pull_secret_value):
+                        doc['spec']['template']['spec']['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
+                        LOG.info('Append image pull secret %s' % image_pull_secret_value)
+            else:
+                doc['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
+                LOG.info('Add imagePullSecret')
+
+        elif doc['kind'] == 'CronJob':
+            yaml_doc = doc['spec']['jobTemplate']['spec']['template']['spec']
+            if 'imagePullSecrets' in yaml_doc and yaml_doc['imagePullSecrets']:
+                LOG.info('Find imagepullsecret')
+                for image_pull_secret in yaml_doc['imagePullSecrets']:
+                    if image_pull_secret['name'] == '%s' % image_pull_secret_value:
+                        LOG.info('secret name find')
+                        if (image_pull_secret['name'] != '%s' % image_pull_secret_value):
+                            doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'].append({'name': '%s' % image_pull_secret_value})
+                            LOG.info('Append image pull secret %s' % image_pull_secret_value)
+            else:
+                 doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
+                 LOG.info('Add imagePullSecret')
+        return doc
+
     def __buildTagAndPushOnDockerRegistry(self, tag):
         if self._context.opt['--use-docker-compose']:
             os.environ['CDP_TAG'] = tag
@@ -512,7 +528,6 @@ class CLIDriver(object):
             self._cmd.run_command('docker build -t %s .' % (image_tag))
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
-
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb is 'PUT':
@@ -533,7 +548,6 @@ class CLIDriver(object):
 
         LOG.info('---------- Failed mode ----------')
         self._cmd.run_command('curl -sf --output /dev/null %s' % url_validator)
-
 
     def __getImageName(self):
         # Configure docker registry
@@ -612,7 +626,6 @@ class CLIDriver(object):
         # Get k8s namespace
         return '%s.%s' % (self.__getRelease(), dns_subdomain)
 
-
     def __simulate_merge_on(self, force_git_config = False):
         if force_git_config or self._context.opt['--simulate-merge-on']:
             git_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-git'], self._context.opt['--volume-from'], True)
@@ -650,7 +663,6 @@ class CLIDriver(object):
                 if environment.name == os.getenv('CI_ENVIRONMENT_NAME', None):
                     env = environment
                     break
-
             return env
 
     def __update_environment(self):

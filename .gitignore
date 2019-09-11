@@ -5,6 +5,6 @@
 dist
 build
 .pytest_cache/
+.idea/
 venv/
 settings.json
-local/
