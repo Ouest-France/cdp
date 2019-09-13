@@ -18,6 +18,7 @@ Usage:
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
+        [--DaltDeploymentRepository=<repository_name> ]  
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
@@ -59,6 +60,7 @@ Options:
     --command=<cmd>                                            Command to run in the docker image.
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env
+    --DaltDeploymentRepository=<repository_name>               Use custom Maven Dpeloyement repository    
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
