@@ -121,7 +121,6 @@ class FakeCommand(object):
         return run_docker_cmd
 
 class TestCliDriver(unittest.TestCase):
-    maxDiff = None
     ci_job_token = 'gitlab-ci'
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
