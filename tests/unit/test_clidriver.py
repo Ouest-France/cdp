@@ -622,7 +622,7 @@ status:
             {'cmd': 'checkout %s' % TestCliDriver.ci_commit_ref_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
             {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % (image_name_maven), 'output': 'unnecessary'},
-            {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::http://repo.fr/test %s -s maven-settings.xml' % (maven_opts) ,'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven}
+            {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::http://repo.fr/test %s" %s -s maven-settings.xml' % (maven_opts,maven_opts) ,'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven}
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-image-maven=%s' % image_name_maven, '--deploy=release' , '--DaltDeploymentRepository=test'},
