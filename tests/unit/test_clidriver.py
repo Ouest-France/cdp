@@ -121,7 +121,6 @@ class FakeCommand(object):
         return run_docker_cmd
 
 class TestCliDriver(unittest.TestCase):
-
     ci_job_token = 'gitlab-ci'
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
@@ -606,6 +605,26 @@ status:
         ]
 
         self.__run_CLIDriver({ 'maven', '--docker-image-maven=%s' % image_name_maven, '--deploy=release'},
+            verif_cmd, env_vars = {'MAVEN_OPTS': maven_opts})
+
+    def test_maven_deployrelease_customrepo(self):
+        # Create FakeCommand
+        branch_name = 'master'
+        image_name_maven = 'maven:3.5-jdk-8'
+        goals = 'clean install -DskipTests'
+        maven_opts = '-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository -e'
+        verif_cmd = [
+            {'cmd': 'docker pull %s' % TestCliDriver.image_name_git, 'output': 'unnecessary'},
+            {'cmd': 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
+            {'cmd': 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
+            {'cmd': 'fetch', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
+            {'cmd': 'checkout %s' % TestCliDriver.ci_commit_ref_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
+            {'cmd': 'cp /cdp/maven/settings.xml maven-settings.xml', 'output': 'unnecessary'},
+            {'cmd': 'docker pull %s' % (image_name_maven), 'output': 'unnecessary'},
+            {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::http://repo.fr/test %s" %s -s maven-settings.xml' % (maven_opts,maven_opts) ,'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven}
+        ]
+
+        self.__run_CLIDriver({ 'maven', '--docker-image-maven=%s' % image_name_maven, '--deploy=release' , '--altDeploymentRepository=test'},
             verif_cmd, env_vars = {'MAVEN_OPTS': maven_opts})
 
 
