@@ -23,7 +23,7 @@ ADD https://github.com/hadolint/hadolint/releases/download/${VERSION_HADOLINT}/h
 RUN chmod +x /bin/hadolint
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends gcc libc6-dev make dh-autoreconf git jq  docker.io apt-transport-https curl apt-utils  openssh-client libterm-readline-gnu-perl \
+ && apt-get install -y --no-install-recommends gcc libc6-dev make dh-autoreconf git jq  docker.io apt-transport-https curl apt-utils  openssh-client libterm-readline-gnu-perl iproute2 \
  && apt -y autoremove \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
