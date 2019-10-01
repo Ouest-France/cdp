@@ -432,7 +432,17 @@ class CLIDriver(object):
                     secretFileCreated = True
                   #For each envVar of the right environnement we had a line in the secret
                   self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-secret.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir']))
-        
+        secretCustomFileCreated = False
+        for envVar, envValue in dict(os.environ).items():
+            if re.match(r"CDP_CUSTOM_SECRET_[A-Z]*",envVar):
+                if not secretCustomFileCreated:
+                    # LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
+                    # Get the secret templates if we envVar to transform into secret
+                    self._cmd.run_command('cp /cdp/k8s/secret/cdp-custom-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+                    secretCustomFileCreated = True
+                # For each envVar of the right environnement we had a line in the secret
+                self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-custom-secret.yaml' % (envVar[len(secretEnvPattern):], envValue, self._context.opt['--deploy-spec-dir']))
+
         command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
