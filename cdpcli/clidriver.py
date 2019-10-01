@@ -449,7 +449,6 @@ class CLIDriver(object):
                         self._cmd.run_secret_command('echo "    %s" >> %s/templates/cdp-filesecret.yaml' % (line, self._context.opt['--deploy-spec-dir']))
                     LOG.warn(self._cmd.run_secret_command('cat %s/templates/cdp-filesecret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
 
-
         command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
