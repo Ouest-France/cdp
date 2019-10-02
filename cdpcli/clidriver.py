@@ -446,7 +446,7 @@ class CLIDriver(object):
                     with open(envValue, "r") as myfile:
                         data = myfile.read()
                     for line in data.splitlines():
-                        self._cmd.run_secret_command('cat "    %s" >> %s/templates/cdp-filesecret.yaml' % (line, self._context.opt['--deploy-spec-dir']))
+                        self._cmd.run_secret_command('echo "    %s" >> %s/templates/cdp-filesecret.yaml' % (line, self._context.opt['--deploy-spec-dir']))
                     LOG.warn(self._cmd.run_secret_command('cat %s/templates/cdp-filesecret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
 
         command = '%s --debug' % command
