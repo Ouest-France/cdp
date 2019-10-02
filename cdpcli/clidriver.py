@@ -442,8 +442,12 @@ class CLIDriver(object):
                         self._cmd.run_command('cp /cdp/k8s/secret/cdp-filesecret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
                         secretCustomFileCreated = True
                     # For each envVar of the right environnement we had a line in the secret
-                    self._cmd.run_secret_command('echo "%s : |" >> %s/templates/cdp-filesecret.yaml' % (envVar, self._context.opt['--deploy-spec-dir']))
-                    self._cmd.run_secret_command('cat "%s" >> %s/templates/cdp-filesecret.yaml' % (envValue , self._context.opt['--deploy-spec-dir']))
+                    self._cmd.run_secret_command('echo "  %s : |" >> %s/templates/cdp-filesecret.yaml' % (envVar, self._context.opt['--deploy-spec-dir']))
+                    with open(envValue, "r") as myfile:
+                        data = myfile.read()
+                    for line in data.splitlines():
+                        self._cmd.run_secret_command('cat "    %s" >> %s/templates/cdp-filesecret.yaml' % (line, self._context.opt['--deploy-spec-dir']))
+                    LOG.warn(self._cmd.run_secret_command('cat %s/templates/cdp-filesecret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
 
         command = '%s --debug' % command
         command = '%s -i' % command
