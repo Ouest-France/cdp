@@ -25,6 +25,8 @@ class Context(object):
 
                 # Login AWS registry
                 self.__login(login_regex[0][2], login_regex[0][0], login_regex[0][1])
+            elif opt['k8s'] and (opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr'):
+                self._registry = os.getenv('CDP_ECR_PATH')
 
             if opt['--use-custom-registry']:
                 self._registry = os.environ['CDP_CUSTOM_REGISTRY']
