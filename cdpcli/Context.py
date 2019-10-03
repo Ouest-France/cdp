@@ -12,51 +12,54 @@ class Context(object):
         self._opt = opt
         self._cmd = cmd
 
-        if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or not opt['--use-registry'] == 'none':
+        if opt['--login-registry'] != opt['--use-registry']:
+            self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--login-registry'].upper(), None),
+                         os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
+                         os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
-            if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['maven'] or opt['docker']:
+        if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
+
+            if (opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr') and (opt['maven'] or opt['docker']) :
                 aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
                 # Use AWS ECR from k8s configuration on gitlab-runner deployment
                 login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', dry_run=False)[0].strip())
-
                 self._registry = login_regex[0][2]
                 self._registry_user_ro = login_regex[0][0]
                 self._registry_token_ro = login_regex[0][1]
-
                 # Login AWS registry
                 self.__login(login_regex[0][2], login_regex[0][0], login_regex[0][1])
+            elif opt['k8s'] and (opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr'):
+                self._registry = os.getenv('CDP_ECR_PATH')
 
             if opt['--use-custom-registry']:
                 self._registry = os.environ['CDP_CUSTOM_REGISTRY']
                 self._registry_user_ro = os.environ['CDP_CUSTOM_REGISTRY_USER']
                 self._registry_token_ro = os.environ['CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN']
+                # Login custom registry
+                self.__login(os.getenv('CDP_CUSTOM_REGISTRY', None), os.getenv('CDP_CUSTOM_REGISTRY_USER', None),
+                             os.getenv('CDP_CUSTOM_REGISTRY_TOKEN', None))
 
             if not (opt['--use-registry'] == 'gitlab' or opt['--use-registry'] == 'aws-ecr' or opt['--use-gitlab-registry'] or opt['--use-custom-registry'] or opt['--use-aws-ecr']):
                 self._registry = os.environ['CDP_%s_REGISTRY' % opt['--use-registry'].upper()]
                 self._registry_user_ro = os.environ['CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper()]
                 self._registry_token_ro = os.environ['CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper()]
+                self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(), None),
+                             os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(), None),
+                             os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(), None))
 
             if opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab':
                 # Use gitlab registry
                 self._registry = os.environ['CI_REGISTRY']
                 self._registry_user_ro = os.getenv('CI_DEPLOY_USER', None)
                 self._registry_token_ro =  os.getenv('CI_DEPLOY_PASSWORD', None)
-
-            self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--login-registry'].upper(), None),
-                os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
-                os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
-
-            # Login custom registry
-            self.__login(os.getenv('CDP_CUSTOM_REGISTRY', None), os.getenv('CDP_CUSTOM_REGISTRY_USER', None), os.getenv('CDP_CUSTOM_REGISTRY_TOKEN', None))
-
-            # Login gitlab registry
-            self.__login(os.getenv('CI_REGISTRY', None), os.getenv('CI_REGISTRY_USER', None), os.getenv('CI_JOB_TOKEN', None))
+                # Login gitlab registry
+                self.__login(os.getenv('CI_REGISTRY', None), os.getenv('CI_REGISTRY_USER', None),
+                             os.getenv('CI_JOB_TOKEN', None))
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
 
         self._repository = os.environ['CI_PROJECT_PATH'].lower()
-
 
     @property
     def opt(self):
