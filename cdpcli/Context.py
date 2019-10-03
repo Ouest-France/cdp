@@ -12,7 +12,6 @@ class Context(object):
         self._opt = opt
         self._cmd = cmd
 
-
         if opt['--login-registry'] != opt['--use-registry']:
             self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--login-registry'].upper(), None),
                          os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
@@ -57,15 +56,10 @@ class Context(object):
                 self.__login(os.getenv('CI_REGISTRY', None), os.getenv('CI_REGISTRY_USER', None),
                              os.getenv('CI_JOB_TOKEN', None))
 
-
-
-
-
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
 
         self._repository = os.environ['CI_PROJECT_PATH'].lower()
-
 
     @property
     def opt(self):

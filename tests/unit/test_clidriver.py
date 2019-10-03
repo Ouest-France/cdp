@@ -167,8 +167,6 @@ class TestCliDriver(unittest.TestCase):
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.9.9'
     image_name_helm = 'ouestfrance/cdp-helm:2.13.1'
     cdp_secret_staging_key = 'value 1'
-
-
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
     cronjob_yaml_without_secret = """---
