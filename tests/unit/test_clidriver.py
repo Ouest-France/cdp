@@ -556,7 +556,6 @@ status:
 
     def test_build_volumefromdocker(self):
         # Create FakeCommand
-        branch_name = 'master'
         image_name = 'maven:3.5-jdk-8'
         command_name = 'mvn clean install'
         verif_cmd = [
@@ -590,9 +589,7 @@ status:
 
     def test_maven_deployrelease_mavenopts(self):
         # Create FakeCommand
-        branch_name = 'master'
         image_name_maven = 'maven:3.5-jdk-8'
-        goals = 'clean install -DskipTests'
         maven_opts = '-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository -e'
         verif_cmd = [
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_git, 'output': 'unnecessary'},
@@ -610,9 +607,7 @@ status:
 
     def test_maven_deployrelease_customrepo(self):
         # Create FakeCommand
-        branch_name = 'master'
         image_name_maven = 'maven:3.5-jdk-8'
-        goals = 'clean install -DskipTests'
         maven_opts = '-Djava.awt.headless=true -Dmaven.repo.local=./.m2/repository -e'
         verif_cmd = [
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_git, 'output': 'unnecessary'},
@@ -720,7 +715,6 @@ status:
 
         verif_cmd = [
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token, TestCliDriver.cdp_harbor_registry), 'output': 'unnecessary'},
-            #{'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': 'docker build -t %s:%s .' % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
@@ -734,7 +728,6 @@ status:
         # Create FakeCommand
         verif_cmd = [
             {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
-           # {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': 'docker build -t %s/%s:%s .' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
             {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
@@ -750,8 +743,6 @@ status:
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': login_cmd, 'output': 'unnecessary'},
-           # {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
-            #{'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
@@ -770,8 +761,6 @@ status:
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': login_cmd, 'output': 'unnecessary'},
-           # {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
-           # {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': ['test', 'test2']},
             {'cmd': 'ecr list-images --repository-name %s/test --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
@@ -793,8 +782,6 @@ status:
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': login_cmd, 'output': 'unnecessary'},
-            #{'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
-            #{'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token, TestCliDriver.ci_registry), 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': ['test', 'test2']},
             {'cmd': 'ecr list-images --repository-name %s/test --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'throw': ValueError, 'docker_image': TestCliDriver.image_name_aws},
@@ -1148,9 +1135,7 @@ status:
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         date_now = datetime.datetime.utcnow()
-        date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration=240
-        date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -1200,11 +1185,9 @@ status:
     def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
         release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
         timeout = 180
-        deploy_spec_dir = 'deploy'
         values = 'values.staging.yaml'
         delete_minutes = 60
         date_format = '%Y-%m-%dT%H%M%SZ'
@@ -1277,7 +1260,6 @@ status:
 
             # Create FakeCommand
             aws_host = 'ecr.amazonaws.com'
-            login_cmd = 'docker login -u user -p pass https://%s' % aws_host
             namespace = TestCliDriver.ci_project_name
             release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
             deploy_spec_dir = 'chart'
@@ -1355,7 +1337,6 @@ status:
             # Create FakeCommand
             internal_port = 80
             aws_host = 'ecr.amazonaws.com'
-            login_cmd = 'docker login -u user -p pass https://%s' % aws_host
             namespace = TestCliDriver.ci_project_name
             release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
             deploy_spec_dir = 'chart'
@@ -1422,12 +1403,10 @@ status:
 
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
         release = TestCliDriver.ci_pnfl_project_id_commit_ref_slug.replace('_', '-')[:53]
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-        sleep = 10
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -1480,12 +1459,10 @@ status:
 
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
         release = '%s%s-env-%s'[:53] % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, env_name.replace('/', '-'))
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-        sleep = 10
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -1540,12 +1517,10 @@ status:
 
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         namespace = TestCliDriver.ci_project_name
         release = '%s-%s'[:53] % (TestCliDriver.ci_project_name,"test")
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-        sleep = 10
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
