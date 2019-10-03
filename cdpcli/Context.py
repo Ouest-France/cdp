@@ -12,9 +12,15 @@ class Context(object):
         self._opt = opt
         self._cmd = cmd
 
-        if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or not opt['--use-registry'] == 'none':
 
-            if (opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr') and (opt['maven'] or opt['docker']) :
+        if opt['--login-registry'] != opt['--use-registry']:
+            self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--login-registry'].upper(), None),
+                         os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
+                         os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
+
+        if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
+
+            if (opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr') and (opt['maven'] or opt['docker']) :
                 aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
                 # Use AWS ECR from k8s configuration on gitlab-runner deployment
                 login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', dry_run=False)[0].strip())
@@ -38,9 +44,9 @@ class Context(object):
                 self._registry = os.environ['CDP_%s_REGISTRY' % opt['--use-registry'].upper()]
                 self._registry_user_ro = os.environ['CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper()]
                 self._registry_token_ro = os.environ['CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper()]
-                self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--login-registry'].upper(), None),
-                             os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
-                             os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
+                self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(), None),
+                             os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(), None),
+                             os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(), None))
 
             if opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab':
                 # Use gitlab registry
@@ -50,6 +56,9 @@ class Context(object):
                 # Login gitlab registry
                 self.__login(os.getenv('CI_REGISTRY', None), os.getenv('CI_REGISTRY_USER', None),
                              os.getenv('CI_JOB_TOKEN', None))
+
+
+
 
 
         if opt['--put'] or opt['--delete']:
