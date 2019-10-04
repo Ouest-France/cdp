@@ -106,4 +106,5 @@ class Context(object):
         # Activate login, only specific stage.
         if self._opt['maven'] or self._opt['docker']:
             if registry_user is not None and registry_token is not None and registry is not None:
-                self._cmd.run_command('docker login -u %s -p %s https://%s' % (registry_user, registry_token, registry))
+                if  registry in os.getenv('CI_LOGGED_REGISTRY', None).split(','):
+                  self._cmd.run_command('docker login -u %s -p %s https://%s' % (registry_user, registry_token, registry))
