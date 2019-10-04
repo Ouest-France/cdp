@@ -26,60 +26,63 @@ class Context(object):
         if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
             if opt['maven'] or opt['docker']:
                 if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr' :
+                    ### Get login from AWS-CLI
                     aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
-                    # Use AWS ECR from k8s configuration on gitlab-runner deployment
                     login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', dry_run=False)[0].strip())
                     self._registry = login_regex[0][2]
                     self._registry_user_ro = login_regex[0][0]
                     self._registry_token_ro = login_regex[0][1]
                     # Login AWS registry
-                    self.__login(login_regex[0][2], login_regex[0][0], login_regex[0][1])
+                    self.__login(self._registry, self._registry_user_ro,self._registry_token_ro)
 
-                elif opt['--use-custom-registry']:
-                    #deprecated
-                    self._set_custom_registry()
-                    # Login custom registry
-                    self.__login(os.getenv('CDP_CUSTOM_REGISTRY', None),
-                                 os.getenv('CDP_CUSTOM_REGISTRY_USER', None),
-                                 os.getenv('CDP_CUSTOM_REGISTRY_TOKEN', None))
-                elif opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab':
+                elif opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab' or opt['--use-custom-registry'] == 'gitlab':
                     # Use gitlab registry
-                    self.__set_gitlab_registry()
+                    self.__set_registry(os.getenv('CI_REGISTRY', None),
+                                        os.getenv('CI_DEPLOY_USER', None),
+                                        os.getenv('CI_DEPLOY_PASSWORD', None))
                     # Login gitlab registry
                     self.__login(os.getenv('CI_REGISTRY', None),
                                  os.getenv('CI_REGISTRY_USER', None),
                                  os.getenv('CI_JOB_TOKEN', None))
+
+                elif opt['--use-custom-registry']:
+                    #deprecated
+                    self.__set_registry(os.getenv('CDP_CUSTOM_REGISTRY', None),
+                                       os.getenv('CDP_CUSTOM_REGISTRY_USER', None),
+                                       os.getenv('CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN', None))
+                    # Login custom registry
+                    self.__login(os.getenv('CDP_CUSTOM_REGISTRY', None),
+                                 os.getenv('CDP_CUSTOM_REGISTRY_USER', None),
+                                 os.getenv('CDP_CUSTOM_REGISTRY_TOKEN', None))
+
                 else:
-                    self.__set_registry(opt)
+                    ### Used by '--use-registry' params
+                    self.__set_registry(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(),None),
+                                        os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None),
+                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None))
                     self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(), None),
                                  os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(), None),
                                  os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(), None))
             elif  opt['k8s']:
-                if  (opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr'):
+                if  opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr':
                     self._registry = os.getenv('CDP_ECR_PATH')
+                elif opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab' or opt['--use-custom-registry'] == 'gitlab':
+                    self.__set_registry(os.getenv('CI_REGISTRY', None),
+                                        os.getenv('CI_DEPLOY_USER', None),
+                                        os.getenv('CI_DEPLOY_PASSWORD', None))
                 elif opt['--use-custom-registry']:
-                    self.__set_custom_registry()
-                elif opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab':
-                    self.__set_gitlab_registry()
+                    self.__set_registry(os.getenv('CDP_CUSTOM_REGISTRY',None),
+                                               os.getenv('CDP_CUSTOM_REGISTRY_USER', None),
+                                               os.getenv('CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN',None))
                 else:
-                    self.__set_registry(opt)
+                    self.__set_registry(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(),None),
+                                        os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None),
+                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None))
 
-
-
-    def __set_gitlab_registry(self):
-        self._registry = os.getenv('CI_REGISTRY', None)
-        self._registry_user_ro = os.getenv('CI_DEPLOY_USER', None)
-        self._registry_token_ro = os.getenv('CI_DEPLOY_PASSWORD', None)
-
-    def __set_custom_registry(self):
-        self._registry = os.getenv('CDP_CUSTOM_REGISTRY',None)
-        self._registry_user_ro = os.getenv('CDP_CUSTOM_REGISTRY_USER', None)
-        self._registry_token_ro = os.getenv('CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN',None)
-
-    def __set_registry(self,opt):
-        self._registry = os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(),None)
-        self._registry_user_ro = os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None)
-        self._registry_token_ro = os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None)
+    def __set_registry(self,registry,user_ro,token_ro):
+        self._registry = registry
+        self._registry_user_ro = user_ro
+        self._registry_token_ro = token_ro
 
     @property
     def opt(self):
