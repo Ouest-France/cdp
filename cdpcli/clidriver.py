@@ -443,8 +443,8 @@ class CLIDriver(object):
                         secretCustomFileCreated = True
                     # For each envVar of the right environnement we had a line in the secret
                     self._cmd.run_secret_command('echo "  %s : |" >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar, self._context.opt['--deploy-spec-dir']))
-                    with open(envValue, "r") as myfile:
-                        data = myfile.read()
+                    with open(envValue, "r") as secretfile:
+                        data = secretfile.read()
                     for line in data.splitlines():
                         self._cmd.run_secret_command('echo "     %s" >> %s/templates/cdp-gitlab-file-secret.yaml' % (line, self._context.opt['--deploy-spec-dir']))
                     LOG.warn(self._cmd.run_secret_command('cat %s/templates/cdp-gitlab-file-secret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
