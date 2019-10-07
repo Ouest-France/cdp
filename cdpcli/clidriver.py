@@ -444,7 +444,7 @@ class CLIDriver(object):
                     # For each envVar of the right environnement we had a line in the secret
                     with open(envValue, "r") as file:
                         data = file.read()
-                    encodedBytes = base64.b64encode(data.encode("utf-8"))
+                    encodedBytes = base64.b64encode(bytes(data,"utf-8"))
                     encodedStr = str(encodedBytes, "utf-8")
                     self._cmd.run_secret_command('echo "  %s : %s " >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar,encodedStr, self._context.opt['--deploy-spec-dir']))
 
