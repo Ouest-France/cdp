@@ -11,12 +11,10 @@ class Context(object):
     def __init__(self, opt, cmd):
         self._opt = opt
         self._cmd = cmd
-
         self._repository = os.environ['CI_PROJECT_PATH'].lower()
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
-
 
         if opt['--login-registry'] != opt['--use-registry']:
             self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--login-registry'].upper(), None),
