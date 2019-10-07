@@ -739,7 +739,7 @@ status:
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
-            {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
@@ -757,7 +757,7 @@ status:
         verif_cmd = [
             {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
-            {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': ['test', 'test2']},
@@ -778,7 +778,7 @@ status:
         verif_cmd = [
             {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
-            {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+            {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': login_cmd, 'output': 'unnecessary'},
             {'cmd': 'docker pull %s' % TestCliDriver.image_name_aws, 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': ['test', 'test2']},
