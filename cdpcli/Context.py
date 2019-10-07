@@ -26,7 +26,7 @@ class Context(object):
                 if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr' :
                     ### Get login from AWS-CLI
                     aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
-                    login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 --debug', dry_run=False)[0].strip())
+                    login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30 ', dry_run=False)[0].strip())
                     self._registry = login_regex[0][2]
                     self._registry_user_ro = login_regex[0][0]
                     self._registry_token_ro = login_regex[0][1]
