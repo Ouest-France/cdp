@@ -442,9 +442,12 @@ class CLIDriver(object):
                         self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-file-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
                         secretCustomFileCreated = True
                     # For each envVar of the right environnement we had a line in the secret
-                    self._cmd.run_secret_command('echo "  %s : |" >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar, self._context.opt['--deploy-spec-dir']))
-                    with open(envValue, "r") as secretfile:
-                        data = secretfile.read()
+                    with open(envValue, "r") as file:
+                        data = file.read()
+                    encodedBytes = base64.b64encode(data.encode("utf-8"))
+                    encodedStr = str(encodedBytes, "utf-8")
+                    self._cmd.run_secret_command('echo "  %s : %s " >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar,encodedStr, self._context.opt['--deploy-spec-dir']))
+
                     for line in data.splitlines():
                         self._cmd.run_secret_command('echo "     %s" >> %s/templates/cdp-gitlab-file-secret.yaml' % ( base64.b64encode(line), self._context.opt['--deploy-spec-dir']))
                     LOG.warn(self._cmd.run_secret_command('cat %s/templates/cdp-gitlab-file-secret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
