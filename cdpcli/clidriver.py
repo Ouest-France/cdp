@@ -102,7 +102,7 @@ Options:
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
 """
-
+import base64
 import configparser
 import sys, os, re
 import logging, verboselogs
@@ -446,7 +446,7 @@ class CLIDriver(object):
                     with open(envValue, "r") as secretfile:
                         data = secretfile.read()
                     for line in data.splitlines():
-                        self._cmd.run_secret_command('echo "     %s" >> %s/templates/cdp-gitlab-file-secret.yaml' % (line, self._context.opt['--deploy-spec-dir']))
+                        self._cmd.run_secret_command('echo "     %s" >> %s/templates/cdp-gitlab-file-secret.yaml' % ( base64.b64encode(line), self._context.opt['--deploy-spec-dir']))
                     LOG.warn(self._cmd.run_secret_command('cat %s/templates/cdp-gitlab-file-secret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
 
         command = '%s --debug' % command
