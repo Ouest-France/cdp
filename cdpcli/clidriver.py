@@ -447,9 +447,6 @@ class CLIDriver(object):
                     encodedBytes = base64.b64encode(bytes(data,"utf-8"))
                     encodedStr = str(encodedBytes, "utf-8")
                     self._cmd.run_secret_command('echo "  %s : %s " >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar,encodedStr, self._context.opt['--deploy-spec-dir']))
-
-                    for line in data.splitlines():
-                        self._cmd.run_secret_command('echo "     %s" >> %s/templates/cdp-gitlab-file-secret.yaml' % ( base64.b64encode(line), self._context.opt['--deploy-spec-dir']))
                     LOG.warn(self._cmd.run_secret_command('cat %s/templates/cdp-gitlab-file-secret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
 
         command = '%s --debug' % command
