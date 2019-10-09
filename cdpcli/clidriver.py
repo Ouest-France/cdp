@@ -419,7 +419,7 @@ class CLIDriver(object):
 
         if self._context.opt['--create-gitlab-secret']:
             if os.getenv('CI_ENVIRONMENT_NAME', None) is None :
-              LOG.err('Can not use gitlab secret because environment is not defined in gitlab job.')
+              LOG.err('Can not use gitlabter secret because environment is not defined in gitlab job.')
             secretEnvPattern = 'CDP_SECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
             secretFileCreated = False
             #LOG.info('Looking for environnement variables starting with : %s' % secretEnvPattern)
@@ -435,19 +435,21 @@ class CLIDriver(object):
             secretCustomFileCreated = False
             for envVar, envValue in dict(os.environ).items():
                 if re.match(r"CDP_FILESECRET_[A-Z]*",envVar):
-                    LOG.warn("Find secretfile")
+                    LOG.warning("Find secretfile")
                     if not secretCustomFileCreated:
                         # LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
                         # Get the secret templates if we envVar to transform into secret
                         self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-file-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
                         secretCustomFileCreated = True
+                    LOG.warning(envValue)
                     # For each envVar of the right environnement we had a line in the secret
                     with open(envValue, "r") as file:
                         data = file.read()
+                    LOG.warning(data)
                     encodedBytes = base64.b64encode(bytes(data,"utf-8"))
                     encodedStr = str(encodedBytes, "utf-8")
                     self._cmd.run_secret_command('echo "  %s : %s " >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar,encodedStr, self._context.opt['--deploy-spec-dir']))
-                    LOG.warn(self._cmd.run_secret_command('cat %s/templates/cdp-gitlab-file-secret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
+                    LOG.warning(self._cmd.run_secret_command('cat %s/templates/cdp-gitlab-file-secret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
 
         command = '%s --debug' % command
         command = '%s -i' % command
