@@ -419,9 +419,11 @@ class CLIDriver(object):
 
         if self._context.opt['--create-gitlab-secret']:
             if os.getenv('CI_ENVIRONMENT_NAME', None) is None :
-              LOG.err('Can not use gitlabter secret because environment is not defined in gitlab job.')
+              LOG.err('Can not use gitlab secret because environment is not defined in gitlab job.')
             secretEnvPattern = 'CDP_SECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
+            fileSecretEnvPattern = 'CDP_FILESECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
             secretFileCreated = False
+            secretCustomFileCreated = False
             #LOG.info('Looking for environnement variables starting with : %s' % secretEnvPattern)
             for envVar, envValue in dict(os.environ).items():
                 if envVar.startswith(secretEnvPattern.upper(),0) :
@@ -432,9 +434,7 @@ class CLIDriver(object):
                     secretFileCreated = True
                   #For each envVar of the right environnement we had a line in the secret
                   self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-secret.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir']))
-            secretCustomFileCreated = False
-            for envVar, envValue in dict(os.environ).items():
-                if re.match(r"CDP_FILESECRET_[A-Z]*",envVar):
+                if envVar.startswith(fileSecretEnvPattern.upper(), 0):
                     LOG.warning("Find secretfile")
                     if not secretCustomFileCreated:
                         # LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
@@ -443,11 +443,11 @@ class CLIDriver(object):
                         secretCustomFileCreated = True
                     LOG.warning(envValue)
                     # For each envVar of the right environnement we had a line in the secret
-                    with open(envValue, "r") as file:
-                        data = file.read()
-                    LOG.warning(data)
-                    encodedBytes = base64.b64encode(bytes(data,"utf-8"))
-                    encodedStr = str(encodedBytes, "utf-8")
+                    secretFile = open(envValue, "r")
+                    fileContent = secretFile.read()
+                    LOG.warning("content of file "+ fileContent)
+                    encodedBytes = base64.b64encode(bytes(fileContent))
+                    encodedStr = str(encodedBytes)
                     self._cmd.run_secret_command('echo "  %s : %s " >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar,encodedStr, self._context.opt['--deploy-spec-dir']))
                     LOG.warning(self._cmd.run_secret_command('cat %s/templates/cdp-gitlab-file-secret.yaml' % (self._context.opt['--deploy-spec-dir'])) )
 
