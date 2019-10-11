@@ -2,7 +2,6 @@
 
 from __future__ import print_function
 
-import tracemalloc
 import unittest
 import os, sys, re
 import datetime
@@ -1196,7 +1195,7 @@ status:
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         env_name = 'staging'
         #Get Mock
-        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
+        self.__get_gitlab_mock(mock_Gitlab, env_name)
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
@@ -1207,7 +1206,7 @@ status:
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace),'output': [TestCliDriver.tiller_not_found], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-file-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'echo "  TEST : {{ $(cat /tmp/test654) | base64enc }}" >> charts/templates/cdp-gitlab-file-secret.yaml','output': 'unnecessary'},
+                {'cmd': 'echo "  TEST : {{ "$(cat /tmp/test654)" | base64enc }}" >> charts/templates/cdp-gitlab-file-secret.yaml','output': 'unnecessary'},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
                            % (deploy_spec_dir,
                               namespace,
