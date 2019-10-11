@@ -1,6 +1,8 @@
 #!/usr/bin/env python3.6
 
 from __future__ import print_function
+
+import tracemalloc
 import unittest
 import os, sys, re
 import datetime
@@ -433,8 +435,6 @@ spec:
             requests:
               cpu: 0.25
               memory: 1Gi
-
-
 ---
 # Source: helloworld/templates/ingress.yaml
 apiVersion: extensions/v1beta1
@@ -490,7 +490,7 @@ spec:
 status:
   lastScheduleTime: '2019-09-10T09:50:00Z'
 """
-    gitlab_secret_file = "test\ntest"
+    all_template_base64 = "LS0tCiMgU291cmNlOiBoZWxsb3dvcmxkL3RlbXBsYXRlcy9zZXJ2aWNlLnlhbWwKYXBpVmVyc2lvbjogdjEKa2luZDogU2VydmljZQptZXRhZGF0YToKICBuYW1lOiBoZWxsb3dvcmxkCiAgbGFiZWxzOgogICAgYXBwOiBoZWxsb3dvcmxkCiAgICBjaGFydDogaGVsbG93b3JsZC0wLjEuMAogICAgcmVsZWFzZTogcmVsZWFzZS1uYW1lCiAgICBoZXJpdGFnZTogVGlsbGVyCnNwZWM6CiAgdHlwZTogQ2x1c3RlcklQCiAgcG9ydHM6CiAgICAtIHBvcnQ6IDgwCiAgICAgIHRhcmdldFBvcnQ6IDgwODAKICAgICAgcHJvdG9jb2w6IFRDUAogIHNlbGVjdG9yOgogICAgYXBwOiBoZWxsb3dvcmxkCiAgICByZWxlYXNlOiByZWxlYXNlLW5hbWUKCi0tLQojIFNvdXJjZTogaGVsbG93b3JsZC90ZW1wbGF0ZXMvZGVwbG95bWVudC55YW1sCmFwaVZlcnNpb246IGV4dGVuc2lvbnMvdjFiZXRhMQpraW5kOiBEZXBsb3ltZW50Cm1ldGFkYXRhOgogIG5hbWU6IGhlbGxvd29ybGQKICBsYWJlbHM6CiAgICBhcHA6IGhlbGxvd29ybGQKICAgIGNoYXJ0OiBoZWxsb3dvcmxkLTAuMS4wCiAgICByZWxlYXNlOiByZWxlYXNlLW5hbWUKICAgIGhlcml0YWdlOiBUaWxsZXIKc3BlYzoKICByZXBsaWNhczogMgogIHN0cmF0ZWd5OgogICAgdHlwZTogUm9sbGluZ1VwZGF0ZQogICAgcm9sbGluZ1VwZGF0ZToKICAgICAgbWF4U3VyZ2U6IDAKICAgICAgbWF4VW5hdmFpbGFibGU6IDIKICBtaW5SZWFkeVNlY29uZHM6IDYwCiAgcmV2aXNpb25IaXN0b3J5TGltaXQ6IDIKICB0ZW1wbGF0ZToKICAgIG1ldGFkYXRhOgogICAgICBsYWJlbHM6CiAgICAgICAgYXBwOiBoZWxsb3dvcmxkCiAgICAgICAgcmVsZWFzZTogcmVsZWFzZS1uYW1lCiAgICBzcGVjOgogICAgICBjb250YWluZXJzOgogICAgICAgIC0gbmFtZTogaGVsbG93b3JsZC1zaGEtMDEyMzQ1NjcKICAgICAgICAgIGltYWdlOiByZWdpc3RyeS5naXRsYWIuY29tL2hlbGxvd29ybGQvaGVsbG93b3JsZDowMTIzNDU2Nzg5YWJjZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3CiAgICAgICAgICBpbWFnZVB1bGxQb2xpY3k6IElmTm90UHJlc2VudAogICAgICAgICAgcG9ydHM6CiAgICAgICAgICAgIC0gY29udGFpbmVyUG9ydDogODA4MAogICAgICAgICAgbGl2ZW5lc3NQcm9iZToKICAgICAgICAgICAgaHR0cEdldDoKICAgICAgICAgICAgICBwYXRoOiAvCiAgICAgICAgICAgICAgcG9ydDogODA4MAogICAgICAgICAgICBpbml0aWFsRGVsYXlTZWNvbmRzOiA2MAogICAgICAgICAgcmVhZGluZXNzUHJvYmU6CiAgICAgICAgICAgIGh0dHBHZXQ6CiAgICAgICAgICAgICAgcGF0aDogLwogICAgICAgICAgICAgIHBvcnQ6IDgwODAKICAgICAgICAgICAgaW5pdGlhbERlbGF5U2Vjb25kczogMjAKICAgICAgICAgIHJlc291cmNlczoKICAgICAgICAgICAgbGltaXRzOgogICAgICAgICAgICAgIGNwdTogMQogICAgICAgICAgICAgIG1lbW9yeTogMUdpCiAgICAgICAgICAgIHJlcXVlc3RzOgogICAgICAgICAgICAgIGNwdTogMC4yNQogICAgICAgICAgICAgIG1lbW9yeTogMUdpCi0tLQojIFNvdXJjZTogaGVsbG93b3JsZC90ZW1wbGF0ZXMvaW5ncmVzcy55YW1sCmFwaVZlcnNpb246IGV4dGVuc2lvbnMvdjFiZXRhMQpraW5kOiBJbmdyZXNzCm1ldGFkYXRhOgogIG5hbWU6IGhlbGxvd29ybGQKICBsYWJlbHM6CiAgICBhcHA6IGhlbGxvd29ybGQKICAgIGNoYXJ0OiBoZWxsb3dvcmxkLTAuMS4wCiAgICByZWxlYXNlOiByZWxlYXNlLW5hbWUKICAgIGhlcml0YWdlOiBUaWxsZXIKICBhbm5vdGF0aW9uczoKc3BlYzoKICBydWxlczoKICAgIC0gaG9zdDogaGVsbG8td29ybGQuZXhhbXBsZS5jb20KICAgICAgaHR0cDoKICAgICAgICBwYXRoczoKICAgICAgICAgIC0gcGF0aDogLwogICAgICAgICAgICBiYWNrZW5kOgogICAgICAgICAgICAgIHNlcnZpY2VOYW1lOiBoZWxsb3dvcmxkCiAgICAgICAgICAgICAgc2VydmljZVBvcnQ6IDgwCi0tLQojIFNvdXJjZTogaGVsbG93b3JsZC90ZW1wbGF0ZXMvc2VjcmV0LnlhbWwK"
 
 
     def setUp(self):
@@ -994,12 +994,12 @@ status:
         date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration=240
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
-        
+
         env_name = 'staging'
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
-            
-        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.gitlab_secret_file)
+
+        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
         with patch("builtins.open", m):
@@ -1010,7 +1010,7 @@ status:
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret.yaml', 'output': 'unnecessary'},{
+                {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret.yaml', 'output': 'unnecessary'},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
                     % (deploy_spec_dir,
                         namespace,
@@ -1183,7 +1183,7 @@ status:
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2019-06-25 11:55:27")
-    def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values_secret_file(self, mock_dump_all, mock_copyfile,mock_makedirs, mock_Gitlab):
+    def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values_secret_file(self, mock_dump_all, mock_copyfile,mock_makedirs,mock_Gitlab):
         # Create FakeCommand
         namespace = TestCliDriver.ci_project_name
         namespace = namespace.replace('_', '-')[:63]
@@ -1192,26 +1192,22 @@ status:
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
         deploy_spec_dir = 'charts'
+
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-        fo = open("/tmp/test654", "w")
-        fo.write("testtest")
-        fo.close()
         env_name = 'staging'
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
-        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.gitlab_secret_file)
-
+        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
-        m.side_effect = [mock_all_resources_tmp.return_value, mock_all_resources_yaml.return_value]
-        with patch("builtins.open"):
+        m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        with patch("builtins.open",m):
             verif_cmd = [
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace),'output': [TestCliDriver.tiller_not_found], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-file-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret.yaml',
-                 'output': 'unnecessary'},
+                {'cmd': 'echo "  TEST : {{ $(cat /tmp/test654) | base64enc }}" >> charts/templates/cdp-gitlab-file-secret.yaml','output': 'unnecessary'},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
                            % (deploy_spec_dir,
                               namespace,
@@ -1232,12 +1228,9 @@ status:
                               namespace,
                               final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary',
                     'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
-                        % (release,
-                           final_deploy_spec_dir,
-                           namespace)
-                    , 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
+                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic' % (release,final_deploy_spec_dir,namespace), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
             ]
+
             self.__run_CLIDriver({'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--create-gitlab-secret', '--values=%s' % values}, verif_cmd,
                 env_vars={'CI_RUNNER_TAGS' : 'test, staging', 'CDP_NAMESPACE': 'project-name',
                           'CDP_IMAGE_PULL_SECRET' : 'true', 'CI_ENVIRONMENT_NAME' : 'staging', 'CDP_FILESECRET_STAGING_TEST' : '/tmp/test654',
@@ -1245,6 +1238,7 @@ status:
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
