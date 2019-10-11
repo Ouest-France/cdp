@@ -1177,67 +1177,6 @@ status:
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
-    @patch('cdpcli.clidriver.gitlab.Gitlab')
-    @patch('cdpcli.clidriver.os.makedirs')
-    @patch("cdpcli.clidriver.shutil.copyfile")
-    @patch("cdpcli.clidriver.yaml.dump_all")
-    @freeze_time("2019-06-25 11:55:27")
-    def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values_secret_file(self, mock_dump_all, mock_copyfile,mock_makedirs,mock_Gitlab):
-        # Create FakeCommand
-        namespace = TestCliDriver.ci_project_name
-        namespace = namespace.replace('_', '-')[:63]
-        release = namespace[:53]
-        staging_file = 'values.staging.yaml'
-        int_file = 'values.int.yaml'
-        values = ','.join([staging_file, int_file])
-        deploy_spec_dir = 'charts'
-
-        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
-        env_name = 'staging'
-        #Get Mock
-        self.__get_gitlab_mock(mock_Gitlab, env_name)
-        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
-        mock_all_resources_yaml = mock_open()
-        m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
-        with patch("builtins.open",m):
-            verif_cmd = [
-                {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
-                {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-                {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace),'output': [TestCliDriver.tiller_not_found], 'docker_image': TestCliDriver.image_name_kubectl},
-                {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-file-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'echo "  TEST : {{ "$(cat /tmp/test654)" | base64enc }}" >> charts/templates/cdp-gitlab-file-secret.yaml','output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=%s --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                           % (deploy_spec_dir,
-                              namespace,
-                              release,
-                              TestCliDriver.cdp_dns_subdomain_staging,
-                              TestCliDriver.cdp_dns_subdomain_staging,
-                              TestCliDriver.ci_commit_sha[:8],
-                              TestCliDriver.cdp_custom_registry,
-                              TestCliDriver.ci_project_path.lower(),
-                              TestCliDriver.ci_commit_ref_slug,
-                              TestCliDriver.cdp_custom_registry_user,
-                              TestCliDriver.cdp_custom_registry_read_only_token,
-                              TestCliDriver.cdp_custom_registry.replace(':', '-'),
-                              release,
-                              staging_file,
-                              int_file,
-                              release,
-                              namespace,
-                              final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary',
-                    'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic' % (release,final_deploy_spec_dir,namespace), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
-            ]
-
-            self.__run_CLIDriver({'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--create-gitlab-secret', '--values=%s' % values}, verif_cmd,
-                env_vars={'CI_RUNNER_TAGS' : 'test, staging', 'CDP_NAMESPACE': 'project-name',
-                          'CDP_IMAGE_PULL_SECRET' : 'true', 'CI_ENVIRONMENT_NAME' : 'staging', 'CDP_FILESECRET_STAGING_TEST' : '/tmp/test654',
-                          'CDP_DNS_SUBDOMAIN' : TestCliDriver.cdp_dns_subdomain_staging})
-
-            mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
-            mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
-
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")

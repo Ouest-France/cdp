@@ -102,6 +102,7 @@ Options:
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
 """
+import base64
 import configparser
 import sys, os, re
 import logging, verboselogs
@@ -437,11 +438,13 @@ class CLIDriver(object):
                     if not secretFile_FileCreated:
                         # LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
                         # Get the secret templates if we envVar to transform into secret
-
                         self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-file-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
                         secretFile_FileCreated = True
                     # For each envVar of the right environnement we had a line in the secret
-                    self._cmd.run_secret_command('echo "  %s : {{ "$(cat %s)" | base64enc }}" >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar[len(fileSecretEnvPattern):],envValue, self._context.opt['--deploy-spec-dir']))
+                    secretFile = open(envValue, "r")
+                    fileContent = secretFile.read()
+                    secretFile.close()
+                    self._cmd.run_secret_command('echo "  %s : {{ $(cat %s} | base64enc }}" >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar[len(fileSecretEnvPattern):],str(base64.b64encode(bytes(fileContent,'utf-8'))), self._context.opt['--deploy-spec-dir']))
 
         command = '%s --debug' % command
         command = '%s -i' % command
