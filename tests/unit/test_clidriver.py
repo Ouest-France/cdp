@@ -487,7 +487,6 @@ status:
   lastScheduleTime: '2019-09-10T09:50:00Z'
 """
 
-
     def setUp(self):
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
@@ -989,11 +988,10 @@ status:
         date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration=240
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
-
         env_name = 'staging'
+
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
-
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
@@ -1172,7 +1170,6 @@ status:
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
-
 
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
