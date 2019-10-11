@@ -444,7 +444,7 @@ class CLIDriver(object):
                     secretFile = open(envValue, "r")
                     fileContent = secretFile.read()
                     secretFile.close()
-                    self._cmd.run_secret_command('echo "  %s : %s" >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar[len(fileSecretEnvPattern):],str(base64.b64encode(bytes(fileContent,'utf-8'))), self._context.opt['--deploy-spec-dir']))
+                    self._cmd.run_secret_command('echo "  %s : %s" >> %s/templates/cdp-gitlab-file-secret.yaml' % (envVar[len(fileSecretEnvPattern):],str(base64.b64encode(bytes(fileContent,'utf-8')),'utf-8'), self._context.opt['--deploy-spec-dir']))
 
         command = '%s --debug' % command
         command = '%s -i' % command
