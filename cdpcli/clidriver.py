@@ -32,6 +32,7 @@ Usage:
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
+        [(--create-gitlab-secret-hook)]
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
@@ -57,6 +58,7 @@ Options:
     --command=<cmd>                                            Command to run in the docker image.
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
+    --create-gitlab-secret-hook                                Create gitlab secret with hook
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
@@ -426,7 +428,6 @@ class CLIDriver(object):
             for envVar, envValue in dict(os.environ).items():
                 if envVar.startswith(secretEnvPattern.upper(),0):
                     self.__create_secret("secret",envVar,envValue,secretEnvPattern)
-
                 if envVar.startswith(fileSecretEnvPattern.upper(), 0):
                     self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
 
@@ -496,6 +497,10 @@ class CLIDriver(object):
         if not os.path.isfile('/cdp/k8s/secret/cdp-gitlab-%s.yaml' % type):
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-%s.yaml %s/templates/' % (type , self._context.opt['--deploy-spec-dir']))
         self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir'],type))
+        if self._context.opt['--create-gitlab-secret-hook']:
+            if not os.path.isfile('/cdp/k8s/secret/cdp-gitlab-%s.yaml' % type+"-hook"):
+                self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-%s.yaml %s/templates/' % (type+"-hook" , self._context.opt['--deploy-spec-dir']))
+            self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir'],type+"-hook"))
 
     @staticmethod
     def addImageSecret(doc,image_pull_secret_value):
