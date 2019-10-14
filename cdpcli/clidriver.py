@@ -417,30 +417,17 @@ class CLIDriver(object):
             set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.registry_token_ro)
             set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
-        if self._context.opt['--create-gitlab-secret']:
+        if self._context.opt['--create-gitlab-secret'] or self._context.opt['--create-gitlab-secret-hook'] :
             if os.getenv('CI_ENVIRONMENT_NAME', None) is None :
               LOG.err('Can not use gitlab secret because environment is not defined in gitlab job.')
             secretEnvPattern = 'CDP_SECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
             fileSecretEnvPattern = 'CDP_FILESECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
-            secretFile_Created = False
-            secretFile_FileCreated = False
             #LOG.info('Looking for environnement variables starting with : %s' % secretEnvPattern)
             for envVar, envValue in dict(os.environ).items():
-                if envVar.startswith(secretEnvPattern.upper(),0) :
-                    if not secretFile_Created :
-                        #LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
-                        #Get the secret templates if we envVar to transform into secret
-                        self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-                        secretFile_Created = True
-                    #For each envVar of the right environnement we had a line in the secret
+                if envVar.startswith(secretEnvPattern.upper(),0):
                     self.__create_secret("secret",envVar,envValue,secretEnvPattern)
+
                 if envVar.startswith(fileSecretEnvPattern.upper(), 0):
-                    if not secretFile_FileCreated:
-                        # LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
-                        # Get the secret templates if we envVar to transform into secret
-                        self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-file-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
-                        secretFile_FileCreated = True
-                    # For each envVar of the right environnement we had a line in the secret
                     self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
 
         command = '%s --debug' % command
@@ -500,17 +487,15 @@ class CLIDriver(object):
 
         self.__update_environment()
 
-
-
     def __create_secret(self,type,envVar,envValue,secretEnvPattern):
         if type == 'file-secret':
             secretFile = open(envValue, "r")
             fileContent = secretFile.read()
             secretFile.close()
             envValue = str(base64.b64encode(bytes(fileContent, 'utf-8')), 'utf-8')
-
+        if not os.path.isfile('/cdp/k8s/secret/cdp-gitlab-%s.yaml' % type):
+            self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-%s.yaml %s/templates/' % (type , self._context.opt['--deploy-spec-dir']))
         self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir'],type))
-
 
     @staticmethod
     def addImageSecret(doc,image_pull_secret_value):
