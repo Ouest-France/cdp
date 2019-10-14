@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.6
 
 from __future__ import print_function
+
 import unittest
 import os, sys, re
 import datetime
@@ -11,7 +12,6 @@ from docopt import docopt, DocoptExit
 from freezegun import freeze_time
 from mock import call, patch, Mock, MagicMock, mock_open
 from ruamel import yaml
-
 import logging, verboselogs
 
 from cdpcli import __version__
@@ -93,7 +93,6 @@ class FakeCommand(object):
     def verify_commands(self):
         self._tc.assertEqual(len(self._verif_cmd), self._index)
 
-
     def __get_rundocker_cmd(self, docker_image, prg_cmd, volume_from = None, with_entrypoint = True):
 
         run_docker_cmd = 'docker run --rm -e DOCKER_HOST'
@@ -166,7 +165,6 @@ class TestCliDriver(unittest.TestCase):
     image_name_aws = 'ouestfrance/cdp-aws:1.16.198'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.9.9'
     image_name_helm = 'ouestfrance/cdp-helm:2.13.1'
-    cdp_secret_staging_key = 'value 1'
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
     cronjob_yaml_without_secret = """---
@@ -433,8 +431,6 @@ spec:
             requests:
               cpu: 0.25
               memory: 1Gi
-
-
 ---
 # Source: helloworld/templates/ingress.yaml
 apiVersion: extensions/v1beta1
@@ -490,6 +486,7 @@ spec:
 status:
   lastScheduleTime: '2019-09-10T09:50:00Z'
 """
+
     def setUp(self):
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
@@ -528,7 +525,6 @@ status:
         os.environ['CDP_GITLAB_API_URL'] = TestCliDriver.cdp_gitlab_api_url
         os.environ['CDP_GITLAB_API_TOKEN'] = TestCliDriver.cdp_gitlab_api_token
         os.environ['CDP_BP_VALIDATOR_HOST'] = TestCliDriver.cdp_bp_validator_host
-        os.environ['CDP_SECRET_STAGING_KEY'] = TestCliDriver.cdp_secret_staging_key
 
 
     def test_build_verbose_simulatemergeon_sleep(self):
@@ -992,11 +988,9 @@ status:
         date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration=240
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
-        
         env_name = 'staging'
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
-            
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
@@ -1041,7 +1035,7 @@ status:
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
             self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--create-gitlab-secret', '--values=%s' % values }, verif_cmd,
-                env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CI_ENVIRONMENT_NAME': 'staging','CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
+                env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CI_ENVIRONMENT_NAME': 'staging','CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging, 'CDP_SECRET_STAGING_KEY': 'value 1'})
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
