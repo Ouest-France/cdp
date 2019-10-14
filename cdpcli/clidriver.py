@@ -421,6 +421,7 @@ class CLIDriver(object):
             if os.getenv('CI_ENVIRONMENT_NAME', None) is None :
               LOG.err('Can not use gitlab secret because environment is not defined in gitlab job.')
             secretEnvPattern = 'CDP_SECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
+            secretHookEnvPattern = 'CDP_SECRET_HOOK_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
             fileSecretEnvPattern = 'CDP_FILESECRET_%s_' % os.getenv('CI_ENVIRONMENT_NAME', None)
             secretFile_Created = False
             secretFile_FileCreated = False
@@ -434,6 +435,14 @@ class CLIDriver(object):
                         secretFile_Created = True
                     #For each envVar of the right environnement we had a line in the secret
                     self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-secret.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir']))
+                if envVar.startswith(secretHookEnvPattern.upper(),0) :
+                    if not secretFile_Created :
+                        #LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
+                        #Get the secret templates if we envVar to transform into secret
+                        self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-secret-hook.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
+                        secretFile_Created = True
+                    #For each envVar of the right environnement we had a line in the secret
+                    self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-secret-hook.yaml' % (envVar[len(secretHookEnvPattern):],envValue,self._context.opt['--deploy-spec-dir']))
                 if envVar.startswith(fileSecretEnvPattern.upper(), 0):
                     if not secretFile_FileCreated:
                         # LOG.info('Some secrets has been found ! Generating a kubernetes secret file !')
