@@ -989,7 +989,6 @@ status:
         deleteDuration=240
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
         env_name = 'staging'
-
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
