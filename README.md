@@ -330,7 +330,7 @@ spec:
         -name: "MY_GITLAB_SECRET"
          valueFrom:
            secretKeyRef:
-             name: cdp-gitlab-secret-{{ .Release.Name  | trunc 35}}
+             name: cdp-gitlab-secret-{{ .Release.Name |trunc 35 | trimAll "-" }}
              key: MY_SECRET_KEY
 ...
 ```
