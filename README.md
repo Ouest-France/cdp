@@ -334,6 +334,55 @@ spec:
              key: MY_SECRET_KEY
 ...
 ```
+### _Gitlab file secret usage sample_
+
+#### 1 - Create a job with environnement using the --create-gitlab-secret option
+```.gitlab-ci.yml
+deploy_staging:
+  image: $CDP_IMAGE
+  stage: deploy
+  script:
+    - cdp k8s --use-aws-ecr --namespace-project-name --image-tag-sha1 --create-gitlab-secret
+  environment:
+    name: staging
+  only:
+    - develop
+  tags:
+    - staging
+```
+cdp will search every variable with the pattern CDP_SECRET_STAGING_* and put them in a secret.
+
+#### 2 - Create file secret as project variable
+Adding CDP_FILESECRET_STAGING_MY_SECRET_KEY as a project variable in gitlab
+
+#### 3 - Updating the chart
+```yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+        - name: {{ template "nginx.name" . }}-{{ .Values.image.commit.sha }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}/my-nginx-project-name:{{ .Values.image.tag }}"
+          volumeMounts:
+           - name: foo
+             mountPath: "/etc/foo"
+             readOnly: true
+      volumes:
+      - name: foo
+        secret:
+         secretName: cdp-gitlab-file-secret-{{ .Release.Name |trunc 35 | trimAll "-" }}
+```
+cdp will search every variable with the pattern CDP_FILESECRET_STAGING_* and put them in a secret.
+
+### _Gitlab secret hook usage sample_
+
+It's possible to deploy secret and filesecret before others ressources with option --create-gitlab-secret-hook. This option duplicate gitlab secret and file secret.
+Secret will be named : 
+- cdp-gitlab-secret-hook-{{ .Release.Name |trunc 35 | trimAll "-" }}  for  cdp-gitlab-secret
+- cdp-gitlab-file-secret-hook-{{ .Release.Name |trunc 35 | trimAll "-" }}  for  cdp-gitlab-file-secret
+
 ## Development
 
 ### Prerequisites
