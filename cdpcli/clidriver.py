@@ -494,11 +494,11 @@ class CLIDriver(object):
             fileContent = secretFile.read()
             secretFile.close()
             envValue = str(base64.b64encode(bytes(fileContent, 'utf-8')), 'utf-8')
-        if not os.path.isfile('/cdp/k8s/secret/cdp-gitlab-%s.yaml' % type):
+        if not os.path.isfile('%s/templates/cdp-gitlab-%s.yaml' % (self._context.opt['--deploy-spec-dir'],type)):
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-%s.yaml %s/templates/' % (type , self._context.opt['--deploy-spec-dir']))
         self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir'],type))
         if self._context.opt['--create-gitlab-secret-hook']:
-            if not os.path.isfile('/cdp/k8s/secret/cdp-gitlab-%s.yaml' % type+"-hook"):
+            if not os.path.isfile('%s/templates/cdp-gitlab-%s.yaml' % (self._context.opt['--deploy-spec-dir'],type+"-hook")):
                 self._cmd.run_command('cp /cdp/k8s/secret/cdp-gitlab-%s.yaml %s/templates/' % (type+"-hook" , self._context.opt['--deploy-spec-dir']))
             self._cmd.run_secret_command('echo "  %s: \'%s\'" >> %s/templates/cdp-gitlab-%s.yaml' % (envVar[len(secretEnvPattern):],envValue,self._context.opt['--deploy-spec-dir'],type+"-hook"))
 
