@@ -14,6 +14,7 @@ Usage:
         [--volume-from=<host_type>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--altDeploymentRepository=<repository_name>]
+        [--login-registry=<registry_name>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
