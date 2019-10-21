@@ -537,12 +537,13 @@ class CLIDriver(object):
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
             monitoring_label = False
             yaml_doc = doc['metadata']['labels']
+            LOG.info(doc['metadata']['labels'])
             for label in yaml_doc:
                 if label == 'monitoring: true':
                     LOG.info("Find monitoring Label")
                     monitoring_label = True
             if not monitoring_label:
-                doc['metadata']['labels'].append({'moniroring: true'})
+                doc['metadata']['labels'].append({'monitoring: true'})
                 LOG.info("Add monitoring Label")
         elif doc['kind'] == 'CronJob':
             LOG.info("Not yet implemented")
