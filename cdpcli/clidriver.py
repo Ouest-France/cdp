@@ -470,9 +470,11 @@ class CLIDriver(object):
                 if doc is not None:
                     LOG.verbose(doc)
                     final_docs.append(doc)
-                    #Manage Deployement and StatefullSate
+                    #Manage Deployement and
+                    if os.getenv('MONITORING'):
+                        doc=CLIDriver.addMonitoringLabel(doc)
                     if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
-                           doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
+                        doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
@@ -529,6 +531,21 @@ class CLIDriver(object):
             else:
                  doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
                  LOG.info('Add imagePullSecret')
+        return doc
+    @staticmethod
+    def addMonitoringLabel(doc,escalation):
+        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
+            monitoring_label = False
+            yaml_doc = doc['metadata']['label']
+            for label in yaml_doc:
+                if label == 'monitoring: true':
+                    LOG.info("Find monitoring Label")
+                    monitoring_label = True
+            if not monitoring_label:
+                doc['metadata']['label'].append[{'moniroring: true'}]
+                LOG.info("Add monitoring Label")
+        elif doc['kind'] == 'CronJob':
+            LOG.info("Not yet implemented")
         return doc
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
