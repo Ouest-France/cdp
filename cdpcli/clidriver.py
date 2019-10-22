@@ -546,7 +546,7 @@ class CLIDriver(object):
                  LOG.info("Find monitoring Label")
                  monitoring_label = True
             if not monitoring_label:
-                doc['metadata']['labels']['monitoring'] = True
+                doc['metadata']['labels']['monitoring'] = "true"
                 LOG.warning("Add monitoring Label")
         elif doc['kind'] == 'CronJob':
             LOG.info("Not yet implemented")
