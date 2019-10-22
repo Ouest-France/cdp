@@ -537,14 +537,19 @@ class CLIDriver(object):
     @staticmethod
     def addMonitoringLabel(doc,escalation):
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
-
-            monitoring_label = False
-            yaml_doc = doc['metadata']['labels']
+            monitoring_parent_label = False
             if 'monitoring' in doc['metadata']['labels']:
                  LOG.info("Find monitoring Label")
-                 monitoring_label = True
-            if not monitoring_label or doc['metadata']['labels']['monitoring'] == "false" :
+                 monitoring_parent_label = True
+            if not monitoring_parent_label or doc['metadata']['labels']['monitoring'] == "false" :
                 doc['metadata']['labels']['monitoring'] = "true"
+                LOG.warning("Add monitoring Label")
+            monitoring_pod_label = False
+            if 'monitoring' in doc['spec']['template']['metadata']['labels']:
+                 LOG.info("Find monitoring Label")
+                 monitoring_pod_label = True
+            if not monitoring_pod_label or doc['spec']['template']['metadata']['labels'] == "false" :
+                doc['spec']['template']['metadata']['labels'] = "true"
                 LOG.warning("Add monitoring Label")
         elif doc['kind'] == 'CronJob':
             LOG.info("Not yet implemented")
