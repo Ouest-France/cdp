@@ -479,6 +479,7 @@ class CLIDriver(object):
 
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
+            LOG.warning("Final docks : %s | outffile : %s" % (final_docs,outfile))
             yaml.dump_all(final_docs, outfile)
 
         # Install or Upgrade environnement
