@@ -538,9 +538,9 @@ class CLIDriver(object):
     def addMonitoringLabel(doc,escalation):
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
 
-             doc['metadata']['labels']['monitoring'] = "true"
+             doc['metadata']['labels']['monitoring'] = True
              LOG.warning("Add monitoring Label")
-             doc['spec']['template']['metadata']['labels'] = "true"
+             doc['spec']['template']['metadata']['labels'] = True
              LOG.warning("Add monitoring Label")
 
         elif doc['kind'] == 'CronJob':
