@@ -469,13 +469,13 @@ class CLIDriver(object):
             for doc in docs:
                 if doc is not None:
                     LOG.verbose(doc)
-
+                    final_docs.append(doc)
                     #Manage Deployement and
                     if os.getenv('MONITORING'):
                         doc=CLIDriver.addMonitoringLabel(doc,True)
                     if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
                         doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
-                    final_docs.append(doc)
+
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
