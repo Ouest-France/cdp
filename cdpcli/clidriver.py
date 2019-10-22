@@ -540,7 +540,7 @@ class CLIDriver(object):
 
              doc['metadata']['labels']['monitoring'] = True
              LOG.warning("Add monitoring Label")
-             doc['spec']['template']['metadata']['labels'] = True
+             doc['spec']['template']['metadata']['labels']['monitoring']  = True
              LOG.warning("Add monitoring Label")
 
         elif doc['kind'] == 'CronJob':
