@@ -463,6 +463,7 @@ class CLIDriver(object):
 
         image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
         image_pull_secret_value = image_pull_secret_value.replace(':', '-')
+
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
             final_docs = []
@@ -543,6 +544,9 @@ class CLIDriver(object):
              if escalation:
                  doc['metadata']['labels']['owner-escalation'] = 'true'
                  doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'true'
+             else:
+                 doc['metadata']['labels']['owner-escalation'] = 'false'
+                 doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'false'
         elif doc['kind'] == 'CronJob':
             LOG.info("Not yet implemented")
         return doc
