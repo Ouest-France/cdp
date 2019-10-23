@@ -473,7 +473,7 @@ class CLIDriver(object):
                     final_docs.append(doc)
                     #Manage Deployement and
                     if os.getenv('CDP_MONITORING'):
-                        if os.getenv('CDP_ALERTING').upper()=="FALSE":
+                        if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
                             doc = CLIDriver.addMonitoringLabel(doc, False)
                         else:
                             doc = CLIDriver.addMonitoringLabel(doc, True)
