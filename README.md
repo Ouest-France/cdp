@@ -295,6 +295,16 @@ spec:
           ...
 ...
 ```
+### Monitoring Label
+
+CDP allows you to add labels on the pods(from deployement and statefulset) to identify which pods should be monitored or not and wich which ones should trigger alerting.
+ ```yaml
+monitoring: [true|false]
+owner-escalation: [true|false]
+```
+To do this it uses two envrionnement variable "CDP_MONITORING" and "CDP_ALERTING"
+CDP_MONITORING: [TRUE|FALSE] : Enable or disable monitoring (Use to set "monitoring")
+CDP_ALERTING: [TRUE|FALSE] : Enable or disable alerting (Use to set "owner-scalation")
 
 ### _Gitlab secret usage sample_
 

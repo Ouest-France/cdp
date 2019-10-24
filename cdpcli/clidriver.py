@@ -463,6 +463,7 @@ class CLIDriver(object):
 
         image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
         image_pull_secret_value = image_pull_secret_value.replace(':', '-')
+
         with open(tmp_templating_file, 'r') as stream:
             docs = list(yaml.load_all(stream))
             final_docs = []
@@ -470,9 +471,16 @@ class CLIDriver(object):
                 if doc is not None:
                     LOG.verbose(doc)
                     final_docs.append(doc)
-                    #Manage Deployement and StatefullSate
+                    #Manage Deployement and
+                    if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
+                        if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
+                            doc = CLIDriver.addMonitoringLabel(doc, False)
+                        else:
+                            doc = CLIDriver.addMonitoringLabel(doc, True)
                     if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
-                           doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
+                        doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
+
+
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
@@ -529,6 +537,19 @@ class CLIDriver(object):
             else:
                  doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
                  LOG.info('Add imagePullSecret')
+        return doc
+    @staticmethod
+    def addMonitoringLabel(doc,escalation):
+        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
+             doc['metadata']['labels']['monitoring'] = 'true'
+             doc['spec']['template']['metadata']['labels']['monitoring']  = 'true'
+             LOG.warning("Add monitoring Label")
+             if escalation:
+                 doc['metadata']['labels']['owner-escalation'] = 'true'
+                 doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'true'
+             else:
+                 doc['metadata']['labels']['owner-escalation'] = 'false'
+                 doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'false'
         return doc
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
