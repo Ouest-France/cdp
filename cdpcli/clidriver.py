@@ -550,8 +550,6 @@ class CLIDriver(object):
              else:
                  doc['metadata']['labels']['owner-escalation'] = 'false'
                  doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'false'
-        elif doc['kind'] == 'CronJob':
-            LOG.info("Not yet implemented")
         return doc
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
