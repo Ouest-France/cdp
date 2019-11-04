@@ -52,4 +52,6 @@ RUN apk -v --no-cache add python3=$VERSION_PYTHON \
     && pip install -r requirements.txt \
     && python setup.py install \
     && apk -v --no-cache --purge del py-pip autoconf automake libtool build-base libgit2-dev python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /run/openrc \
+    && touch /run/openrc/softlevel
