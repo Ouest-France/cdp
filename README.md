@@ -302,9 +302,9 @@ CDP allows you to add labels on the pods(from deployement and statefulset) to id
 monitoring: [true|false]
 owner-escalation: [true|false]
 ```
-To do this it uses two envrionnement variable "CDP_MONITORING" and "CDP_ALERTING"
-CDP_MONITORING: [TRUE|FALSE] : Enable or disable monitoring (Use to set "monitoring")
-CDP_ALERTING: [TRUE|FALSE] : Enable or disable alerting (Use to set "owner-scalation")
+To do this it uses two envrionnement variable "CDP_MONITORING" and "CDP_ALERTING"  
+CDP_MONITORING: [TRUE|FALSE] : Enable or disable monitoring (Use to set "monitoring")  
+CDP_ALERTING: [TRUE|FALSE] : Enable or disable alerting (Use to set "owner-scalation")  
 
 ### _Gitlab secret usage sample_
 
