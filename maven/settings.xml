@@ -49,7 +49,7 @@
           <url>${env.CDP_REPOSITORY_URL}/${env.CDP_REPOSITORY_MAVEN_SNAPSHOT}</url>
           <snapshots>
             <enabled>true</enabled>
-            <updatePolicy>always<updatePolicy/>
+            <updatePolicy>always</updatePolicy>
           </snapshots>
         </repository>
       </repositories>
@@ -76,7 +76,7 @@
           <url>${env.CDP_PLUGINREPOSITORY_URL}/${env.CDP_PLUGINREPOSITORY_MAVEN_SNAPSHOT}</url>
           <snapshots>
             <enabled>true</enabled>
-            <updatePolicy>always<updatePolicy/>
+            <updatePolicy>always</updatePolicy>
           </snapshots>
         </pluginRepository>
       </pluginRepositories>
