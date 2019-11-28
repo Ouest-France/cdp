@@ -12,6 +12,7 @@ Usage:
         [--maven-release-plugin=<version>]
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
+        [--build-context=<path>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--altDeploymentRepository=<repository_name>]
         [--login-registry=<registry_name>]
@@ -55,6 +56,7 @@ Options:
     -q, --quiet                                                Make less noise.
     -d, --dry-run                                              Simulate execution.
     --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
+    --build-context=<path>                                     Specify the docker building context [default: .].
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --create-default-helm                                      Create default helm for simple project (One docker image).
@@ -564,7 +566,8 @@ class CLIDriver(object):
 
             image_tag = self.__getImageTag(self.__getImageName(), tag)
             # Tag docker image
-            self._cmd.run_command('docker build -t %s .' % (image_tag))
+            self._cmd.run_command('docker build -t %s %s' % (image_tag,self._context.opt['--build-context']))
+
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
 

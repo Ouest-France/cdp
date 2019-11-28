@@ -27,6 +27,7 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
+        [--build-context=<path>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--login-registry=<registry_name>]
@@ -57,7 +58,8 @@ Options:
     -v, --verbose                                              Make more noise.
     -q, --quiet                                                Make less noise.
     -d, --dry-run                                              Simulate execution.
-    --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository    
+    --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
+    --build-context=<path>                                     Specify the docker building context [default: .].
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --create-default-helm                                      Create default helm for simple project (One docker image).
