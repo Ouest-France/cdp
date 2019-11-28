@@ -18,6 +18,7 @@ ARG VERSION_JQ="1.6-r0"
 ARG VERSION_GIT="2.20.1-r0"
 ARG VERSION_WHEEL="0.33.1"
 ARG VERSION_DOCKER_COMPOSE="1.23.2"
+ARG VERSION_UNZIP="6.0-r4"
 
 COPY . cdp/
 
@@ -40,6 +41,7 @@ RUN apk -v --no-cache add python3=$VERSION_PYTHON \
       docker=$VERSION_DOCKER \
       jq=$VERSION_JQ \
       git=$VERSION_GIT \
+      unzip=$VERSION_UNZIP \
     && chmod +x /bin/hadolint \
     && if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi \
     && python -m ensurepip \
