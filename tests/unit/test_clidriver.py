@@ -131,7 +131,7 @@ class TestCliDriver(unittest.TestCase):
     ci_commit_ref_slug = 'branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_63'
     ci_registry_image = 'registry.gitlab.com/helloworld/helloworld'
     ci_project_id = '14'
-    ci_project_name = 'hello-world'
+    ci_project_name = 'HelloWorld'
     ci_project_name_first_letter = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', ci_project_name)])
     ci_pnfl_project_id_commit_ref_slug = '%s%s-%s' % (ci_project_name_first_letter, ci_project_id, ci_commit_ref_slug)
     ci_project_path = 'HelloWorld/HelloWorld'

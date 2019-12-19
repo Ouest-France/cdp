@@ -28,6 +28,7 @@ Usage:
         [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
         [--build-context=<path>]
+		[--registry-label=<label>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--login-registry=<registry_name>]
@@ -40,6 +41,7 @@ Usage:
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
         [--values=<files>]
+		[--registry-label=<label>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
@@ -90,7 +92,8 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<value>                              Customize release name with namepsace-name-<value>
+	--registry-label=<label>								   Add a label for the tag in the registry (HARBOR only)
+    --release-custom-name=<value>                              Customize release name with namepsace-name-<value> 
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.

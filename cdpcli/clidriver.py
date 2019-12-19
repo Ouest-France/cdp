@@ -596,11 +596,11 @@ class CLIDriver(object):
         label = self.__getLabelName()
         harborUrl = self._context._registry_api_url
         
-        if label is None or harborUrl is None:
+        if label is None or self._context._registry_isHarbor is False: 
             return
     
         # Recherche des labels du tag
-        harborRepoName = '%s%%2F%s' % (self._context.project_name, self._context.project_name);
+        harborRepoName = self._context.registrySlugRepositoryName
         harborAuth = self._context._registry_basic_auth
         
         resp = requests.get('%s/api/labels?name=%s&scope=g' % (harborUrl,label),auth=harborAuth)
@@ -648,7 +648,12 @@ class CLIDriver(object):
 
     def __getImageName(self):
         # Configure docker registry
-        image_name = '%s/%s' % (self._context.registry, self._context.repository)
+        if self._context._registry_isHarbor:
+           image_name = '%s/%s' % (self._context.registry, self._context.registryRepositoryName)
+        else: 
+           image_name = '%s/%s' % (self._context.registry, self._context.repository)
+        print(self._context.registryRepositoryName)
+        print(image_name)
         LOG.verbose('Image name : %s', image_name)
         return image_name
 
