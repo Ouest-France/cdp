@@ -25,6 +25,7 @@ Usage:
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--build-context=<path>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
+        [--registry-label=<label>]
         [--login-registry=<registry_name>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
@@ -36,6 +37,7 @@ Usage:
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
         [--values=<files>]
+        [--registry-label=<label>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
@@ -89,6 +91,7 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
+    --registry-label=<label>                                   Add a label for the tag in the registry (HARBOR only)
     --release-custom-name=<release_name>                       Customize release name with namepsace-name-<value>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
@@ -116,6 +119,8 @@ import json
 import gitlab
 import pyjq
 import shutil
+import requests
+
 from .Context import Context
 from .clicommand import CLICommand
 from cdpcli import __version__
@@ -490,6 +495,9 @@ class CLIDriver(object):
         # Install or Upgrade environnement
         helm_cmd.run(command)
 
+        # Add label registry
+        self.__registryAddLabel(tag)
+
         if self._context.opt['--delete-labels']:
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
@@ -555,8 +563,8 @@ class CLIDriver(object):
         return doc
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
+        os.environ['CDP_TAG'] = tag
         if self._context.opt['--use-docker-compose']:
-            os.environ['CDP_TAG'] = tag
             os.environ['CDP_REGISTRY'] = self.__getImageName()
             self._cmd.run_command('docker-compose build')
             self._cmd.run_command('docker-compose push')
@@ -570,6 +578,44 @@ class CLIDriver(object):
 
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
+            
+            self.__registryAddLabel(tag)
+
+    # Ajout de labels /!\ Seulemennt pour HARBOR
+    def __registryAddLabel(self, tag):
+
+        label = self.__getLabelName()
+        harborUrl = self._context._registry_api_url
+        
+        if label is None or harborUrl is None:
+            return
+    
+        # Recherche des labels du tag
+        harborRepoName = '%s%%2F%s' % (self._context.project_name, self._context.project_name);
+        harborAuth = self._context._registry_basic_auth
+        
+        resp = requests.get('%s/api/labels?name=%s&scope=g' % (harborUrl,label),auth=harborAuth)
+        labels = resp.json()
+        if len(labels) > 0:
+            labelId = labels[0]['id']
+            resp = requests.get('%s/api/repositories/%s/tags' % (harborUrl,harborRepoName),auth=harborAuth)
+            tags = resp.json();
+            for harborTag in tags:
+                harborTagName=harborTag['name']
+                if tag in harborTagName:
+                    resp = requests.get('%s/api/repositories/%s/tags/%s/labels' % (harborUrl,harborRepoName, harborTagName),auth=harborAuth)
+                    labels = resp.json()
+                    alreadyLabeled = False
+                    for existinglabel in labels:
+                        if existinglabel['id'] == labelId:
+                            alreadyLabeled = True
+                    
+                    if not alreadyLabeled: 
+                        resp = requests.post('%s/api/repositories/%s/tags/%s/labels' % (harborUrl,harborRepoName, harborTagName),json={'id': labelId }, auth=harborAuth)
+                        LOG.info('Adding label %s to tag %s of repository %s', label, harborTagName, harborRepoName)
+                        if resp.status_code != 200:
+                            raise ValueError('Error while setting label %s to tag %s from repo %s' % (label, harborTagName, harborRepoName))
+        
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb is 'PUT':
@@ -718,6 +764,10 @@ class CLIDriver(object):
                 LOG.info('Update external url, unless present in the file gitlabci.yaml: %s.' % env.external_url)
             else:
                 LOG.warning('Environment %s not found.' % os.getenv('CI_ENVIRONMENT_NAME', None))
+
+    def __getLabelName(self):
+        return (self._context.opt['--registry-label'] or os.getenv("CDP_REGISTRY_LABEL") or self.__getTagBranchName())
+    
 
     @staticmethod
     def verbose(verbose):

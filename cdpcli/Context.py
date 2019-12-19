@@ -11,7 +11,9 @@ class Context(object):
     def __init__(self, opt, cmd):
         self._opt = opt
         self._cmd = cmd
+        self._project_name = os.environ['CI_PROJECT_NAME'].lower()
         self._repository = os.environ['CI_PROJECT_PATH'].lower()
+        self._registry_api_url = None
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
@@ -66,7 +68,9 @@ class Context(object):
                     ### Used by '--use-registry' params
                     self.__set_registry(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(),None),
                                         os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None),
-                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None))
+                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None),
+                                        os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(),None),
+                                        os.getenv('CDP_%s_REGISTRY_API_URL' % opt['--use-registry'].upper(),None))
                     self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(), None),
                                  os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(), None),
                                  os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(), None))
@@ -84,13 +88,22 @@ class Context(object):
                 else:
                     self.__set_registry(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(),None),
                                         os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None),
-                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None))
+                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None),
+                                        os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(),None),
+                                        os.getenv('CDP_%s_REGISTRY_API_URL' % opt['--use-registry'].upper(),None))
 
-    def __set_registry(self,registry,user_ro,token_ro):
+    def __set_registry(self,registry,user_ro,token_ro, tokenOrPassword=None, api_url=None):
         self._registry = registry
         self._registry_user_ro = user_ro
         self._registry_token_ro = token_ro
-
+        self._registry_token = token_ro
+        if tokenOrPassword is not None:
+           self._registry_token = tokenOrPassword
+        self._registry_api_url = api_url
+        if api_url is not None:
+           self._registry_api_url = "https://%s" % self._registry_api_url
+        self._registry_basic_auth = (user_ro, self._registry_token)
+        
     @property
     def opt(self):
         return self._opt
@@ -110,6 +123,10 @@ class Context(object):
     @property
     def repository(self):
         return self._repository
+
+    @property
+    def project_name(self):
+        return self._project_name
 
     @property
     def is_namespace_project_name(self):
