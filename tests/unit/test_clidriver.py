@@ -5,6 +5,7 @@ from __future__ import print_function
 import unittest
 import os, sys, re
 import datetime
+import requests_mock
 
 from cdpcli.clicommand import CLICommand
 from cdpcli.clidriver import CLIDriver, __doc__
@@ -151,6 +152,7 @@ class TestCliDriver(unittest.TestCase):
     cdp_harbor_registry_token = '1298937676109092094'
     cdp_harbor_registry_read_only_token = '1298937676109092095'
     cdp_harbor_registry = 'harbor.io:8123'
+    cdp_harbor_registry_api_url = 'harbor.io:8123'
     cdp_artifactory_path = 'http://repo.fr/test'
     cdp_artifactory_token = '29873678036783'
     cdp_repository_url = 'http://repo.fr'
@@ -516,6 +518,7 @@ status:
         os.environ['CDP_HARBOR_REGISTRY_TOKEN'] = TestCliDriver.cdp_harbor_registry_token
         os.environ['CDP_HARBOR_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_harbor_registry_read_only_token
         os.environ['CDP_HARBOR_REGISTRY'] = TestCliDriver.cdp_harbor_registry
+        os.environ['CDP_HARBOR_REGISTRY_API_URL'] = TestCliDriver.cdp_harbor_registry_api_url
         os.environ['CDP_ARTIFACTORY_PATH'] = TestCliDriver.cdp_artifactory_path
         os.environ['CDP_ARTIFACTORY_TOKEN'] = TestCliDriver.cdp_artifactory_token
         os.environ['CDP_REPOSITORY_URL'] = TestCliDriver.cdp_repository_url
@@ -728,6 +731,65 @@ status:
             {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
+
+    def test_docker_usedocker_imagetagsha1_useharborregistry(self):
+        # Create FakeCommand
+
+        harborRepo = '%s%%2F%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_project_name)
+
+        verif_cmd = [
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token, TestCliDriver.cdp_harbor_registry), 'output': 'unnecessary'},
+            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'docker build -t %s/%s:%s .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+        ]
+        with requests_mock.Mocker() as m:
+            m.register_uri('GET', 'https://%s/api/labels?name=master&scope=g' % TestCliDriver.cdp_harbor_registry, text='[{ "id" : 1,  "name" : "master"}]')
+            m.register_uri('GET', 'https://%s/api/repositories/%s/tags' % (TestCliDriver.cdp_harbor_registry,harborRepo), text=('[{"name": "%s"}]' %  TestCliDriver.ci_commit_sha))
+            m.register_uri('GET', 'https://%s/api/repositories/%s/tags/%s/labels' % (TestCliDriver.cdp_harbor_registry,harborRepo,TestCliDriver.ci_commit_sha), text='[]')
+            m.register_uri('POST', 'https://%s/api/repositories/%s/tags/%s/labels' % (TestCliDriver.cdp_harbor_registry,harborRepo,TestCliDriver.ci_commit_sha), text='[]',status_code=200)
+
+            self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--registry-label=master', '--image-tag-sha1' }, verif_cmd)
+
+    def test_docker_usedocker_imagetagsha1_useharborregistry_bad_label(self):
+        # Create FakeCommand
+
+        harborRepo = '%s%%2F%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_project_name)
+
+        verif_cmd = [
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token, TestCliDriver.cdp_harbor_registry), 'output': 'unnecessary'},
+            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'docker build -t %s/%s:%s .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+        ]
+        with requests_mock.Mocker() as m:
+            m.register_uri('GET', 'https://%s/api/labels?name=master&scope=g' % TestCliDriver.cdp_harbor_registry, text='[]')
+            m.register_uri('GET', 'https://%s/api/repositories/%s/tags/%s/labels' % (TestCliDriver.cdp_harbor_registry,harborRepo,TestCliDriver.ci_commit_sha), text='[]')
+            m.register_uri('GET', 'https://%s/api/repositories/%s/tags' % (TestCliDriver.cdp_harbor_registry,harborRepo), text=('[{"name": "%s"}]' %  TestCliDriver.ci_commit_sha))
+            m.register_uri('POST', 'https://%s/api/repositories/%s/tags/%s/labels' % (TestCliDriver.cdp_harbor_registry,harborRepo,TestCliDriver.ci_commit_sha), text='[]',status_code=409)
+
+            self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--registry-label=master', '--image-tag-sha1' }, verif_cmd)
+
+    def test_docker_usedocker_imagetagsha1_useharborregistry_error(self):
+        # Create FakeCommand
+
+        harborRepo = '%s%%2F%s' % (TestCliDriver.ci_project_name, TestCliDriver.ci_project_name)
+
+        verif_cmd = [
+            {'cmd': 'docker login -u %s -p %s https://%s' % (TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token, TestCliDriver.cdp_harbor_registry), 'output': 'unnecessary'},
+            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'docker build -t %s/%s:%s .' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_harbor_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+        ]
+        with requests_mock.Mocker() as m:
+            m.register_uri('GET', 'https://%s/api/labels?name=master&scope=g' % TestCliDriver.cdp_harbor_registry, text='[{ "id" : 1,  "name" : "master"}]')
+            m.register_uri('GET', 'https://%s/api/repositories/%s/tags/%s/labels' % (TestCliDriver.cdp_harbor_registry,harborRepo,TestCliDriver.ci_commit_sha), text='[]')
+            m.register_uri('GET', 'https://%s/api/repositories/%s/tags' % (TestCliDriver.cdp_harbor_registry,harborRepo), text=('[{"name": "%s"}]' %  TestCliDriver.ci_commit_sha))
+            m.register_uri('POST', 'https://%s/api/repositories/%s/tags/%s/labels' % (TestCliDriver.cdp_harbor_registry,harborRepo,TestCliDriver.ci_commit_sha), text='[]',status_code=409)
+
+            with self.assertRaises(ValueError):         
+                self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--registry-label=master', '--image-tag-sha1' }, verif_cmd)
+
 
 
     def test_docker_imagetagsha1_useawsecr(self):
