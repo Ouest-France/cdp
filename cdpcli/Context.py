@@ -14,6 +14,7 @@ class Context(object):
         self._project_name = os.environ['CI_PROJECT_NAME'].lower()
         self._repository = os.environ['CI_PROJECT_PATH'].lower()
         self._registry_api_url = None
+        self._registry_isHarbor = False
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
@@ -101,9 +102,20 @@ class Context(object):
            self._registry_token = tokenOrPassword
         self._registry_api_url = api_url
         if api_url is not None:
+           self._registry_isHarbor = True
            self._registry_api_url = "https://%s" % self._registry_api_url
         self._registry_basic_auth = (user_ro, self._registry_token)
+
+    @property
+    def registryRepositoryName(self):
+        if self._registry_isHarbor:
+           return '%s/%s' % (self._project_name, self._project_name)
+        return self._repository
         
+    @property
+    def registrySlugRepositoryName(self):
+        return self.registryRepositoryName.replace('/','%2F')
+
     @property
     def opt(self):
         return self._opt
