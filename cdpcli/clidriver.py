@@ -588,6 +588,7 @@ class CLIDriver(object):
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
             
+            # Label registry
             self.__registryAddLabel(tag)
 
     # Ajout de labels /!\ Seulemennt pour HARBOR
@@ -620,8 +621,8 @@ class CLIDriver(object):
                             alreadyLabeled = True
                     
                     if not alreadyLabeled: 
-                        resp = requests.post('%s/api/repositories/%s/tags/%s/labels' % (harborUrl,harborRepoName, harborTagName),json={'id': labelId }, auth=harborAuth)
                         LOG.info('Adding label %s to tag %s of repository %s', label, harborTagName, harborRepoName)
+                        resp = requests.post('%s/api/repositories/%s/tags/%s/labels' % (harborUrl,harborRepoName, harborTagName),json={'id': labelId }, auth=harborAuth)
                         if resp.status_code != 200:
                             raise ValueError('Error while setting label %s to tag %s from repo %s' % (label, harborTagName, harborRepoName))
         
@@ -649,8 +650,6 @@ class CLIDriver(object):
     def __getImageName(self):
         # Configure docker registry
         image_name = '%s/%s' % (self._context.registry, self._context.registryRepositoryName)
-        print(self._context.registryRepositoryName)
-        print(image_name)
         LOG.verbose('Image name : %s', image_name)
         return image_name
 
