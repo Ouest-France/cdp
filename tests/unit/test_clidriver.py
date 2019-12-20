@@ -152,7 +152,7 @@ class TestCliDriver(unittest.TestCase):
     cdp_harbor_registry_token = '1298937676109092094'
     cdp_harbor_registry_read_only_token = '1298937676109092095'
     cdp_harbor_registry = 'harbor.io:8123'
-    cdp_harbor_registry_api_url = 'harbor.io:8123'
+    cdp_harbor_registry_api_url = 'https://harbor.io:8123'
     cdp_artifactory_path = 'http://repo.fr/test'
     cdp_artifactory_token = '29873678036783'
     cdp_repository_url = 'http://repo.fr'
