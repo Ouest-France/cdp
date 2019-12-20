@@ -415,7 +415,7 @@ class CLIDriver(object):
         set_command = '%s --set ingress.subdomain=%s' % (set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
         set_command = '%s --set image.commit.sha=sha-%s' % (set_command, os.environ['CI_COMMIT_SHA'][:8])
         set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
-        set_command = '%s --set image.repository=%s' % (set_command, self._context.repository)
+        set_command = '%s --set image.repository=%s' % (set_command, self._context.registryRepositoryName)
         set_command = '%s --set image.tag=%s' % (set_command, tag)
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
 
@@ -648,10 +648,7 @@ class CLIDriver(object):
 
     def __getImageName(self):
         # Configure docker registry
-        if self._context._registry_isHarbor:
-           image_name = '%s/%s' % (self._context.registry, self._context.registryRepositoryName)
-        else: 
-           image_name = '%s/%s' % (self._context.registry, self._context.repository)
+        image_name = '%s/%s' % (self._context.registry, self._context.registryRepositoryName)
         print(self._context.registryRepositoryName)
         print(image_name)
         LOG.verbose('Image name : %s', image_name)
