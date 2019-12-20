@@ -424,7 +424,7 @@ class CLIDriver(object):
             # Add secret (Only if secret is not exist )
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
-            set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.registry_token_ro)
+            set_command = '%s --set image.credentials.password=\'%s\'' % (set_command, self._context.registry_token_ro)
             set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
         if self._context.opt['--create-gitlab-secret'] or self._context.opt['--create-gitlab-secret-hook'] :
