@@ -39,7 +39,7 @@ Usage:
         [--values=<files>]
         [--registry-label=<label>]
         [--delete-labels=<minutes>]
-        [--namespace-project-branch-name | -	]
+        [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
