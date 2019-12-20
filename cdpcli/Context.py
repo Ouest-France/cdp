@@ -103,7 +103,7 @@ class Context(object):
         self._registry_api_url = api_url
         if api_url is not None:
            self._registry_isHarbor = True
-           self._registry_api_url = "https://%s" % self._registry_api_url
+           
         self._registry_basic_auth = (user_ro, self._registry_token)
 
     @property
