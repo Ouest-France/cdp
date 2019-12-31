@@ -749,6 +749,10 @@ status:
             m.register_uri('POST', 'https://%s/api/repositories/%s/tags/%s/labels' % (TestCliDriver.cdp_harbor_registry,harborRepo,TestCliDriver.ci_commit_sha), text='[]',status_code=200)
 
             self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--registry-label=master', '--image-tag-sha1' }, verif_cmd)
+        
+            self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-tag-sha1' }, verif_cmd, env_vars = {'CDP_REGISTRY_LABEL':'master'})
+
+            self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-tag-sha1' }, verif_cmd, env_vars = {'CI_COMMIT_REF_SLUG':'master'})
 
     def test_docker_usedocker_imagetagsha1_useharborregistry_bad_label(self):
         # Create FakeCommand
@@ -1880,8 +1884,9 @@ status:
             for key,val in env_vars.items():
                 os.environ[key] = val
 
-            verif_cmd.insert(0, {'cmd': 'ip route | awk \'NR==1 {print $3}\'', 'output': [cdp_docker_host_internal]})
-            cmd = FakeCommand(verif_cmd = verif_cmd)
+            verif_cmd_cli = verif_cmd.copy()
+            verif_cmd_cli.insert(0, {'cmd': 'ip route | awk \'NR==1 {print $3}\'', 'output': [cdp_docker_host_internal]})
+            cmd = FakeCommand(verif_cmd = verif_cmd_cli)
             cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
             cli.main()
         except BaseException as e:
