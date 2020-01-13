@@ -54,7 +54,7 @@ setup_options = dict(
         ]
     },
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'freezegun'],
+    tests_require=['pytest', 'freezegun', 'requests_mock'],
     license='Apache License 2.0',
     classifiers=(
         'Development Status :: 3 - Alpha',

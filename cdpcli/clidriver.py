@@ -473,6 +473,8 @@ class CLIDriver(object):
                 if doc is not None:
                     LOG.verbose(doc)
                     final_docs.append(doc)
+                    if self.__get_team() != "empty_team":
+                        doc= CLIDriver.addTeamLabel(doc)
                     #Manage Deployement and
                     if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
                         if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
@@ -552,6 +554,13 @@ class CLIDriver(object):
              else:
                  doc['metadata']['labels']['owner-escalation'] = 'false'
                  doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'false'
+        return doc
+
+    @staticmethod
+    def addTeamLabel(doc,team):
+        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
+             doc['metadata']['labels']['team'] = team
+             doc['spec']['template']['metadata']['labels']['team']  = team
         return doc
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
@@ -706,6 +715,15 @@ class CLIDriver(object):
                     env = environment
                     break
             return env
+    def __get_team(selfself):
+        gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
+        # Get a project by ID
+        project = gl.projects.get(os.environ['CI_PROJECT_ID'])
+        pattern = re.compile("^team=")
+        for index, value in enumerate(project.attributes['tag_list']):
+            if pattern.match(value):
+                return value[5:]
+        return "empty_team"
 
     def __update_environment(self):
         if os.getenv('CI_ENVIRONMENT_NAME', None) is not None:
