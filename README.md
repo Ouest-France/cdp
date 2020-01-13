@@ -90,7 +90,7 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<value>                              Customize release name with namepsace-name-<value> 
+    --release-custom-name=<value>                              Customize release name with namepsace-name-<value>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
@@ -392,7 +392,7 @@ cdp will search every variable with the pattern CDP_FILESECRET_STAGING_* and put
 ### _Gitlab secret hook usage sample_
 
 It's possible to deploy secret and filesecret before others ressources with option --create-gitlab-secret-hook. This option duplicate gitlab secret and file secret.
-Secret will be named : 
+Secret will be named :
 - cdp-gitlab-secret-hook-{{ .Release.Name |trunc 35 | trimAll "-" }}  for  cdp-gitlab-secret
 - cdp-gitlab-file-secret-hook-{{ .Release.Name |trunc 35 | trimAll "-" }}  for  cdp-gitlab-file-secret
 
@@ -410,6 +410,9 @@ Secret will be named :
 ```sh
 python3 -m pip install -r requirements.txt
 python3 setup.py test
+
+# Single test
+python3 setup.py test --addopts tests/unit/test_clidriver.py::TestCliDriver::test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values
 ```
 ### Installations
 

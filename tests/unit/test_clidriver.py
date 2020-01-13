@@ -13,7 +13,6 @@ from freezegun import freeze_time
 from mock import call, patch, Mock, MagicMock, mock_open
 from ruamel import yaml
 import logging, verboselogs
-import requests_mock
 
 from cdpcli import __version__
 LOG = verboselogs.VerboseLogger('clidriver')
@@ -32,7 +31,7 @@ class FakeCommand(object):
 
     def run_secret_command(self, cmd, dry_run = None, timeout = None, raise_error = True):
         return self.run(cmd, dry_run, timeout, raise_error)
-        
+
     def run(self, cmd, dry_run = None, timeout = None, raise_error = True):
         print(cmd)
         try:
@@ -487,97 +486,6 @@ spec:
   failedJobsHistoryLimit: 5
 status:
   lastScheduleTime: '2019-09-10T09:50:00Z'
-"""
-    gitlab_project_response = """{
-  "id": 14,
-  "description": "",
-  "name": "infrastructure-configuration-helm-kube-resource-report",
-  "name_with_namespace": "sipa / infrastructure / charts / infrastructure-configuration-helm-kube-resource-report",
-  "path": "infrastructure-configuration-helm-kube-resource-report",
-  "path_with_namespace": "sipa-ouest-france/infrastructure/charts/infrastructure-configuration-helm-kube-resource-report",
-  "created_at": "2020-01-08T15:03:51.652+01:00",
-  "default_branch": "master",
-  "tag_list": [
-    "team=sin-ops",
-    "testtot=toto",
-    "tteam=sqkdjhsq"
-  ],
-  "ssh_url_to_repo": "git@gitlab.ouest-france.fr:sipa-ouest-france/infrastructure/charts/infrastructure-configuration-helm-kube-resource-report.git",
-  "http_url_to_repo": "https://gitlab.ouest-france.fr/sipa-ouest-france/infrastructure/charts/infrastructure-configuration-helm-kube-resource-report.git",
-  "web_url": "https://gitlab.ouest-france.fr/sipa-ouest-france/infrastructure/charts/infrastructure-configuration-helm-kube-resource-report",
-  "readme_url": "https://gitlab.ouest-france.fr/sipa-ouest-france/infrastructure/charts/infrastructure-configuration-helm-kube-resource-report/blob/master/README.md",
-  "avatar_url": null,
-  "star_count": 0,
-  "forks_count": 0,
-  "last_activity_at": "2020-01-08T17:25:08.038+01:00",
-  "namespace": {
-    "id": 102,
-    "name": "charts",
-    "path": "charts",
-    "kind": "group",
-    "full_path": "sipa-ouest-france/infrastructure/charts",
-    "parent_id": 11,
-    "avatar_url": null,
-    "web_url": "https://gitlab.ouest-france.fr/groups/sipa-ouest-france/infrastructure/charts"
-  },
-  "_links": {
-    "self": "https://gitlab.ouest-france.fr/api/v4/projects/1263",
-    "issues": "https://gitlab.ouest-france.fr/api/v4/projects/1263/issues",
-    "merge_requests": "https://gitlab.ouest-france.fr/api/v4/projects/1263/merge_requests",
-    "repo_branches": "https://gitlab.ouest-france.fr/api/v4/projects/1263/repository/branches",
-    "labels": "https://gitlab.ouest-france.fr/api/v4/projects/1263/labels",
-    "events": "https://gitlab.ouest-france.fr/api/v4/projects/1263/events",
-    "members": "https://gitlab.ouest-france.fr/api/v4/projects/1263/members"
-  },
-  "empty_repo": false,
-  "archived": false,
-  "visibility": "internal",
-  "resolve_outdated_diff_discussions": false,
-  "container_registry_enabled": true,
-  "issues_enabled": true,
-  "merge_requests_enabled": true,
-  "wiki_enabled": true,
-  "jobs_enabled": true,
-  "snippets_enabled": true,
-  "issues_access_level": "enabled",
-  "repository_access_level": "enabled",
-  "merge_requests_access_level": "enabled",
-  "wiki_access_level": "enabled",
-  "builds_access_level": "enabled",
-  "snippets_access_level": "enabled",
-  "shared_runners_enabled": true,
-  "lfs_enabled": true,
-  "creator_id": 235,
-  "import_status": "none",
-  "import_error": null,
-  "open_issues_count": 0,
-  "runners_token": "gayzXNds2EBsJesBCTPF",
-  "ci_default_git_depth": 50,
-  "public_jobs": true,
-  "build_git_strategy": "fetch",
-  "build_timeout": 3600,
-  "auto_cancel_pending_pipelines": "enabled",
-  "build_coverage_regex": null,
-  "ci_config_path": null,
-  "shared_with_groups": [],
-  "only_allow_merge_if_pipeline_succeeds": false,
-  "request_access_enabled": true,
-  "only_allow_merge_if_all_discussions_are_resolved": false,
-  "remove_source_branch_after_merge": true,
-  "printing_merge_request_link_enabled": true,
-  "merge_method": "merge",
-  "auto_devops_enabled": false,
-  "auto_devops_deploy_strategy": "continuous",
-  "permissions": {
-    "project_access": null,
-    "group_access": {
-      "access_level": 50,
-      "notification_level": 3
-    }
-  },
-  "approvals_before_merge": 0,
-  "mirror": false
-}
 """
 
     def setUp(self):
@@ -1072,11 +980,15 @@ status:
             self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (release, TestCliDriver.cdp_dns_subdomain))
             mock_env2.save.assert_called_with()
 
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2019-06-25 11:55:27")
-    def test_k8s_usegitlabregistry_namespaceprojectbranchname_onDeploymentHasSecret_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
+    def test_k8s_usegitlabregistry_namespaceprojectbranchname_onDeploymentHasSecret_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
@@ -1137,6 +1049,10 @@ status:
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1208,7 +1124,7 @@ status:
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
-            
+
             # GITLAB API check
             mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
             mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
@@ -1303,11 +1219,15 @@ status:
                              'https://%s.%s.%s' % (release, env_name, TestCliDriver.cdp_dns_subdomain))
             mock_env2.save.assert_called_with()
 
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2019-06-25 11:55:27")
-    def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
+    def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
@@ -1369,11 +1289,19 @@ status:
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2019-06-25 11:55:27")
-    def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
+    def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
         # Create FakeCommand
         namespace = TestCliDriver.ci_project_name
         namespace = namespace.replace('_', '-')[:63]
@@ -1427,11 +1355,19 @@ status:
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2018-02-14 11:55:27")
-    def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
+    def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         namespace = TestCliDriver.ci_project_name
@@ -1487,6 +1423,10 @@ status:
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -1699,13 +1639,12 @@ status:
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
-    @patch('self.__get_team', return_value='pumpkins')
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_releaseprojectenvname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
             env_name = 'review/test'
 
             #Get Mock
-            mock_projects, mock_environments, mock_env1, mock_env2, mock_attributes = self.__get_gitlab_mock(mock_Gitlab, env_name)
+            mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
 
             # Create FakeCommand
             aws_host = 'ecr.amazonaws.com'
@@ -1752,7 +1691,7 @@ status:
             #GITLAB API check
             mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
             mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
-            mock_attributes.get.assert_called_with()
+
             self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (release, TestCliDriver.cdp_dns_subdomain))
             mock_env2.save.assert_called_with()
 
@@ -1909,7 +1848,6 @@ status:
         if(output != docs_target) :
            raise Exception("Deployement Output are not identical")
 
-    # @patch('CLIDriver.get_team', return_value='pumpkins')
     def __run_CLIDriver(self, args, verif_cmd, docker_host = 'unix:///var/run/docker.sock', env_vars = {}):
         cdp_docker_host_internal = '172.17.0.1'
         try:
@@ -1948,15 +1886,9 @@ status:
         mock_environments.configure_mock(**attrs1)
 
         mock_projects = Mock()
-        attrs = {'get.return_value.environments': mock_environments}
+        attrs = {'get.return_value.environments': mock_environments, 'get.return_value.attributes': { 'tag_list': [] } }
         mock_projects.configure_mock(**attrs)
-
-        mock_attributes = Mock()
-        attrs_attributes = {'get.return_value.attributes': []}
-        mock_attributes.configure_mock(**attrs_attributes)
-
-        mock_Gitlab.return_value.attributes = mock_attributes
 
         mock_Gitlab.return_value.projects = mock_projects
 
-        return mock_projects, mock_environments, mock_env1, mock_env2, mock_attributes
+        return mock_projects, mock_environments, mock_env1, mock_env2
