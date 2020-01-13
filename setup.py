@@ -24,9 +24,9 @@ def find_version(*file_paths):
 
 
 requires = ['docopt==0.6.2',
-            'python-gitlab==1.8.0',
+            'python-gitlab==1.11.0',
             'verboselogs==1.7',
-            'ruamel.yaml==0.15.96']
+            'ruamel.yaml==0.16.5']
 
 
 if sys.version_info[:2] == (2, 6):
@@ -54,7 +54,7 @@ setup_options = dict(
         ]
     },
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'freezegun', 'requests_mock'],
+    tests_require=['pytest', 'freezegun'],
     license='Apache License 2.0',
     classifiers=(
         'Development Status :: 3 - Alpha',
