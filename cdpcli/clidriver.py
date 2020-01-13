@@ -474,7 +474,7 @@ class CLIDriver(object):
                     LOG.verbose(doc)
                     final_docs.append(doc)
                     if self.__get_team() != "empty_team":
-                        doc= CLIDriver.addTeamLabel(doc)
+                        doc= CLIDriver.addTeamLabel(doc,self.__get_team())
                     #Manage Deployement and
                     if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
                         if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
