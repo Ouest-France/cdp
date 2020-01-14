@@ -1705,7 +1705,7 @@ status:
         env_name = 'review/test'
 
         #Get Mock
-        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name,["team=toto"])
 
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
@@ -1873,7 +1873,7 @@ status:
                 for key,val in env_vars.items():
                     del os.environ[key]
 
-    def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2'):
+    def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2',tag_list = []):
         mock_env1 = Mock()
         mock_env1.name = 'test'
         mock_env1.external_url = None
@@ -1886,7 +1886,7 @@ status:
         mock_environments.configure_mock(**attrs1)
 
         mock_projects = Mock()
-        attrs = {'get.return_value.environments': mock_environments, 'get.return_value.attributes': { 'tag_list': [] } }
+        attrs = {'get.return_value.environments': mock_environments, 'get.return_value.attributes': { 'tag_list': tag_list } }
         mock_projects.configure_mock(**attrs)
 
         mock_Gitlab.return_value.projects = mock_projects

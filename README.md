@@ -297,6 +297,11 @@ spec:
           ...
 ...
 ```
+
+### Team label
+
+If your gitlab project contains a tag formed as "team=my _team_name", the CDP will automatically report this tag in the Kubernetes object labels. This is designed to work with [Kube-resource-report](https://github.com/hjacobs/kube-resource-report) tool. 
+
 ### Monitoring Label
 
 CDP allows you to add labels on the pods(from deployement and statefulset) to identify which pods should be monitored or not and wich which ones should trigger alerting.
