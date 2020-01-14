@@ -123,6 +123,7 @@ class FakeCommand(object):
 
 class TestCliDriver(unittest.TestCase):
     ci_job_token = 'gitlab-ci'
+    ci_job_id = '123456'
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
     ci_registry = 'registry.gitlab.com'
@@ -492,6 +493,7 @@ status:
 
     def setUp(self):
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
+        os.environ['CI_JOB_ID'] = TestCliDriver.ci_job_id
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
         os.environ['CI_REGISTRY_USER'] = TestCliDriver.ci_registry_user
         os.environ['CI_REGISTRY'] = TestCliDriver.ci_registry
@@ -809,9 +811,13 @@ status:
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': 'docker build -t %s/%s:%s .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+            {'cmd': 'docker push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
+            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'docker build -t %s/%s:%s-%s .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_job_id), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s-%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_job_id), 'output': 'unnecessary'},
+
         ]
-        self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
+        self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1', '--image-tag-jobid' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
 
 
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withrepo(self):
