@@ -105,7 +105,7 @@ Options:
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image.
     --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
-    --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab or custom name for load specifics environments variables) [default: none].
+    --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
@@ -343,6 +343,31 @@ class CLIDriver(object):
     def __k8s(self):
         kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
         helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
+        
+        needToTag = False
+        
+        if self._context.opt['--image-tag-latest']:
+            tag =  self.__getTagLatest()
+            pullPolicy = 'Always'
+        elif self._context.opt['--image-tag-sha1']:
+            tag = self.__getTagSha1()
+            pullPolicy = 'IfNotPresent'
+            if "CDP_TAG_PREFIX" in os.environ:
+               needToTag = True
+               tag = "%s-%s" % (os.environ["CDP_TAG_PREFIX"], tag)
+               source_image_tag = self.__getImageTag(self.__getImageName(),  self.__getTagSha1())
+               dest_image_tag = self.__getImageTag(self.__getImageName(), tag)
+               LOG.info("Ajout du tag %s sur l'image %s" % (tag, source_image_tag))
+               # Pull de l'image
+               self._cmd.run_command('docker pull %s' % (source_image_tag))
+               # Tag de l'image
+               self._cmd.run_command('docker tag %s %s' % (source_image_tag, dest_image_tag))
+               # Push docker image
+               self._cmd.run_command('docker push %s' % (dest_image_tag))            
+            
+        else:
+            tag = self.__getTagBranchName()
+            pullPolicy = 'Always'
 
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
@@ -400,16 +425,6 @@ class CLIDriver(object):
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
             set_command = '%s --set service.internalPort=%s' % (set_command, self._context.opt['--internal-port'])
-
-        if self._context.opt['--image-tag-latest']:
-            tag =  self.__getTagLatest()
-            pullPolicy = 'Always'
-        elif self._context.opt['--image-tag-sha1']:
-            tag = self.__getTagSha1()
-            pullPolicy = 'IfNotPresent'
-        else:
-            tag = self.__getTagBranchName()
-            pullPolicy = 'Always'
 
         set_command = '%s --set ingress.host=%s' % (set_command, host)
         set_command = '%s --set ingress.subdomain=%s' % (set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
@@ -767,7 +782,7 @@ class CLIDriver(object):
                 LOG.warning('Environment %s not found.' % os.getenv('CI_ENVIRONMENT_NAME', None))
 
     def __getLabelName(self):
-        return (self._context.opt['--registry-label'] or os.getenv("CDP_REGISTRY_LABEL") or self.__getTagBranchName())
+        return (self._context.opt['--registry-label'] or os.getenv("CDP_REGISTRY_LABEL"))
     
 
     @staticmethod
