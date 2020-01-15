@@ -1705,7 +1705,7 @@ status:
         env_name = 'review/test'
 
         #Get Mock
-        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name,["team=toto"])
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name,["team=infra"])
 
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
