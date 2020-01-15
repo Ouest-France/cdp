@@ -31,7 +31,7 @@ class FakeCommand(object):
 
     def run_secret_command(self, cmd, dry_run = None, timeout = None, raise_error = True):
         return self.run(cmd, dry_run, timeout, raise_error)
-        
+
     def run(self, cmd, dry_run = None, timeout = None, raise_error = True):
         print(cmd)
         try:
@@ -118,6 +118,7 @@ class FakeCommand(object):
             run_docker_cmd = '%s /bin/sh -c \'%s\'' % (run_docker_cmd, prg_cmd)
 
         return run_docker_cmd
+
 
 class TestCliDriver(unittest.TestCase):
     ci_job_token = 'gitlab-ci'
@@ -979,11 +980,15 @@ status:
             self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (release, TestCliDriver.cdp_dns_subdomain))
             mock_env2.save.assert_called_with()
 
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2019-06-25 11:55:27")
-    def test_k8s_usegitlabregistry_namespaceprojectbranchname_onDeploymentHasSecret_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
+    def test_k8s_usegitlabregistry_namespaceprojectbranchname_onDeploymentHasSecret_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
@@ -1044,6 +1049,10 @@ status:
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1115,7 +1124,7 @@ status:
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
-            
+
             # GITLAB API check
             mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
             mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
@@ -1210,11 +1219,15 @@ status:
                              'https://%s.%s.%s' % (release, env_name, TestCliDriver.cdp_dns_subdomain))
             mock_env2.save.assert_called_with()
 
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2019-06-25 11:55:27")
-    def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
+    def test_k8s_usecustomregistry_namespaceprojectbranchname_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
         # Create FakeCommand
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
@@ -1276,11 +1289,19 @@ status:
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2019-06-25 11:55:27")
-    def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
+    def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
         # Create FakeCommand
         namespace = TestCliDriver.ci_project_name
         namespace = namespace.replace('_', '-')[:63]
@@ -1334,11 +1355,19 @@ status:
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
 
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2018-02-14 11:55:27")
-    def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self, mock_dump_all, mock_copyfile, mock_makedirs):
+    def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         namespace = TestCliDriver.ci_project_name
@@ -1394,6 +1423,10 @@ status:
 
             mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
             mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -1608,57 +1641,60 @@ status:
     @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_releaseprojectenvname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
-        env_name = 'review/test'
+            env_name = 'review/test'
 
-        #Get Mock
-        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
+            #Get Mock
+            mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
 
-        # Create FakeCommand
-        aws_host = 'ecr.amazonaws.com'
-        namespace = TestCliDriver.ci_project_name
-        release = '%s%s-env-%s'[:53] % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, env_name.replace('/', '-'))
-        deploy_spec_dir = 'charts'
-        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+            # Create FakeCommand
+            aws_host = 'ecr.amazonaws.com'
+            namespace = TestCliDriver.ci_project_name
+            release = '%s%s-env-%s'[:53] % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, env_name.replace('/', '-'))
+            deploy_spec_dir = 'charts'
+            final_deploy_spec_dir = '%s_final' % deploy_spec_dir
 
-        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
-        mock_all_resources_yaml = mock_open()
-        m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
-        with patch("builtins.open", m):
+            m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
+            mock_all_resources_yaml = mock_open()
+            m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
 
-            verif_cmd = [
-                {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
-                {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-                {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
-                        namespace,
-                        release,
-                        TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.cdp_dns_subdomain,
-                        TestCliDriver.ci_commit_sha[:8],
-                        aws_host,
-                        TestCliDriver.ci_project_path.lower(),
-                        TestCliDriver.ci_commit_sha,
-                        release,
-                        namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait --atomic'
-                    % (release,
-                        final_deploy_spec_dir,
-                        namespace,
-                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
-            ]
-            self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-env-name' },
-                verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test', 'CI_ENVIRONMENT_NAME': 'review/test','CDP_ECR_PATH' : aws_host })
+            with patch("builtins.open", m):
+                verif_cmd = [
+                    {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
+                    {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
+                    {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+                    {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
+                        % (deploy_spec_dir,
+                            namespace,
+                            release,
+                            TestCliDriver.cdp_dns_subdomain,
+                            TestCliDriver.cdp_dns_subdomain,
+                            TestCliDriver.ci_commit_sha[:8],
+                            aws_host,
+                            TestCliDriver.ci_project_path.lower(),
+                            TestCliDriver.ci_commit_sha,
+                            release,
+                            namespace,
+                            final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                    {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait --atomic'
+                        % (release,
+                            final_deploy_spec_dir,
+                            namespace,
+                            namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
+                ]
 
-            mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
-            mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+                self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-env-name' },
+                    verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test', 'CI_ENVIRONMENT_NAME': 'review/test','CDP_ECR_PATH' : aws_host })
 
-            # GITLAB API check
+                mock_makedirs.assert_called_with('%s/templates' % final_deploy_spec_dir)
+                mock_copyfile.assert_called_with('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+            #GITLAB API check
             mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
             mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
             self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (release, TestCliDriver.cdp_dns_subdomain))
             mock_env2.save.assert_called_with()
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1669,7 +1705,7 @@ status:
         env_name = 'review/test'
 
         #Get Mock
-        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name,["team=infra"])
 
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
@@ -1821,6 +1857,7 @@ status:
             verif_cmd.insert(0, {'cmd': 'ip route | awk \'NR==1 {print $3}\'', 'output': [cdp_docker_host_internal]})
             cmd = FakeCommand(verif_cmd = verif_cmd)
             cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
+
             cli.main()
         except BaseException as e:
             print('************************** ERROR *******************************')
@@ -1836,7 +1873,7 @@ status:
                 for key,val in env_vars.items():
                     del os.environ[key]
 
-    def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2'):
+    def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2',tag_list = []):
         mock_env1 = Mock()
         mock_env1.name = 'test'
         mock_env1.external_url = None
@@ -1849,7 +1886,7 @@ status:
         mock_environments.configure_mock(**attrs1)
 
         mock_projects = Mock()
-        attrs = {'get.return_value.environments': mock_environments}
+        attrs = {'get.return_value.environments': mock_environments, 'get.return_value.attributes': { 'tag_list': tag_list } }
         mock_projects.configure_mock(**attrs)
 
         mock_Gitlab.return_value.projects = mock_projects

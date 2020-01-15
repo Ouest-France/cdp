@@ -90,7 +90,7 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<value>                              Customize release name with namepsace-name-<value> 
+    --release-custom-name=<value>                              Customize release name with namepsace-name-<value>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
@@ -297,6 +297,11 @@ spec:
           ...
 ...
 ```
+
+### Team label
+
+If your gitlab project contains a tag formed as "team=my _team_name", the CDP will automatically report this tag in the Kubernetes object labels. This is designed to work with [Kube-resource-report](https://github.com/hjacobs/kube-resource-report) tool. 
+
 ### Monitoring Label
 
 CDP allows you to add labels on the pods(from deployement and statefulset) to identify which pods should be monitored or not and wich which ones should trigger alerting.
@@ -392,7 +397,7 @@ cdp will search every variable with the pattern CDP_FILESECRET_STAGING_* and put
 ### _Gitlab secret hook usage sample_
 
 It's possible to deploy secret and filesecret before others ressources with option --create-gitlab-secret-hook. This option duplicate gitlab secret and file secret.
-Secret will be named : 
+Secret will be named :
 - cdp-gitlab-secret-hook-{{ .Release.Name |trunc 35 | trimAll "-" }}  for  cdp-gitlab-secret
 - cdp-gitlab-file-secret-hook-{{ .Release.Name |trunc 35 | trimAll "-" }}  for  cdp-gitlab-file-secret
 
@@ -410,6 +415,9 @@ Secret will be named :
 ```sh
 python3 -m pip install -r requirements.txt
 python3 setup.py test
+
+# Single test
+python3 setup.py test --addopts tests/unit/test_clidriver.py::TestCliDriver::test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values
 ```
 ### Installations
 
