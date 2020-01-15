@@ -75,23 +75,6 @@ class Context(object):
                     self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(), None),
                                  os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(), None),
                                  os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(), None))
-#            elif  opt['k8s']:
-#                if  opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr':
-#                    self._registry = os.getenv('CDP_ECR_PATH')
-#                elif opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab' or opt['--use-custom-registry'] == 'gitlab':
-#                    self.__set_registry(os.getenv('CI_REGISTRY', None),
-#                                        os.getenv('CI_DEPLOY_USER', None),
-#                                        os.getenv('CI_DEPLOY_PASSWORD', None))
-#                elif opt['--use-custom-registry']:
-#                    self.__set_registry(os.getenv('CDP_CUSTOM_REGISTRY',None),
-#                                               os.getenv('CDP_CUSTOM_REGISTRY_USER', None),
-#                                               os.getenv('CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN',None))
-#                else:
-#                    self.__set_registry(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(),None),
-#                                        os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None),
-#                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None),
-#                                        os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(),None),
-#                                        os.getenv('CDP_%s_REGISTRY_API_URL' % opt['--use-registry'].upper(),None))
 
     def __set_registry(self,registry,user_ro,token_ro, tokenOrPassword=None, api_url=None):
         self._registry = registry
@@ -164,4 +147,4 @@ class Context(object):
     def __login(self, registry, registry_user, registry_token):
         # Activate login, only specific stage.
         if registry_user is not None and registry_token is not None and registry is not None:
-            self._cmd.run_command('docker login -u %s -p \'%s\' https://%s' % (registry_user, registry_token, registry))
+            self._cmd.run_secret_command('docker login -u %s -p \'%s\' https://%s' % (registry_user, registry_token, registry))

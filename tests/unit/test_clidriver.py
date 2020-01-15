@@ -812,12 +812,9 @@ status:
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': 'docker build -t %s/%s:%s .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
             {'cmd': 'docker push %s/%s:%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'},
-            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': 'docker build -t %s/%s:%s-%s .' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_job_id), 'output': 'unnecessary'},
-            {'cmd': 'docker push %s/%s:%s-%s' % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_ref_slug, TestCliDriver.ci_job_id), 'output': 'unnecessary'},
 
         ]
-        self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1', '--image-tag-jobid' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
+        self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
 
 
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withrepo(self):
