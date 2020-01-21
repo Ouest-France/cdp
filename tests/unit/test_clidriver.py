@@ -161,7 +161,7 @@ class TestCliDriver(unittest.TestCase):
     cdp_gitlab_api_url = 'https://www.gitlab.com'
     cdp_gitlab_api_token = 'azlemksiu84dza'
     cdp_bp_validator_host = 'https://validator-server.com'
-    image_name_git = 'ouestfrance/cdp-git:2.15.0'
+    image_name_git = 'ouestfrance/cdp-git:2.24.1'
     image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:3.1.0'
     image_name_aws = 'ouestfrance/cdp-aws:1.16.198'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.17.0'
