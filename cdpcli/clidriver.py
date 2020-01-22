@@ -26,6 +26,7 @@ Usage:
         [--build-context=<path>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--login-registry=<registry_name>]
+        [--docker-build-target=<target_name>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
@@ -74,6 +75,7 @@ Options:
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image-vault=<image_name_git>                      Docker image which execute vault command [default: vault:1.13.0].
     --docker-image=<image_name>                                Specify docker image name for build project.
+    --docker-build-target=<target_name>                        Specify target in multi stage build
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
@@ -595,7 +597,10 @@ class CLIDriver(object):
 
             image_tag = self.__getImageTag(self.__getImageName(), tag)
             # Tag docker image
-            self._cmd.run_command('docker build -t %s %s' % (image_tag,self._context.opt['--build-context']))
+            docker_command =  'docker build -t %s %s' % (image_tag,self._context.opt['--build-context'])
+            if self._context.opt['--docker-build-target']:
+                docker_command = '%s --target %s' % (docker_command, self._context.opt['--docker-build-target'])
+            self._cmd.run_command(docker_command)
 
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
