@@ -597,9 +597,12 @@ class CLIDriver(object):
 
             image_tag = self.__getImageTag(self.__getImageName(), tag)
             # Tag docker image
-            docker_command =  'docker build -t %s %s' % (image_tag,self._context.opt['--build-context'])
+
             if self._context.opt['--docker-build-target']:
+                docker_command = 'docker build -t %s-%s %s' % (image_tag, self._context.opt['--docker-build-target'], self._context.opt['--build-context'])
                 docker_command = '%s --target %s' % (docker_command, self._context.opt['--docker-build-target'])
+            else:
+                docker_command = 'docker build -t %s %s' % (image_tag, self._context.opt['--build-context'])
             self._cmd.run_command(docker_command)
 
             # Push docker image
