@@ -10,7 +10,7 @@ services:
 stages:
   - name: test
   - name: deploy
-    if: type IN (push)
+    if: type IN (push,pull_request)
 
 jobs:
   include:
