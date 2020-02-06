@@ -1990,7 +1990,6 @@ status:
             self.assertEqual(mock_env2.external_url, 'https://%s.%s' % (release, TestCliDriver.cdp_dns_subdomain))
             mock_env2.save.assert_called_with()
 			
->>>>>>> 7858d6ad7b87686252ee34450c830d23d51ed87a
     def test_validator_validateconfigurations_dockerhost(self):
         docker_host = 'unix:///var/run/docker.sock'
 
