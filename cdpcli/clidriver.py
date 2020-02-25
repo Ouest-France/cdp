@@ -25,6 +25,7 @@ Usage:
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--build-context=<path>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
+        [--registry-label=<label>]
         [--login-registry=<registry_name>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
@@ -36,6 +37,7 @@ Usage:
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
         [--values=<files>]
+        [--registry-label=<label>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
@@ -89,6 +91,7 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
+    --registry-label=<label>                                   Add a label for the tag in the registry (HARBOR only)
     --release-custom-name=<release_name>                       Customize release name with namepsace-name-<value>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
@@ -102,7 +105,7 @@ Options:
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image.
     --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
-    --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab or custom name for load specifics environments variables) [default: none].
+    --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
@@ -116,6 +119,8 @@ import json
 import gitlab
 import pyjq
 import shutil
+import requests
+
 from .Context import Context
 from .clicommand import CLICommand
 from cdpcli import __version__
@@ -338,6 +343,31 @@ class CLIDriver(object):
     def __k8s(self):
         kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
         helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
+        
+        needToTag = False
+        
+        if self._context.opt['--image-tag-latest']:
+            tag =  self.__getTagLatest()
+            pullPolicy = 'Always'
+        elif self._context.opt['--image-tag-sha1']:
+            tag = self.__getTagSha1()
+            pullPolicy = 'IfNotPresent'
+            if "CDP_TAG_PREFIX" in os.environ:
+               needToTag = True
+               tag = "%s-%s" % (os.environ["CDP_TAG_PREFIX"], tag)
+               source_image_tag = self.__getImageTag(self.__getImageName(),  self.__getTagSha1())
+               dest_image_tag = self.__getImageTag(self.__getImageName(), tag)
+               LOG.info("Ajout du tag %s sur l'image %s" % (tag, source_image_tag))
+               # Pull de l'image
+               self._cmd.run_command('docker pull %s' % (source_image_tag))
+               # Tag de l'image
+               self._cmd.run_command('docker tag %s %s' % (source_image_tag, dest_image_tag))
+               # Push docker image
+               self._cmd.run_command('docker push %s' % (dest_image_tag))            
+            
+        else:
+            tag = self.__getTagBranchName()
+            pullPolicy = 'Always'
 
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
@@ -396,21 +426,11 @@ class CLIDriver(object):
         if self._context.opt['--create-default-helm']:
             set_command = '%s --set service.internalPort=%s' % (set_command, self._context.opt['--internal-port'])
 
-        if self._context.opt['--image-tag-latest']:
-            tag =  self.__getTagLatest()
-            pullPolicy = 'Always'
-        elif self._context.opt['--image-tag-sha1']:
-            tag = self.__getTagSha1()
-            pullPolicy = 'IfNotPresent'
-        else:
-            tag = self.__getTagBranchName()
-            pullPolicy = 'Always'
-
         set_command = '%s --set ingress.host=%s' % (set_command, host)
         set_command = '%s --set ingress.subdomain=%s' % (set_command, os.getenv('CDP_DNS_SUBDOMAIN', None))
         set_command = '%s --set image.commit.sha=sha-%s' % (set_command, os.environ['CI_COMMIT_SHA'][:8])
         set_command = '%s --set image.registry=%s' % (set_command,  self._context.registry)
-        set_command = '%s --set image.repository=%s' % (set_command, self._context.repository)
+        set_command = '%s --set image.repository=%s' % (set_command, self._context.registryRepositoryName)
         set_command = '%s --set image.tag=%s' % (set_command, tag)
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
 
@@ -419,7 +439,7 @@ class CLIDriver(object):
             # Add secret (Only if secret is not exist )
             self._cmd.run_command('cp /cdp/k8s/secret/cdp-secret.yaml %s/templates/' % self._context.opt['--deploy-spec-dir'])
             set_command = '%s --set image.credentials.username=%s' % (set_command, self._context.registry_user_ro)
-            set_command = '%s --set image.credentials.password=%s' % (set_command, self._context.registry_token_ro)
+            set_command = '%s --set image.credentials.password=\'%s\'' % (set_command, self._context.registry_token_ro)
             set_command = '%s --set image.imagePullSecrets=cdp-%s-%s' % (set_command, self._context.registry.replace(':', '-'),release)
 
         if self._context.opt['--create-gitlab-secret'] or self._context.opt['--create-gitlab-secret-hook'] :
@@ -491,6 +511,9 @@ class CLIDriver(object):
 
         # Install or Upgrade environnement
         helm_cmd.run(command)
+
+        # Add label registry
+        self.__registryAddLabel(tag)
 
         if self._context.opt['--delete-labels']:
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
@@ -564,8 +587,8 @@ class CLIDriver(object):
         return doc
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
+        os.environ['CDP_TAG'] = tag
         if self._context.opt['--use-docker-compose']:
-            os.environ['CDP_TAG'] = tag
             os.environ['CDP_REGISTRY'] = self.__getImageName()
             self._cmd.run_command('docker-compose build')
             self._cmd.run_command('docker-compose push')
@@ -579,6 +602,45 @@ class CLIDriver(object):
 
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
+            
+            # Label registry
+            self.__registryAddLabel(tag)
+
+    # Ajout de labels /!\ Seulemennt pour HARBOR
+    def __registryAddLabel(self, tag):
+
+        label = self.__getLabelName()
+        harborUrl = self._context._registry_api_url
+        
+        if label is None or self._context._registry_isHarbor is False: 
+            return
+    
+        # Recherche des labels du tag
+        harborRepoName = self._context.registrySlugRepositoryName
+        harborAuth = self._context._registry_basic_auth
+        
+        resp = requests.get('%s/api/labels?name=%s&scope=g' % (harborUrl,label),auth=harborAuth)
+        labels = resp.json()
+        if len(labels) > 0:
+            labelId = labels[0]['id']
+            resp = requests.get('%s/api/repositories/%s/tags' % (harborUrl,harborRepoName),auth=harborAuth)
+            tags = resp.json();
+            for harborTag in tags:
+                harborTagName=harborTag['name']
+                if tag in harborTagName:
+                    resp = requests.get('%s/api/repositories/%s/tags/%s/labels' % (harborUrl,harborRepoName, harborTagName),auth=harborAuth)
+                    labels = resp.json()
+                    alreadyLabeled = False
+                    for existinglabel in labels:
+                        if existinglabel['id'] == labelId:
+                            alreadyLabeled = True
+                    
+                    if not alreadyLabeled: 
+                        LOG.info('Adding label %s to tag %s of repository %s', label, harborTagName, harborRepoName)
+                        resp = requests.post('%s/api/repositories/%s/tags/%s/labels' % (harborUrl,harborRepoName, harborTagName),json={'id': labelId }, auth=harborAuth)
+                        if resp.status_code != 200:
+                            raise ValueError('Error while setting label %s to tag %s from repo %s' % (label, harborTagName, harborRepoName))
+        
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb is 'PUT':
@@ -602,7 +664,7 @@ class CLIDriver(object):
 
     def __getImageName(self):
         # Configure docker registry
-        image_name = '%s/%s' % (self._context.registry, self._context.repository)
+        image_name = '%s/%s' % (self._context.registry, self._context.registryRepositoryName)
         LOG.verbose('Image name : %s', image_name)
         return image_name
 
@@ -620,6 +682,9 @@ class CLIDriver(object):
 
     def __getTagSha1(self):
         return os.environ['CI_COMMIT_SHA']
+
+    def __getTagJobid(self):
+        return '%s-%s' % (self.__getTagBranchName(), os.environ['CI_JOB_ID'])
 
     def __getNamespace(self):
         return self.__getName(self._context.is_namespace_project_name)[:63]
@@ -737,6 +802,10 @@ class CLIDriver(object):
                 LOG.info('Update external url, unless present in the file gitlabci.yaml: %s.' % env.external_url)
             else:
                 LOG.warning('Environment %s not found.' % os.getenv('CI_ENVIRONMENT_NAME', None))
+
+    def __getLabelName(self):
+        return (self._context.opt['--registry-label'] or os.getenv("CDP_REGISTRY_LABEL"))
+    
 
     @staticmethod
     def verbose(verbose):

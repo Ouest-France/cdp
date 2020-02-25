@@ -28,6 +28,7 @@ Usage:
         [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
         [--build-context=<path>]
+        [--registry-label=<label>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--login-registry=<registry_name>]
@@ -40,6 +41,7 @@ Usage:
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
         [--values=<files>]
+        [--registry-label=<label>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
@@ -90,7 +92,8 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<value>                              Customize release name with namepsace-name-<value>
+    --registry-label=<label>                                   Add a label for the tag in the registry (HARBOR only)
+    --release-custom-name=<value>                              Customize release name with namepsace-name-<value> 
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
@@ -156,6 +159,7 @@ docker|k8s:
   - CDP_DNS_SUBDOMAIN – Specify the subdomain of k8s cluster (set by environment variable in runner).
   - CDP_IMAGE_PULL_SECRET – Add the imagePullSecret value to use the helm --wait option instead of patch and rollout.
   - CDP_NAMESPACE – if value = 'project-name', force usage of project name to create k8s namespace.
+  - CDP_TAG_PREFIX - Prefix of the tag when pushing to registry (for --image-tag-sha1 only)
   --use-registry=aws-ecr:
     - AWS_ACCESS_KEY_ID (Gitlab-runner env var) – AWS access key.
     - AWS_SECRET_ACCESS_KEY (Gitlab-runner env var) – AWS secret key. Access and secret key variables override credentials stored in credential and config files.
@@ -167,6 +171,7 @@ docker|k8s:
     - CDP_<REGISTRY_NAME>_REGISTRY_TOKEN (Gitlab-runner env var) – Access token used for authentication on custom docker registry.
     - CDP_<REGISTRY_NAME>_REGISTRY_TOKEN_READ_ONLY (Gitlab-runner env var) – Read only access token used for authentication on custom docker registry.
     - CDP_<REGISTRY_NAME>_REGISTRY_USER (Gitlab-runner env var) – User used for authentication on custom docker registry.
+    - CDP_<REGISTRY_NAME>_REGISTRY_API_URL (Gitlab-runner env var) – Url of registry API (Harbor only).
 
 artifactory:
   --put=<file>|--delete=<file>:
