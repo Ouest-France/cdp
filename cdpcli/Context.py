@@ -25,7 +25,7 @@ class Context(object):
                 login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', dry_run=False)[0].strip())
                 self._registry = login_regex[0][2]
                 self._registry_user_ro = login_regex[0][0]
-                self._registry_token_ro = login_regex[0][1]
+                self._registry_token_ro = login_regex[0][1][1:-1]
                 # Login AWS registry
                 self.__login(self._registry, self._registry_user_ro,self._registry_token_ro)
             else:
@@ -41,7 +41,7 @@ class Context(object):
                     login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', dry_run=False)[0].strip())
                     self._registry = login_regex[0][2]
                     self._registry_user_ro = login_regex[0][0]
-                    self._registry_token_ro = login_regex[0][1]
+                    self._registry_token_ro = login_regex[0][1][1:-1]
                     # Login AWS registry
                     self.__login(self._registry, self._registry_user_ro,self._registry_token_ro)
 
