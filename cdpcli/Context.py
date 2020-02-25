@@ -67,7 +67,7 @@ class Context(object):
 
                 else:
                     ### Used by '--use-registry' params
-                    self.__set_registry(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(),None),
+                    self.__set_registry(os.getenv('Cvi % opt['--use-registry'].upper(),None),
                                         os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None),
                                         os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None),
                                         os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(),None),
