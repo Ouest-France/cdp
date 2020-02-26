@@ -136,6 +136,14 @@ class Context(object):
         else:
             return self.opt['--image-pull-secret']
 
+
+    def string_protected(selft,input):
+        if not input.startswith("'"):
+            input = "'"+input
+        if not input.endswith("'"):
+            input = input+"'"
+        return input
+
     def __verif_attr(self, attr):
         if attr is None:
             raise ValueError('Compatible with gitlab >= 10.8 or deploy token with the name gitlab-deploy-token and the scope read_registry must be created in this project.')
@@ -145,4 +153,4 @@ class Context(object):
         # Activate login, only specific stage.
         if self._opt['maven'] or self._opt['docker']:
             if registry_user is not None and registry_token is not None and registry is not None:
-                self._cmd.run_command('docker login -u %s -p \'%s\' https://%s' % (registry_user, registry_token, registry))
+                self._cmd.run_command('docker login -u %s -p %s https://%s' % (registry_user, self.string_protected(registry_token), registry))
