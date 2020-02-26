@@ -640,9 +640,6 @@ class CLIDriver(object):
     def __getTagSha1(self):
         return os.environ['CI_COMMIT_SHA']
 
-    def __getTagJobid(self):
-        return '%s-%s' % (self.__getTagBranchName(), os.environ['CI_JOB_ID'])
-
     def __getNamespace(self):
         return self.__getName(self._context.is_namespace_project_name)[:63]
 
