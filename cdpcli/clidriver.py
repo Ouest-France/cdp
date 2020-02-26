@@ -116,7 +116,6 @@ import json
 import gitlab
 import pyjq
 import shutil
-import requests
 
 from .Context import Context
 from .clicommand import CLICommand
@@ -360,8 +359,7 @@ class CLIDriver(object):
                # Tag de l'image
                self._cmd.run_command('docker tag %s %s' % (source_image_tag, dest_image_tag))
                # Push docker image
-               self._cmd.run_command('docker push %s' % (dest_image_tag))            
-            
+               self._cmd.run_command('docker push %s' % (dest_image_tag))
         else:
             tag = self.__getTagBranchName()
             pullPolicy = 'Always'
@@ -759,7 +757,6 @@ class CLIDriver(object):
 
     def __getLabelName(self):
         return ( os.getenv("CDP_REGISTRY_LABEL"))
-    
 
     @staticmethod
     def verbose(verbose):
