@@ -168,7 +168,6 @@ docker|k8s:
     - CDP_<REGISTRY_NAME>_REGISTRY_TOKEN (Gitlab-runner env var) – Access token used for authentication on custom docker registry.
     - CDP_<REGISTRY_NAME>_REGISTRY_TOKEN_READ_ONLY (Gitlab-runner env var) – Read only access token used for authentication on custom docker registry.
     - CDP_<REGISTRY_NAME>_REGISTRY_USER (Gitlab-runner env var) – User used for authentication on custom docker registry.
-    - CDP_<REGISTRY_NAME>_REGISTRY_API_URL (Gitlab-runner env var) – Url of registry API (Harbor only).
 
 artifactory:
   --put=<file>|--delete=<file>:
