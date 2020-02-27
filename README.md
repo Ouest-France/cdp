@@ -352,7 +352,7 @@ spec:
              key: MY_SECRET_KEY
 ...
 ```
-### _Gitlab file secret usage sample_
+### Gitlab file secret usage sample_
 
 #### 1 - Create a job with environnement using the --create-gitlab-secret option
 ```.gitlab-ci.yml
@@ -394,7 +394,7 @@ spec:
 ```
 cdp will search every variable with the pattern CDP_FILESECRET_STAGING_* and put them in a secret.
 
-### _Gitlab secret hook usage sample_
+### Gitlab secret hook usage sample_
 
 It's possible to deploy secret and filesecret before others ressources with option --create-gitlab-secret-hook. This option duplicate gitlab secret and file secret.
 Secret will be named :
@@ -427,7 +427,3 @@ sudo python3 setup.py install
 
 cdp --help
 ```
-
-## TODO
-
-Vault usage for token and password storage
