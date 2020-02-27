@@ -517,7 +517,7 @@ class CLIDriver(object):
 
     @staticmethod
     def addImageSecret(doc,image_pull_secret_value):
-        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
+        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Job':
             yaml_doc = doc['spec']['template']['spec']
             if 'imagePullSecrets' in yaml_doc and yaml_doc['imagePullSecrets']:
                 for image_pull_secret in yaml_doc['imagePullSecrets']:
