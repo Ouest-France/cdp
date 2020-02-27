@@ -544,23 +544,27 @@ class CLIDriver(object):
         return doc
     @staticmethod
     def addMonitoringLabel(doc,escalation):
-        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
+        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Service':
              doc['metadata']['labels']['monitoring'] = 'true'
-             doc['spec']['template']['metadata']['labels']['monitoring']  = 'true'
+             if 'template' in doc['spec'].keys():
+                doc['spec']['template']['metadata']['labels']['monitoring']  = 'true'
              LOG.warning("Add monitoring Label")
              if escalation:
                  doc['metadata']['labels']['owner-escalation'] = 'true'
-                 doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'true'
+                 if 'template' in doc['spec'].keys():
+                    doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'true'
              else:
                  doc['metadata']['labels']['owner-escalation'] = 'false'
-                 doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'false'
+                 if 'template' in doc['spec'].keys():
+                    doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'false'
         return doc
 
     @staticmethod
     def addTeamLabel(doc,team):
-        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet':
+        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Service':
              doc['metadata']['labels']['team'] = team
-             doc['spec']['template']['metadata']['labels']['team']  = team
+             if 'template' in doc['spec'].keys():
+                doc['spec']['template']['metadata']['labels']['team'] = team
         return doc
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
