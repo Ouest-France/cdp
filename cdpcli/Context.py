@@ -30,7 +30,7 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
         if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
-            if opt['maven'] or opt['docker'] or (opt['k8s'] and "CDP_TAG_PREFIX " in os.environ):
+            if opt['maven'] or opt['docker'] or (opt['k8s'] and "CDP_TAG_PREFIX" in os.environ):
                 if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr' :
                     ### Get login from AWS-CLI
                     aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
