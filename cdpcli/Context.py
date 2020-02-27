@@ -30,7 +30,7 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
         if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
-            if opt['maven'] or opt['docker']:
+            if opt['maven'] or opt['docker'] or (opt['k8s'] and "CDP_TAG_PREFIX " in os.environ):
                 if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr' :
                     ### Get login from AWS-CLI
                     aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
@@ -151,6 +151,6 @@ class Context(object):
 
     def __login(self, registry, registry_user, registry_token):
         # Activate login, only specific stage.
-        if self._opt['maven'] or self._opt['docker']:
+        if self._opt['maven'] or self._opt['docker'] or (self._opt['k8s'] and "CDP_TAG_PREFIX " in os.environ):
             if registry_user is not None and registry_token is not None and registry is not None:
                 self._cmd.run_command('docker login -u %s -p %s https://%s' % (registry_user, self.string_protected(registry_token), registry))
