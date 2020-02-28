@@ -152,4 +152,4 @@ class Context(object):
         # Activate login, only specific stage.
         if self._opt['maven'] or self._opt['docker'] or (self._opt['k8s'] and "CDP_TAG_PREFIX" in os.environ):
             if registry_user is not None and registry_token is not None and registry is not None:
-                self._cmd.run_command('docker login -u %s -p %s https://%s' % (registry_user, self.string_protected(registry_token), registry))
+                self._cmd.run_secret_command('docker login -u %s -p %s https://%s' % (registry_user, self.string_protected(registry_token), registry))
