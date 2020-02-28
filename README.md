@@ -156,6 +156,7 @@ docker|k8s:
   - CDP_DNS_SUBDOMAIN – Specify the subdomain of k8s cluster (set by environment variable in runner).
   - CDP_IMAGE_PULL_SECRET – Add the imagePullSecret value to use the helm --wait option instead of patch and rollout.
   - CDP_NAMESPACE – if value = 'project-name', force usage of project name to create k8s namespace.
+  - CDP_TAG_PREFIX - Prefix of the tag when pushing to registry (for --image-tag-sha1 only)
   --use-registry=aws-ecr:
     - AWS_ACCESS_KEY_ID (Gitlab-runner env var) – AWS access key.
     - AWS_SECRET_ACCESS_KEY (Gitlab-runner env var) – AWS secret key. Access and secret key variables override credentials stored in credential and config files.

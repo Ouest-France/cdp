@@ -11,7 +11,6 @@ class Context(object):
     def __init__(self, opt, cmd):
         self._opt = opt
         self._cmd = cmd
-        self._repository = os.environ['CI_PROJECT_PATH'].lower()
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
@@ -31,7 +30,7 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
         if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
-            if opt['maven'] or opt['docker']:
+            if opt['maven'] or opt['docker'] or (opt['k8s'] and "CDP_TAG_PREFIX" in os.environ):
                 if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr' :
                     ### Get login from AWS-CLI
                     aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
@@ -109,7 +108,7 @@ class Context(object):
 
     @property
     def repository(self):
-        return self._repository
+        return os.environ['CI_PROJECT_PATH'].lower()
 
     @property
     def is_namespace_project_name(self):
@@ -120,12 +119,29 @@ class Context(object):
             return self._opt['--namespace-project-name']
 
     @property
+    def registryRepositoryName(self):
+        if self.opt['--use-registry']=="harbor":
+           return '%s/%s' % (self.project_name, self.project_name)
+        return self.repository
+
+    @property
+    def project_name(self):
+        return os.environ['CI_PROJECT_NAME'].lower()
+
+    @property
     def is_image_pull_secret(self):
         image_pull_secret =  os.getenv('CDP_IMAGE_PULL_SECRET', None)
         if image_pull_secret is not None:
             return True if image_pull_secret == 'true' else False
         else:
             return self.opt['--image-pull-secret']
+
+    def string_protected(selft,input):
+        if not input.startswith("'"):
+            input = "'"+input
+        if not input.endswith("'"):
+            input = input+"'"
+        return input
 
     def __verif_attr(self, attr):
         if attr is None:
@@ -134,6 +150,6 @@ class Context(object):
 
     def __login(self, registry, registry_user, registry_token):
         # Activate login, only specific stage.
-        if self._opt['maven'] or self._opt['docker']:
+        if self._opt['maven'] or self._opt['docker'] or (self._opt['k8s'] and "CDP_TAG_PREFIX" in os.environ):
             if registry_user is not None and registry_token is not None and registry is not None:
-                self._cmd.run_command('docker login -u %s -p %s https://%s' % (registry_user, registry_token, registry))
+                self._cmd.run_command('docker login -u %s -p %s https://%s' % (registry_user, self.string_protected(registry_token), registry))
