@@ -136,7 +136,6 @@ class Context(object):
         else:
             return self.opt['--image-pull-secret']
 
-
     def string_protected(selft,input):
         if not input.startswith("'"):
             input = "'"+input
