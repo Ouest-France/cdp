@@ -596,14 +596,12 @@ class CLIDriver(object):
             self._cmd.run_command('hadolint Dockerfile', raise_error = False)
 
             image_tag = self.__getImageTag(self.__getImageName(), tag)
-            # Tag docker image
 
+            # Tag docker image
+            docker_build_command = 'docker build -t %s %s' % (image_tag, self._context.opt['--build-context'])
             if self._context.opt['--docker-build-target']:
-                docker_command = 'docker build -t %s-%s %s' % (image_tag, self._context.opt['--docker-build-target'], self._context.opt['--build-context'])
-                docker_command = '%s --target %s' % (docker_command, self._context.opt['--docker-build-target'])
-            else:
-                docker_command = 'docker build -t %s %s' % (image_tag, self._context.opt['--build-context'])
-            self._cmd.run_command(docker_command)
+                docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
+            self._cmd.run_command(docker_build_command)
 
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
@@ -631,8 +629,10 @@ class CLIDriver(object):
 
     def __getImageName(self):
         # Configure docker registry
+
         image_name = '%s/%s' % (self._context.registry, self._context.registryRepositoryName)
-        LOG.verbose('Image name : %s', image_name)
+        if self._context.opt['--docker-build-target']:
+           image_name = '%s/%s' % (image_name, self._context.opt['--docker-build-target'])
         return image_name
 
     def __getImageTag(self, image_name, tag):
