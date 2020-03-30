@@ -629,7 +629,6 @@ class CLIDriver(object):
 
     def __getImageName(self):
         # Configure docker registry
-
         image_name = '%s/%s' % (self._context.registry, self._context.registryRepositoryName)
         if self._context.opt['--docker-build-target']:
            image_name = '%s/%s' % (image_name, self._context.opt['--docker-build-target'])
