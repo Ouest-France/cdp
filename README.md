@@ -369,7 +369,7 @@ deploy_staging:
   tags:
     - staging
 ```
-cdp will search every variable with the pattern CDP_SECRET_STAGING_* and put them in a secret.
+cdp will search every variable with the pattern CDP_FILESECRET_STAGING_* and put them in a secret.
 
 #### 2 - Create file secret as project variable
 Adding CDP_FILESECRET_STAGING_MY_SECRET_KEY as a project variable in gitlab
