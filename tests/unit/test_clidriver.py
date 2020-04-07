@@ -165,7 +165,7 @@ class TestCliDriver(unittest.TestCase):
     image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:3.1.0'
     image_name_aws = 'ouestfrance/cdp-aws:1.16.198'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.17.0'
-    image_name_helm = 'ouestfrance/cdp-helm:2.13.1'
+    image_name_helm = 'ouestfrance/cdp-helm:2.16.3'
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
     cronjob_yaml_without_secret = """---
