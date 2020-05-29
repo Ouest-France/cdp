@@ -588,14 +588,6 @@ class CLIDriver(object):
                 doc['spec']['template']['metadata']['labels']['team'] = team
         return doc
 
-    @staticmethod
-    def addDeletableLabel(doc,delay):
-        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Service':
-             doc['metadata']['labels']['deletable'] = "true"
-             if 'template' in doc['spec'].keys():
-                doc['spec']['template']['metadata']['labels']['team'] = team
-        return doc
-
     def __buildTagAndPushOnDockerRegistry(self, tag):
         os.environ['CDP_TAG'] = tag
         if self._context.opt['--use-docker-compose']:
