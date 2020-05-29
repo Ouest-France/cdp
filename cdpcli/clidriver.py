@@ -490,7 +490,8 @@ class CLIDriver(object):
                 if doc is not None:
                     LOG.verbose(doc)
                     # Ajout du label deletable sur tous les objets si la release est temporaire
-                    doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--delete-labels'] else "false"
+                    if "metadata" in doc and "labels" in doc['metadata']:
+                       doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--delete-labels'] else "false"
 
                     final_docs.append(doc)
                     if self.__get_team() != "empty_team":
