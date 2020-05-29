@@ -489,6 +489,9 @@ class CLIDriver(object):
             for doc in docs:
                 if doc is not None:
                     LOG.verbose(doc)
+                    # Ajout du label deletable sur tous les objets si la release est temporaire
+                    doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--delete-labels'] else "false"
+
                     final_docs.append(doc)
                     if self.__get_team() != "empty_team":
                         doc= CLIDriver.addTeamLabel(doc,self.__get_team())
@@ -581,6 +584,14 @@ class CLIDriver(object):
     def addTeamLabel(doc,team):
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Service':
              doc['metadata']['labels']['team'] = team
+             if 'template' in doc['spec'].keys():
+                doc['spec']['template']['metadata']['labels']['team'] = team
+        return doc
+
+    @staticmethod
+    def addDeletableLabel(doc,delay):
+        if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Service':
+             doc['metadata']['labels']['deletable'] = "true"
              if 'template' in doc['spec'].keys():
                 doc['spec']['template']['metadata']['labels']['team'] = team
         return doc
