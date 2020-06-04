@@ -1493,7 +1493,7 @@ status:
             self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
                 verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name,'CDP_ECR_PATH' : aws_host, 'CI_RUNNER_TAGS': 'test', 'CDP_SLEEP': str(sleep_override)})
 
-            mock_isdir.assert_called_with('%s/templates' % deploy_spec_dir)
+            mock_isdir.assert_any_call('%s/templates' % deploy_spec_dir)
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
 
             data = dict(
@@ -1569,7 +1569,7 @@ status:
             self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--internal-port=%s' % internal_port, '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
                 verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name, 'CI_RUNNER_TAGS': 'test','CDP_ECR_PATH' : aws_host})
 
-            mock_isdir.assert_called_with('%s/templates' % deploy_spec_dir)
+            mock_isdir.assert_any_call('%s/templates' % deploy_spec_dir)
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
 
             data = dict(
