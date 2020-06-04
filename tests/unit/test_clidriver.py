@@ -526,6 +526,7 @@ status:
         os.environ['CDP_GITLAB_API_URL'] = TestCliDriver.cdp_gitlab_api_url
         os.environ['CDP_GITLAB_API_TOKEN'] = TestCliDriver.cdp_gitlab_api_token
         os.environ['CDP_BP_VALIDATOR_HOST'] = TestCliDriver.cdp_bp_validator_host
+        os.environ['CDP_NO_CONFTEST'] = "true"
 
 
     def test_build_verbose_simulatemergeon_sleep(self):
