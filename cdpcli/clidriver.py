@@ -31,7 +31,7 @@ Usage:
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>]
+        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
@@ -46,6 +46,9 @@ Usage:
         [--tiller-namespace]
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<value>]
         [--image-pull-secret]
+        [--conftest-repo=<gitlab repo>] [--no-conftest] [--conftest-namespace=<namespace>]
+    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>] 
+        [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespace=<namespace>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
         (--validate-configurations)
@@ -60,6 +63,8 @@ Options:
     --build-context=<path>                                     Specify the docker building context [default: .].
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
+    --conftest-repo=<gitlab >                                  Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
+    --conftest-namespace=<namespace>                           Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACE  is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
@@ -74,6 +79,7 @@ Options:
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image-vault=<image_name_git>                      Docker image which execute vault command [default: vault:1.13.0].
+    --docker-image-conftest=<image_name_git>                   Docker image which execute conftest command [default: instrumenta/conftest:v0.18.2].
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-build-target=<target_name>                        Specify target in multi stage build
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
@@ -87,6 +93,7 @@ Options:
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
+    --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
@@ -107,7 +114,7 @@ Options:
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
+    --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [default: k8s]
 """
 import base64
 import configparser
@@ -192,6 +199,9 @@ class CLIDriver(object):
 
             if self._context.opt['k8s']:
                 self.__k8s()
+
+            if self._context.opt['conftest']:
+                self.__conftest()
 
             if self._context.opt['validator-server']:
                 self.__validator()
@@ -510,6 +520,15 @@ class CLIDriver(object):
             LOG.info(yaml.dump_all(final_docs))
             yaml.dump_all(final_docs, outfile)
 
+        #Run conftest
+        if (os.path.isdir('%s/data' % self._context.opt['--deploy-spec-dir'])):
+            shutils.copytree('%s/data' % self._context.opt['--deploy-spec-dir'], '%s/data' % final_template_deploy_spec_dir)
+        
+        if (os.path.isdir('%s/policy' % self._context.opt['--deploy-spec-dir'])):
+            shutils.copytree('%s/policy' % self._context.opt['--deploy-spec-dir'], '%s/policy' % final_template_deploy_spec_dir)
+
+        self.__runConftest(final_template_deploy_spec_dir, 'all_resources.yaml'.split(','))
+
         # Install or Upgrade environnement
         helm_cmd.run(command)
 
@@ -610,6 +629,10 @@ class CLIDriver(object):
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
             
+    def __conftest(self):
+        dir = self._context.opt['--deploy-spec-dir']
+        files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir,f))]
+        self.__runConftest(dir,files)
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb is 'PUT':
@@ -772,6 +795,55 @@ class CLIDriver(object):
 
     def __getLabelName(self):
         return ( os.getenv("CDP_REGISTRY_LABEL"))
+
+    '''
+    Lancement des tests conftest. 
+      <chartdir> : répertoire de définition des charts du projet. Peut contenir les répertoires policy et data contenant
+                  restpectivement les policies à appliquer et les éventuelles valeurs spécifiques       
+      <charts>   : Tableau des charts à controller
+    '''
+    def __runConftest(self, chartdir, charts):
+        no_conftest = self.__getParamOrEnv('no-conftest')
+        if (no_conftest is True or no_conftest == "true"):
+            return
+
+        conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], "%s:/project" % chartdir, True)
+
+        conftest_repo = self.__getParamOrEnv('conftest-repo')
+        if (conftest_repo != "" and conftest_repo != "none" ):
+            try: 
+               conftest_repo = conftest_repo.replace("/","%2F")
+               cmd = "curl -H 'PRIVATE-TOKEN: %s' -skL %s/api/v4/projects/%s/repository/archive.tar.gz | tar zx --strip 1 -C %s" % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], conftest_repo, chartdir)
+               self._cmd.run_command(cmd)
+            except Exception as e:
+                LOG.error("Error when downloading %s - Pass - %s" % conftest_repo,str(e))               
+
+        if (not os.path.isdir("%s/policy" % chartdir)):
+            LOG.info('conftest : No policy found in %s - pass' % chartdir)
+            return
+
+        cmd = "test --policy policy"
+        if (os.path.isdir("%s/data" % chartdir)):
+           cmd = "%s --data data" % cmd
+
+        # Boucle sur tous les namespaces
+        conftest_ns = self.__getParamOrEnv('conftest-namespace').split(",")
+        for ns in conftest_ns:
+          if (ns == "all"):
+              cmd = "%s --all-namespaces" % (cmd)
+          elif not ns == "":
+              cmd = "%s --namespace=%s" % (cmd, ns)
+          conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, False)
+
+
+    ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
+    def __getParamOrEnv(self, param):
+        envvar = "CDP_%s" % param.upper().replace("-","_")
+        commandlineParam = "--%s" % param
+        value = self._context.opt[commandlineParam]
+        if ((not self._context.opt[commandlineParam] or self._context.opt[commandlineParam] == '') and os.getenv(envvar, None) is not None):
+           value = os.getenv(envvar)
+        return value
 
     @staticmethod
     def verbose(verbose):
