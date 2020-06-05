@@ -808,7 +808,7 @@ class CLIDriver(object):
             return
 
 #        conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], "%s:/project" % chartdir, True)
-        conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], self._context.opt['--volume-from'], True)
+        conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], 'k8s"', True)
        
         conftest_repo = self.__getParamOrEnv('conftest-repo')
         if (conftest_repo != "" and conftest_repo != "none" ):
@@ -823,8 +823,7 @@ class CLIDriver(object):
         self._cmd.run('pwd')
         self._cmd.run('ls -Rl %s ' % chartdir)
         self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock -v %s:/project instrumenta/conftest:v0.18.2 -Rl' % chartdir)
-        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") instrumenta/conftest:v0.18.2 -Rl')
-        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} instrumenta/conftest:v0.18.2 -Rl')
+        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w %s instrumenta/conftest:v0.18.2 -Rl' % chartdir)
 
         if (not os.path.isdir("%s/policy" % chartdir)):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
@@ -841,7 +840,7 @@ class CLIDriver(object):
               cmd = "%s --all-namespaces" % (cmd)
           elif not ns == "":
               cmd = "%s --namespace=%s" % (cmd, ns)
-          conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, True)
+          conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, chartdir)
 
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore

@@ -34,8 +34,9 @@ class DockerCommand(object):
           else:  
             run_docker_cmd = '%s -v %s' % (run_docker_cmd, self._volume_from)
 
-        if (workingDir):
-           run_docker_cmd = '%s -w ${PWD}' % (run_docker_cmd)
+        if (workingDir is not False):
+            run_docker_cmd = '%s -w %s' % (run_docker_cmd, '${PWD}' if workingDir is True else workingDir )
+
         run_docker_cmd = '%s %s' % (run_docker_cmd, self._docker_image)
         if (self._with_entrypoint):
             run_docker_cmd = '%s %s' % (run_docker_cmd, prg_cmd)
