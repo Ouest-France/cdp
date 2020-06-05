@@ -26,7 +26,7 @@ ADD https://github.com/hadolint/hadolint/releases/download/${VERSION_HADOLINT}/h
 
 WORKDIR /cdp
 
-RUN apk -v --no-cache add python3=$VERSION_PYTHON \
+RUN apk -v --no-cache add tar python3=$VERSION_PYTHON \
       python3-dev=$VERSION_PYTHON \
       groff=$VERSION_GROFF \
       less=$VERSION_LESS \
