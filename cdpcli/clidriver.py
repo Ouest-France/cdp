@@ -632,7 +632,7 @@ class CLIDriver(object):
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']
         files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir,f))]
-        self.__runConftest(dir,files)
+        self.__runConftest(dir,files,False)
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
         if http_verb is 'PUT':
@@ -802,7 +802,7 @@ class CLIDriver(object):
                   restpectivement les policies à appliquer et les éventuelles valeurs spécifiques       
       <charts>   : Tableau des charts à controller
     '''
-    def __runConftest(self, chartdir, charts):
+    def __runConftest(self, chartdir, charts, withWorkingDir=True):
         no_conftest = self.__getParamOrEnv('no-conftest')
         if (no_conftest is True or no_conftest == "true"):
             return
@@ -819,12 +819,6 @@ class CLIDriver(object):
             except Exception as e:
                 LOG.error("Error when downloading %s - Pass - %s" % conftest_repo,str(e))               
 
- 
-        self._cmd.run('pwd')
-        self._cmd.run('ls -Rl %s ' % chartdir)
-        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock -v %s:/project instrumenta/conftest:v0.18.2 -Rl' % chartdir)
-        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w %s instrumenta/conftest:v0.18.2 -Rl' % chartdir)
-
         if (not os.path.isdir("%s/policy" % chartdir)):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
             return
@@ -835,12 +829,16 @@ class CLIDriver(object):
 
         # Boucle sur tous les namespaces
         conftest_ns = self.__getParamOrEnv('conftest-namespace').split(",")
+        LOG.info("=============================================================")
+        LOG.info("== CONFTEST                                               ==")
+        LOG.info("=============================================================")
         for ns in conftest_ns:
           if (ns == "all"):
               cmd = "%s --all-namespaces" % (cmd)
           elif not ns == "":
               cmd = "%s --namespace=%s" % (cmd, ns)
-          conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, chartdir)
+
+          conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, chartdir if withWorkingDir else False)
 
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore

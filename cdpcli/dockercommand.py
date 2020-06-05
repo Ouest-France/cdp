@@ -33,7 +33,7 @@ class DockerCommand(object):
             run_docker_cmd = '%s -v $PWD:$PWD' % (run_docker_cmd)
           else:  
             run_docker_cmd = '%s -v %s' % (run_docker_cmd, self._volume_from)
-
+        
         if (workingDir is not False):
             run_docker_cmd = '%s -w %s' % (run_docker_cmd, '${PWD}' if workingDir is True else workingDir )
 
