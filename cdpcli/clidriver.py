@@ -824,7 +824,7 @@ class CLIDriver(object):
         self._cmd.run('ls -Rl %s ' % chartdir)
         self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock -v %s:/project instrumenta/conftest:v0.18.2 -Rl' % chartdir)
         self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") instrumenta/conftest:v0.18.2 -Rl')
-        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build") instrumenta/conftest:v0.18.2 -Rl')
+        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock --volumes-from $(docker ps -aqf "name=k8s_build_${HOSTNAME}") -w ${PWD} instrumenta/conftest:v0.18.2 -Rl')
 
         if (not os.path.isdir("%s/policy" % chartdir)):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
