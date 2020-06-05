@@ -825,10 +825,10 @@ class CLIDriver(object):
                    if (len(repo) > 2):
                      repo_sha="?sha=%s" % repo[2]
 
-               cmd = "curl -H 'PRIVATE-TOKEN: %s' -skL %s/api/v4/projects/%s/repository/archive.tar.gz%s | tar zx --wildcards --strip %s -C %s %s" % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], repo_name,repo_sha, strip, chartdir, repo_dir)
-               self._cmd.run_command(cmd)
+               cmd = 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz%s | tar zx --wildcards --strip %s -C %s %s' % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], repo_name,repo_sha, strip, chartdir, repo_dir)
+               self._cmd.run_command(cmd.strip())
             except Exception as e:
-                LOG.error("Error when downloading %s - Pass - %s" % conftest_repo,str(e))               
+                LOG.error("Error when downloading %s - Pass - %s" % (conftest_repo,str(e)))               
 
         if (not os.path.isdir("%s/policy" % chartdir)):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)

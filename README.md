@@ -18,7 +18,7 @@ Usage:
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
-        [--altDeploymentRepository=<repository_name> ]
+        [--altDeploymentRepository=<repository_name>]
         [--login-registry=<registry_name>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
@@ -27,27 +27,33 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
-        [--build-context=<path>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--build-context=<path>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--login-registry=<registry_name>]
+        [--docker-build-target=<target_name>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>]
+        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
+        [(--create-gitlab-secret-hook)]
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
         [--volume-from=<host_type>]
+        [--create-gitlab-secret]
         [--tiller-namespace]
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<value>]
         [--image-pull-secret]
+        [--conftest-repo=<gitlab repo>] [--no-conftest] [--conftest-namespaces=<namespaces>]
+    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>] 
+        [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
         (--validate-configurations)
@@ -62,8 +68,11 @@ Options:
     --build-context=<path>                                     Specify the docker building context [default: .].
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
+    --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
+    --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
-    --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env
+    --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
+    --create-gitlab-secret-hook                                Create gitlab secret with hook
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
@@ -74,7 +83,10 @@ Options:
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.17.0].
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
+    --docker-image-vault=<image_name_git>                      Docker image which execute vault command [default: vault:1.13.0].
+    --docker-image-conftest=<image_name_git>                   Docker image which execute conftest command [default: instrumenta/conftest:v0.18.2].
     --docker-image=<image_name>                                Specify docker image name for build project.
+    --docker-build-target=<target_name>                        Specify target in multi stage build
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
@@ -86,11 +98,12 @@ Options:
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
+    --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<value>                              Customize release name with namepsace-name-<value>
+    --release-custom-name=<release_name>                       Customize release name with namepsace-name-<value>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
@@ -103,10 +116,10 @@ Options:
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image.
     --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
-    --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab or custom name for load specifics environments variables) [default: none].
+    --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --volume-from=<host_type>                                  Volume type of sources - docker, k8s or local [default: k8s]
+    --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [default: k8s]
 ```
 
 ### _Prerequisites_
@@ -316,18 +329,37 @@ CDP_ALERTING: [TRUE|FALSE] : Enable or disable alerting (Use to set "owner-scala
 
 ### conftest charts validation
 
-Charts can be validate by conftest (https://www.conftest.dev/).
+#### Policies repository
+Charts can be validated by conftest (https://www.conftest.dev/).
 Conftest is based upon policies in rego format.
-To define policies to apply, create a gitlab repo with your policies in policy folder.
+To define policies to apply, create a gitlab repo with your policies in policy folder. Datas must be defined in data folder
 You can pass this repo to the cdp with --conftest-repo (or CDP_CONFTEST_REPO var).
-Value of this parametre is lile reponame:repodir:branch.
+Value of this parameter is like reponame:repodir:branch.
 
 Examples ;
 - monrepo-conftest
-- monrepo-conftest:k8s
-- monrepo-conftest:k8s:staging
+- monrepo-conftest:policies/k8s
+- monrepo-conftest:policies/k8s:staging
 - monrepo-conftest::staging
 
+#### Namespaces
+
+Policies are grouped by namespace (package in rego definition). By default, main package is used.
+
+You can used multiples packages in cdp by using --conftest-namespaces (or CDP_CONFTEST_NAMESPACES) with namespaces separated by comma or all for all packages.
+
+#### Custom project policies
+
+A projet can define own policies. To do that, policies must be created in charts/policy folder of the projet as the same level as templates. Datas must be defined in charts/data folder
+Project struct
+```
+project
+   |-charts
+   |   |-templates
+   |   |-policy
+   |   |-data
+   ... 
+```
 
 ### _Gitlab secret usage sample_
 
