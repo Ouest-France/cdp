@@ -330,6 +330,7 @@ CDP_ALERTING: [TRUE|FALSE] : Enable or disable alerting (Use to set "owner-scala
 ### conftest charts validation
 
 #### Policies repository
+
 Charts can be validated by conftest (https://www.conftest.dev/).
 Conftest is based upon policies in rego format.
 To define policies to apply, create a gitlab repo with your policies in policy folder. Datas must be defined in data folder
@@ -346,11 +347,11 @@ Examples ;
 
 Policies are grouped by namespace (package in rego definition). By default, main package is used.
 
-You can used multiples packages in cdp by using --conftest-namespaces (or CDP_CONFTEST_NAMESPACES) with namespaces separated by comma or all for all packages.
+You can use multiple packages in cdp by using --conftest-namespaces (or CDP_CONFTEST_NAMESPACES) with namespaces separated by comma or all for all packages.
 
 #### Custom project policies
 
-A projet can define own policies. To do that, policies must be created in charts/policy folder of the projet as the same level as templates. Datas must be defined in charts/data folder
+A projet can define their own policies. To do that, policies must be created in charts/policy folder of the projet as the same level as templates. Datas must be defined in charts/data folder
 Project struct
 ```
 project
