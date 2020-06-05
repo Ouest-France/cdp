@@ -841,7 +841,7 @@ class CLIDriver(object):
               cmd = "%s --all-namespaces" % (cmd)
           elif not ns == "":
               cmd = "%s --namespace=%s" % (cmd, ns)
-          conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, False)
+          conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, True)
 
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
