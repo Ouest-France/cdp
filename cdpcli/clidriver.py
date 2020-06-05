@@ -46,9 +46,9 @@ Usage:
         [--tiller-namespace]
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<value>]
         [--image-pull-secret]
-        [--conftest-repo=<gitlab repo>] [--no-conftest] [--conftest-namespace=<namespace>]
+        [--conftest-repo=<gitlab repo>] [--no-conftest] [--conftest-namespaces=<namespaces>]
     cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>] 
-        [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespace=<namespace>]
+        [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
         (--validate-configurations)
@@ -63,8 +63,8 @@ Options:
     --build-context=<path>                                     Specify the docker building context [default: .].
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
-    --conftest-repo=<gitlab >                                  Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
-    --conftest-namespace=<namespace>                           Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACE  is used if empty.
+    --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
+    --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
@@ -813,8 +813,19 @@ class CLIDriver(object):
         conftest_repo = self.__getParamOrEnv('conftest-repo')
         if (conftest_repo != "" and conftest_repo != "none" ):
             try: 
-               conftest_repo = conftest_repo.replace("/","%2F")
-               cmd = "curl -H 'PRIVATE-TOKEN: %s' -skL %s/api/v4/projects/%s/repository/archive.tar.gz | tar zx --strip 1 -C %s" % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], conftest_repo, chartdir)
+               repo = conftest_repo.split(":")
+               repo_name = repo[0].replace("/","%2F")
+               repo_sha= ""
+               repo_dir= ""
+               strip=1
+               if (len(repo) > 1):
+                   if len(repo[1]) > 0:
+                     repo_dir="'*/%s'" % repo[1]
+                     strip= repo_dir.count("/") + 1
+                   if (len(repo) > 2):
+                     repo_sha="?sha=%s" % repo[2]
+
+               cmd = "curl -H 'PRIVATE-TOKEN: %s' -skL %s/api/v4/projects/%s/repository/archive.tar.gz%s | tar zx --wildcards --strip %s -C %s %s" % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], repo_name,repo_sha, strip, chartdir, repo_dir)
                self._cmd.run_command(cmd)
             except Exception as e:
                 LOG.error("Error when downloading %s - Pass - %s" % conftest_repo,str(e))               
@@ -828,7 +839,7 @@ class CLIDriver(object):
            cmd = "%s --data data" % cmd
 
         # Boucle sur tous les namespaces
-        conftest_ns = self.__getParamOrEnv('conftest-namespace').split(",")
+        conftest_ns = self.__getParamOrEnv('conftest-namespaces').split(",")
         LOG.info("=============================================================")
         LOG.info("== CONFTEST                                               ==")
         LOG.info("=============================================================")

@@ -314,6 +314,21 @@ To do this it uses two envrionnement variable "CDP_MONITORING" and "CDP_ALERTING
 CDP_MONITORING: [TRUE|FALSE] : Enable or disable monitoring (Use to set "monitoring")  
 CDP_ALERTING: [TRUE|FALSE] : Enable or disable alerting (Use to set "owner-scalation")  
 
+### conftest charts validation
+
+Charts can be validate by conftest (https://www.conftest.dev/).
+Conftest is based upon policies in rego format.
+To define policies to apply, create a gitlab repo with your policies in policy folder.
+You can pass this repo to the cdp with --conftest-repo (or CDP_CONFTEST_REPO var).
+Value of this parametre is lile reponame:repodir:branch.
+
+Examples ;
+- monrepo-conftest
+- monrepo-conftest:k8s
+- monrepo-conftest:k8s:staging
+- monrepo-conftest::staging
+
+
 ### _Gitlab secret usage sample_
 
 #### 1 - Create a job with environnement using the --create-gitlab-secret option
