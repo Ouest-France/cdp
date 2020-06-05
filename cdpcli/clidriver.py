@@ -808,7 +808,7 @@ class CLIDriver(object):
             return
 
         conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], "%s:/project" % chartdir, True)
-
+       
         conftest_repo = self.__getParamOrEnv('conftest-repo')
         if (conftest_repo != "" and conftest_repo != "none" ):
             try: 
@@ -817,6 +817,11 @@ class CLIDriver(object):
                self._cmd.run_command(cmd)
             except Exception as e:
                 LOG.error("Error when downloading %s - Pass - %s" % conftest_repo,str(e))               
+
+ 
+        self._cmd.run('pwd')
+        self._cmd.run('ls -Rl')
+        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock -v charts:/project instrumenta/conftest:v0.18.2 -Rl')
 
         if (not os.path.isdir("%s/policy" % chartdir)):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
