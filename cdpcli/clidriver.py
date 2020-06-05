@@ -527,7 +527,7 @@ class CLIDriver(object):
         if (os.path.isdir('%s/policy' % self._context.opt['--deploy-spec-dir'])):
             shutils.copytree('%s/policy' % self._context.opt['--deploy-spec-dir'], '%s/policy' % final_template_deploy_spec_dir)
 
-        self.__runConftest(final_template_deploy_spec_dir, 'all_resources.yaml'.split(','))
+        self.__runConftest(os.path.abspath(final_template_deploy_spec_dir), 'all_resources.yaml'.split(','))
 
         # Install or Upgrade environnement
         helm_cmd.run(command)
