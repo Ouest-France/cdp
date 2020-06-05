@@ -522,10 +522,10 @@ class CLIDriver(object):
 
         #Run conftest
         if (os.path.isdir('%s/data' % self._context.opt['--deploy-spec-dir'])):
-            shutils.copytree('%s/data' % self._context.opt['--deploy-spec-dir'], '%s/data' % final_template_deploy_spec_dir)
+            shutil.copytree('%s/data' % self._context.opt['--deploy-spec-dir'], '%s/data' % final_template_deploy_spec_dir)
         
         if (os.path.isdir('%s/policy' % self._context.opt['--deploy-spec-dir'])):
-            shutils.copytree('%s/policy' % self._context.opt['--deploy-spec-dir'], '%s/policy' % final_template_deploy_spec_dir)
+            shutil.copytree('%s/policy' % self._context.opt['--deploy-spec-dir'], '%s/policy' % final_template_deploy_spec_dir)
 
         self.__runConftest(os.path.abspath(final_template_deploy_spec_dir), 'all_resources.yaml'.split(','))
 
