@@ -820,8 +820,8 @@ class CLIDriver(object):
 
  
         self._cmd.run('pwd')
-        self._cmd.run('ls -Rl')
-        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock -v charts:/project instrumenta/conftest:v0.18.2 -Rl')
+        self._cmd.run('ls -Rl %s ' % chartdir)
+        self._cmd.run('docker run --rm -e DOCKER_HOST --entrypoint="ls" -v /var/run/docker.sock:/var/run/docker.sock -v %s:/project instrumenta/conftest:v0.18.2 -Rl' % chartdir)
 
         if (not os.path.isdir("%s/policy" % chartdir)):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
