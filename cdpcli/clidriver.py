@@ -524,7 +524,7 @@ class CLIDriver(object):
         conftest_temp_dir = '%s_conftest' % self._context.opt['--deploy-spec-dir']
         try:
             os.makedirs(conftest_temp_dir)
-            shutil.copyfile('%s/all_resources.yaml' % self._context.opt['--deploy-spec-dir'], '%s/all_resources.yaml' % conftest_temp_dir)
+            shutil.copyfile('%s/all_resources.yaml' % final_template_deploy_spec_dir, '%s/all_resources.yaml' % conftest_temp_dir)
         except OSError as e:
             LOG.error(str(e))
 
@@ -814,7 +814,6 @@ class CLIDriver(object):
         if (no_conftest is True or no_conftest == "true"):
             return
 
-#        conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], "%s:/project" % chartdir, True)
         conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], self._context.opt['--volume-from'], True)
        
         conftest_repo = self.__getParamOrEnv('conftest-repo')
