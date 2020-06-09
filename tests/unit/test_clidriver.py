@@ -944,7 +944,7 @@ status:
         values = ','.join([staging_file, int_file])
         docker_host = 'unix:///var/run/docker.sock'
         deploy_spec_dir = 'charts'
-        final_deploy_spec_dir = '%s_conftest' % deploy_spec_dir
+        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         date_now = datetime.datetime.utcnow()
         date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration=240
@@ -953,7 +953,7 @@ status:
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
-        chartdir = os.path.abspath(final_deploy_spec_dir) + "/templates"
+        chartdir = os.path.abspath('%s_conftest' % deploy_spec_dir)
         cmdcurl = 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz%s | tar zx --wildcards --strip %s -C %s' % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], os.environ['CDP_CONFTEST_REPO'].replace("/","%2F"),"", 1, chartdir )
 
         with patch("builtins.open", m):
