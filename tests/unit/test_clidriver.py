@@ -983,8 +983,8 @@ status:
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
 
-                {'cmd': 'docker pull %s' % TestCliDriver.image_name_conftest, 'output': 'unnecessary'},
                 {'cmd': cmdcurl, 'output': 'unnecessary'},                
+                {'cmd': 'docker pull %s' % TestCliDriver.image_name_conftest, 'output': 'unnecessary'},
                 {'cmd': 'test --policy policy --data data all_resources.yaml', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_conftest,'workingDir':chartdir},
                 {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,

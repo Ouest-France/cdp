@@ -814,7 +814,6 @@ class CLIDriver(object):
         if (no_conftest is True or no_conftest == "true"):
             return
 
-        conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], self._context.opt['--volume-from'], True)
        
         conftest_repo = self.__getParamOrEnv('conftest-repo')
         if (conftest_repo != "" and conftest_repo != "none" ):
@@ -840,6 +839,7 @@ class CLIDriver(object):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
             return
 
+        conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], self._context.opt['--volume-from'], True)
         cmd = "test --policy policy"
         if (os.path.isdir("%s/data" % chartdir)):
            cmd = "%s --data data" % cmd
