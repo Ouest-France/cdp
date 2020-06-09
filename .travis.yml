@@ -8,14 +8,14 @@ services:
   - docker
 
 stages:
-#  - name: test
+  - name: test
   - name: deploy
     if: type IN (push)
 
 jobs:
   include:
-#    - stage: test
-#      script: python setup.py test
+    - stage: test
+      script: python setup.py test
     - stage: deploy
       script:
         - docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
