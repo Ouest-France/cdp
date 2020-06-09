@@ -521,13 +521,20 @@ class CLIDriver(object):
             yaml.dump_all(final_docs, outfile)
 
         #Run conftest
+        conftest_temp_dir = '%s_conftest' % self._context.opt['--deploy-spec-dir']
+        try:
+            os.makedirs(conftest_temp_dir)
+            shutil.copyfile('%s/all_resources.yaml' % self._context.opt['--deploy-spec-dir'], '%s/all_resources.yaml' % conftest_temp_dir)
+        except OSError as e:
+            LOG.error(str(e))
+
         if (os.path.isdir('%s/data' % self._context.opt['--deploy-spec-dir'])):
-            shutil.copytree('%s/data' % self._context.opt['--deploy-spec-dir'], '%s/data' % final_template_deploy_spec_dir)
+            shutil.copytree('%s/data' % self._context.opt['--deploy-spec-dir'], '%s/data' % conftest_temp_dir)
         
         if (os.path.isdir('%s/policy' % self._context.opt['--deploy-spec-dir'])):
-            shutil.copytree('%s/policy' % self._context.opt['--deploy-spec-dir'], '%s/policy' % final_template_deploy_spec_dir)
+            shutil.copytree('%s/policy' % self._context.opt['--deploy-spec-dir'], '%s/policy' % conftest_temp_dir)
 
-        self.__runConftest(os.path.abspath(final_template_deploy_spec_dir), 'all_resources.yaml'.split(','))
+        self.__runConftest(os.path.abspath(conftest_temp_dir), 'all_resources.yaml'.split(','))
 
         # Install or Upgrade environnement
         helm_cmd.run(command)
