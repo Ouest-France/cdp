@@ -333,7 +333,7 @@ CDP_ALERTING: [TRUE|FALSE] : Enable or disable alerting (Use to set "owner-scala
 
 Charts can be validated by conftest (https://www.conftest.dev/).
 Conftest is based upon policies in rego format.
-To define policies to apply, create a gitlab repo with your policies in policy folder. Datas must be defined in data folder
+To define policies to apply, create a gitlab repo with your policies in a **policy** folder. Datas must be defined in a **data** folder
 You can pass this repo to the cdp with --conftest-repo (or CDP_CONFTEST_REPO var).
 Value of this parameter is like reponame:repodir:branch.
 
