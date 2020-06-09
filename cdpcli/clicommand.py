@@ -31,6 +31,9 @@ class CLICommand(object):
         start = timeit.default_timer()
         self._process = None
         self._output = []
+        if "CDP_DEBUG" in os.environ:
+          LOG.verbose('******************** Run command (debug) ********************')
+          LOG.verbose(command)
 
         if dry_run is None:
             self._real_dry_run = self._dry_run
