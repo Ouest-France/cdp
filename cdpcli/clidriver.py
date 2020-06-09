@@ -79,7 +79,7 @@ Options:
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image-vault=<image_name_git>                      Docker image which execute vault command [default: vault:1.13.0].
-    --docker-image-conftest=<image_name_git>                   Docker image which execute conftest command [default: instrumenta/conftest:v0.18.2].
+    --docker-image-conftest=<image_name_conftest>                   Docker image which execute conftest command [default: instrumenta/conftest:v0.18.2].
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-build-target=<target_name>                        Specify target in multi stage build
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
