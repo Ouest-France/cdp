@@ -34,7 +34,6 @@ class CLICommand(object):
         if "CDP_DEBUG" in os.environ:
           LOG.verbose('******************** Run command (debug) ********************')
           LOG.verbose(command)
-        LOG.verbose(command)
 
         if dry_run is None:
             self._real_dry_run = self._dry_run
