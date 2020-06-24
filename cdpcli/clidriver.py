@@ -306,8 +306,10 @@ class CLIDriver(object):
 
             repos = []
 
-            if self._context.opt['--use-docker'] or not (self._context.opt['--use-docker-compose']):
+            if self._context.opt['--use-docker'] or not (self._context.opt['--use-docker-compose']) and not (self._context.opt['--docker-build-target']):
                 repos.append(self._context.repository)
+            elif (self._context.opt['--docker-build-target']):
+                repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
                 docker_services = self._cmd.run_command('docker-compose config --services')
                 for docker_service in docker_services:
