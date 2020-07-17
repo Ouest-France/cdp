@@ -171,7 +171,7 @@ class TestCliDriver(unittest.TestCase):
     image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:3.1.0'
     image_name_aws = 'ouestfrance/cdp-aws:1.16.198'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.17.0'
-    image_name_helm = 'ouestfrance/cdp-helm:2.16.3'
+    image_name_helm = 'ouestfrance/cdp-helm:3.2.4'
     image_name_conftest = 'instrumenta/conftest:v0.18.2'
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
@@ -881,8 +881,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain,
@@ -897,10 +898,9 @@ status:
                         release,
                         staging_file,
                         int_file,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -963,8 +963,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain,
@@ -979,14 +980,12 @@ status:
                         release,
                         staging_file,
                         int_file,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-
                 {'cmd': cmdcurl, 'output': 'unnecessary'},                
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_conftest, 'output': 'unnecessary'},
                 {'cmd': 'test --policy policy --data data all_resources.yaml', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_conftest,'workingDir':chartdir},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1043,8 +1042,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [TestCliDriver.tiller_not_found], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                        % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                        % (release,
+                           deploy_spec_dir,
                            namespace,
                            release,
                            TestCliDriver.cdp_dns_subdomain,
@@ -1059,10 +1059,9 @@ status:
                            release,
                            staging_file,
                            int_file,
-                           release,
                            namespace,
                            final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                         % (release,
                            final_deploy_spec_dir,
                            namespace,
@@ -1117,8 +1116,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain_staging,
@@ -1133,10 +1133,9 @@ status:
                         release,
                         staging_file,
                         int_file,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1192,8 +1191,9 @@ status:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret.yaml', 'output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain_staging,
@@ -1208,10 +1208,9 @@ status:
                         release,
                         staging_file,
                         int_file,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1272,8 +1271,9 @@ status:
                 {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret.yaml','output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-secret-hook.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret-hook.yaml', 'output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                           % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                           % (release,
+                              deploy_spec_dir,
                               namespace,
                               release,
                               TestCliDriver.cdp_dns_subdomain_staging,
@@ -1288,12 +1288,11 @@ status:
                               release,
                               staging_file,
                               int_file,
-                              release,
                               namespace,
                               final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary',
                     'docker_image': TestCliDriver.image_name_helm},
                 {
-                    'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                    'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                            % (release,
                               final_deploy_spec_dir,
                               namespace,
@@ -1356,8 +1355,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain_staging,
@@ -1372,10 +1372,9 @@ status:
                         release,
                         staging_file,
                         int_file,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1428,8 +1427,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain_staging,
@@ -1444,10 +1444,9 @@ status:
                         release,
                         staging_file,
                         int_file,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace)
@@ -1495,8 +1494,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain,
@@ -1507,10 +1507,9 @@ status:
                         TestCliDriver.ci_commit_sha,
                         deploy_spec_dir,
                         values,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout %s --debug -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout %ss --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         timeout,
@@ -1565,8 +1564,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-                {'cmd': 'template %s --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain,
@@ -1575,10 +1575,9 @@ status:
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace)
@@ -1592,7 +1591,7 @@ status:
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
 
             data = dict(
-                apiVersion = 'v1',
+                apiVersion = 'v2',
                 description = 'A Helm chart for Kubernetes',
                 name = TestCliDriver.ci_project_name,
                 version = '0.1.0'
@@ -1641,8 +1640,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [ TestCliDriver.tiller_not_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-                {'cmd': 'template %s --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         internal_port,
                         release,
@@ -1652,10 +1652,9 @@ status:
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --debug -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
@@ -1668,7 +1667,7 @@ status:
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
 
             data = dict(
-                apiVersion = 'v1',
+                apiVersion = 'v2',
                 description = 'A Helm chart for Kubernetes',
                 name = TestCliDriver.ci_project_name,
                 version = '0.1.0'
@@ -1708,8 +1707,9 @@ status:
             verif_cmd = [
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain,
@@ -1718,10 +1718,9 @@ status:
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1766,8 +1765,9 @@ status:
                     {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
                     {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                     {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-                    {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                        % (deploy_spec_dir,
+                    {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                        % ( release,
+                            deploy_spec_dir,
                             namespace,
                             release,
                             TestCliDriver.cdp_dns_subdomain,
@@ -1776,10 +1776,9 @@ status:
                             aws_host,
                             TestCliDriver.ci_project_path.lower(),
                             TestCliDriver.ci_commit_sha,
-                            release,
                             namespace,
                             final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                    {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait --atomic'
+                    {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
                         % (release,
                             final_deploy_spec_dir,
                             namespace,
@@ -1832,8 +1831,9 @@ status:
                  {'cmd': 'docker tag %s %s' % (image_tag, dest_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'docker push %s' % dest_image_tag, 'output': 'unnecessary'},
                  {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from': 'k8s', 'output': [TestCliDriver.tiller_found], 'docker_image': TestCliDriver.image_name_kubectl},
-                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s-%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                         % (deploy_spec_dir,
+                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s-%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                         % (release,
+                            deploy_spec_dir,
                             namespace,
                             release,
                             TestCliDriver.cdp_dns_subdomain,
@@ -1842,10 +1842,9 @@ status:
                             aws_host,
                             TestCliDriver.ci_project_path.lower(),
                             prefix, TestCliDriver.ci_commit_sha,
-                            release,
                             namespace,
                             final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                 {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait --atomic'
+                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
                          % (release,
                             final_deploy_spec_dir,
                             namespace,
@@ -1890,8 +1889,9 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
-                {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % (deploy_spec_dir,
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
                         namespace,
                         release,
                         TestCliDriver.cdp_dns_subdomain,
@@ -1900,10 +1900,9 @@ status:
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
-                        release,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600 --tiller-namespace=%s --debug -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
