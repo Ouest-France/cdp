@@ -900,7 +900,7 @@ status:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -985,7 +985,7 @@ status:
                 {'cmd': cmdcurl, 'output': 'unnecessary'},                
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_conftest, 'output': 'unnecessary'},
                 {'cmd': 'test --policy policy --data data all_resources.yaml', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_conftest,'workingDir':chartdir},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1061,7 +1061,7 @@ status:
                            int_file,
                            namespace,
                            final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic --description deletionTimestamp=%s'
                         % (release,
                            final_deploy_spec_dir,
                            namespace,
@@ -1135,7 +1135,7 @@ status:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1210,7 +1210,7 @@ status:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1292,7 +1292,7 @@ status:
                               final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary',
                     'docker_image': TestCliDriver.image_name_helm},
                 {
-                    'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                    'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic --description deletionTimestamp=%s'
                            % (release,
                               final_deploy_spec_dir,
                               namespace,
@@ -1374,7 +1374,7 @@ status:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1446,7 +1446,7 @@ status:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace)
@@ -1509,7 +1509,7 @@ status:
                         values,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout %ss --history-max 20 -i --namespace=%s --force --wait --atomic --description deletionTimestamp=%s'
+                {'cmd': 'upgrade %s %s --timeout %ss --history-max 20 -i --namespace=%s --create-namespace --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         timeout,
@@ -1577,7 +1577,7 @@ status:
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace)
@@ -1654,7 +1654,7 @@ status:
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
@@ -1720,7 +1720,7 @@ status:
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --create-namespace --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
@@ -1778,7 +1778,7 @@ status:
                             TestCliDriver.ci_commit_sha,
                             namespace,
                             final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                    {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
+                    {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --create-namespace --wait --atomic'
                         % (release,
                             final_deploy_spec_dir,
                             namespace,
@@ -1844,7 +1844,7 @@ status:
                             prefix, TestCliDriver.ci_commit_sha,
                             namespace,
                             final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
+                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --create-namespace --wait --atomic'
                          % (release,
                             final_deploy_spec_dir,
                             namespace,
@@ -1902,7 +1902,7 @@ status:
                         TestCliDriver.ci_commit_sha,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --force --wait --atomic'
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 --tiller-namespace=%s -i --namespace=%s --create-namespace --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
