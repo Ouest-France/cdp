@@ -468,7 +468,8 @@ class CLIDriver(object):
         #command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
-        command = '%s --force' % command
+        command = '%s --create-namespace' % (command)
+        #command = '%s --force' % command
         command = '%s --wait' % command
         command = '%s --atomic' % command
 
