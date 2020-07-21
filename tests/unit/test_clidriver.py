@@ -911,7 +911,7 @@ status:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver({ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values },
+            self.__run_CLIDriver({ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4'},
                 verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST': docker_host, 'CI_ENVIRONMENT_NAME': env_name})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -995,7 +995,7 @@ status:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver({ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values },
+            self.__run_CLIDriver({ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4' },
                 verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST': docker_host, 'CI_ENVIRONMENT_NAME': env_name,'CDP_NO_CONFTEST':'false'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1146,7 +1146,7 @@ status:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
-            self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4' }, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1220,7 +1220,7 @@ status:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
-            self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--create-gitlab-secret', '--values=%s' % values }, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--create-gitlab-secret', '--values=%s' % values, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4'}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CI_ENVIRONMENT_NAME': 'staging','CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging, 'CDP_SECRET_STAGING_KEY': 'value 1'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1302,7 +1302,7 @@ status:
                               namespace), 'volume_from': 'k8s', 'output': 'unnecessary',
                     'docker_image': TestCliDriver.image_name_kubectl},
             ]
-            self.__run_CLIDriver({'k8s', '--use-gitlab-registry', '--namespace-project-branch-name','--create-gitlab-secret-hook','--values=%s' % values}, verif_cmd,
+            self.__run_CLIDriver({'k8s', '--use-gitlab-registry', '--namespace-project-branch-name','--create-gitlab-secret-hook','--values=%s' % values, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4'}, verif_cmd,
                 env_vars={'CI_RUNNER_TAGS': 'test, staging', 'CI_ENVIRONMENT_NAME': 'staging',
                           'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging,
                           'CDP_SECRET_STAGING_KEY': 'value 1'})
@@ -1381,7 +1381,7 @@ status:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
-            self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4' }, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1446,7 +1446,7 @@ status:
                         namespace)
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
             ]
-            self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4' }, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1514,7 +1514,7 @@ status:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes}, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4' }, verif_cmd,
                 env_vars = {'CDP_ECR_PATH' : aws_host,'CI_RUNNER_TAGS': 'test, test2'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1576,7 +1576,7 @@ status:
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
                 {'cmd': 'sleep %s' % sleep_override, 'output': 'unnecessary'}
             ]
-            self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
+            self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep ,'--docker-image-helm=ouestfrance/cdp-helm:3.2.4'},
                 verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name,'CDP_ECR_PATH' : aws_host, 'CI_RUNNER_TAGS': 'test', 'CDP_SLEEP': str(sleep_override)})
 
             mock_isdir.assert_any_call('%s/templates' % deploy_spec_dir)
@@ -1651,7 +1651,7 @@ status:
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
                 {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
             ]
-            self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--internal-port=%s' % internal_port, '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
+            self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--internal-port=%s' % internal_port, '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep,'--docker-image-helm=ouestfrance/cdp-helm:3.2.4' },
                 verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name, 'CI_RUNNER_TAGS': 'test','CDP_ECR_PATH' : aws_host})
 
             mock_isdir.assert_any_call('%s/templates' % deploy_spec_dir)
