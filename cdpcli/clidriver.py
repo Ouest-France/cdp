@@ -414,19 +414,22 @@ class CLIDriver(object):
 
         command = 'upgrade %s' % release
         command = '%s %s' % (command, final_deploy_spec_dir)
-        command = '%s --timeout %ss' % (command, self._context.opt['--timeout'])
+        if self._context.opt['--docker-image-helm'].startswith('3',21):
+          command = '%s --timeout %ss' % (command, self._context.opt['--timeout'])
+          command = '%s --history-max %s' % (command, 20)
+        else:
+          command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
         #Don't retain more than 20 release for history
-        command = '%s --history-max %s' % (command, 20)
         set_command = '--set namespace=%s' % namespace
 
         #Deprecated, we will detect if tiller is available in our namespace or in kube-system
-        if self._context.opt['--tiller-namespace']:
+        if self._context.opt['--tiller-namespace'] and self._context.opt['--docker-image-helm'].startswith('2',21):
             command = '%s --tiller-namespace=%s' % (command, namespace)
 
         tiller_length = 0
         tiller_json = ''
         try:
-            if not self._context.opt['--tiller-namespace']:
+            if not self._context.opt['--tiller-namespace'] and self._context.opt['--docker-image-helm'].startswith('2',21):
                 tiller_json = ''.join(kubectl_cmd.run('get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % ( namespace )))
                 tiller_length = len(pyjq.first('.items[] | .metadata.labels.name', json.loads(tiller_json)))
                 command = '%s --tiller-namespace=%s' % (command, namespace)
@@ -465,11 +468,14 @@ class CLIDriver(object):
                 if envVar.startswith(fileSecretEnvPattern.upper(), 0):
                     self.__create_secret("file-secret", envVar, envValue, fileSecretEnvPattern)
 
-        #command = '%s --debug' % command
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
-        command = '%s --create-namespace' % (command)
-        #command = '%s --force' % command
+        
+        if self._context.opt['--docker-image-helm'].startswith('3',21):
+          command = '%s --create-namespace' % (command)
+        else:
+          command = '%s --force' % command
+        
         command = '%s --wait' % command
         command = '%s --atomic' % command
 
@@ -482,7 +488,11 @@ class CLIDriver(object):
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
-        template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
+        if self._context.opt['--docker-image-helm'].startswith('3',21):
+          template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
+        else:
+          template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
+        
         template_command = '%s %s' % (template_command, set_command)
 
         if self._context.opt['--values']:
@@ -490,7 +500,8 @@ class CLIDriver(object):
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
             template_command = '%s %s' % (template_command, values)
 
-        #template_command = '%s --name=%s' % (template_command, release)
+        if self._context.opt['--docker-image-helm'].startswith('2',21):
+          template_command = '%s --name=%s' % (template_command, release)
         template_command = '%s --namespace=%s' % (template_command, namespace)
         template_command = '%s > %s' % (template_command, tmp_templating_file)
         helm_cmd.run(template_command)
