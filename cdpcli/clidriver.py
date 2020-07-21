@@ -74,7 +74,7 @@ Options:
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
     --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.16.198].
     --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.24.1].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:3.2.4].
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.16.3].
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.17.0].
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
@@ -397,11 +397,13 @@ class CLIDriver(object):
                 self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
                 with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], 'w') as outfile:
                     data = dict(
-                        apiVersion = 'v2',
+                        apiVersion = 'v1',
                         description = 'A Helm chart for Kubernetes',
                         name = os.environ['CI_PROJECT_NAME'],
                         version = '0.1.0'
                     )
+                    if self._context.opt['--docker-image-helm'].startswith('3',21):
+                      data['apiVersion'] = 'v2'
                     yaml.dump(data, outfile)
 
         final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
