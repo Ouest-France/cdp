@@ -36,6 +36,7 @@ Usage:
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
+        [--use-docker-compose]
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
@@ -109,7 +110,7 @@ Options:
     --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
-    --use-docker-compose                                       Use docker-compose to build / push image.
+    --use-docker-compose                                       Use docker-compose to build / push image./ retag container
     --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
@@ -363,20 +364,28 @@ class CLIDriver(object):
             tag = self.__getTagSha1()
             pullPolicy = 'IfNotPresent'
             if "CDP_TAG_PREFIX" in os.environ:
-               needToTag = True
-               tag = "%s-%s" % (os.environ["CDP_TAG_PREFIX"], tag)
-               source_image_tag = self.__getImageTag(self.__getImageName(),  self.__getTagSha1())
-               dest_image_tag = self.__getImageTag(self.__getImageName(), tag)
-               LOG.info("Ajout du tag %s sur l'image %s" % (tag, source_image_tag))
-               # Pull de l'image
-               self._cmd.run_command('docker pull %s' % (source_image_tag))
-               # Tag de l'image
-               self._cmd.run_command('docker tag %s %s' % (source_image_tag, dest_image_tag))
-               # Push docker image
-               self._cmd.run_command('docker push %s' % (dest_image_tag))
+              needToTag = True
+              if self._context.opt['--use-docker-compose']:
+                LOG.info("Mode docker compose for retag")
+                docker_services = self._cmd.run_command('docker-compose config --services')
+                for docker_service in docker_services:
+                  image_repo = self.__getImageName() + '/%s' % docker_service
+                  self.__buildTagAndPushOnDockerRegistryWithPrefix(self,image_repo)
+              else:
+                try:
+                  self.__buildTagAndPushOnDockerRegistryWithPrefix(self,self.__getImageName())
+                except Exception as e:
+                  try:
+                    LOG.info("Mode docker compose for retag")
+                    docker_services = self._cmd.run_command('docker-compose config --services')
+                    for docker_service in docker_services:
+                      image_repo = self.__getImageName() + '/%s' % docker_service
+                      self.__buildTagAndPushOnDockerRegistryWithPrefix(self,image_repo)
+                  except Exception as e:
+                    LOG.error(str(e))
         else:
-            tag = self.__getTagBranchName()
-            pullPolicy = 'Always'
+          tag = self.__getTagBranchName()
+          pullPolicy = 'Always'
 
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
@@ -632,7 +641,19 @@ class CLIDriver(object):
              if 'template' in doc['spec'].keys():
                 doc['spec']['template']['metadata']['labels']['team'] = team
         return doc
-
+    @staticmethod
+    def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo):
+        prefixTag = "%s-%s" % (os.environ["CDP_TAG_PREFIX"], self.__getTagSha1())
+        source_image_tag = self.__getImageTag(image_repo,  self.__getTagSha1())
+        dest_image_tag = self.__getImageTag(image_repo, prefixTag)
+        LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
+        # Pull de l'image
+        self._cmd.run_command('docker pull %s' % (source_image_tag))
+        # Tag de l'image
+        self._cmd.run_command('docker tag %s %s' % (source_image_tag, dest_image_tag))
+        # Push docker image
+        self._cmd.run_command('docker push %s' % (dest_image_tag))
+        
     def __buildTagAndPushOnDockerRegistry(self, tag):
         os.environ['CDP_TAG'] = tag
         if self._context.opt['--use-docker-compose']:
