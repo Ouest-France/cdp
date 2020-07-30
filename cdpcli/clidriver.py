@@ -36,7 +36,7 @@ Usage:
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
-        [--use-docker-compose]
+        [(--use-docker-compose)]
         [--values=<files>]
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
@@ -45,9 +45,9 @@ Usage:
         [--volume-from=<host_type>]
         [--create-gitlab-secret]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-custom-name=<value>]
+        [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
         [--image-pull-secret]
-        [--conftest-repo=<gitlab repo>] [--no-conftest] [--conftest-namespaces=<namespaces>]
+        [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
     cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>] 
         [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -99,7 +99,7 @@ Options:
     --preview                                                  Run issues mode (Preview).
     --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<release_name>                       Customize release name with namepsace-name-<value>
+    --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --sast                                                     Static Application Security Testing mode.
@@ -110,7 +110,7 @@ Options:
     --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
-    --use-docker-compose                                       Use docker-compose to build / push image./ retag container
+    --use-docker-compose                                       Use docker-compose to build / push image / retag container
     --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
@@ -355,8 +355,6 @@ class CLIDriver(object):
         kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
         helm_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-helm'], self._context.opt['--volume-from'], True)
         
-        needToTag = False
-        
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
             pullPolicy = 'Always'
@@ -364,25 +362,28 @@ class CLIDriver(object):
             tag = self.__getTagSha1()
             pullPolicy = 'IfNotPresent'
             if "CDP_TAG_PREFIX" in os.environ:
-              needToTag = True
+              tag = '%s-%s' % (os.environ["CDP_TAG_PREFIX"],self.__getTagSha1())
               if self._context.opt['--use-docker-compose']:
                 LOG.info("Mode docker compose for retag")
                 docker_services = self._cmd.run_command('docker-compose config --services')
                 for docker_service in docker_services:
                   image_repo = self.__getImageName() + '/%s' % docker_service
-                  self.__buildTagAndPushOnDockerRegistryWithPrefix(self,image_repo)
+                  self.__buildTagAndPushOnDockerRegistryWithPrefix(image_repo)
               else:
                 try:
-                  self.__buildTagAndPushOnDockerRegistryWithPrefix(self,self.__getImageName())
+                  LOG.info("default check for image")
+                  self.__buildTagAndPushOnDockerRegistryWithPrefix(self.__getImageName())
                 except Exception as e:
+                  LOG.info(str(e))
                   try:
-                    LOG.info("Mode docker compose for retag")
+                    LOG.info("Mode docker compose for retag if we can't find the image in the default path ( maybe a package error or --use-docker-compose parameter is missing on cdp k8s ?)")
                     docker_services = self._cmd.run_command('docker-compose config --services')
                     for docker_service in docker_services:
                       image_repo = self.__getImageName() + '/%s' % docker_service
-                      self.__buildTagAndPushOnDockerRegistryWithPrefix(self,image_repo)
+                      self.__buildTagAndPushOnDockerRegistryWithPrefix(image_repo)
                   except Exception as e:
                     LOG.error(str(e))
+                
         else:
           tag = self.__getTagBranchName()
           pullPolicy = 'Always'
@@ -617,6 +618,7 @@ class CLIDriver(object):
                  doc['spec']['jobTemplate']['spec']['template']['spec']['imagePullSecrets'] = [{'name': '%s' % image_pull_secret_value}]
                  LOG.info('Add imagePullSecret')
         return doc
+
     @staticmethod
     def addMonitoringLabel(doc,escalation):
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Service':
@@ -641,19 +643,22 @@ class CLIDriver(object):
              if 'template' in doc['spec'].keys():
                 doc['spec']['template']['metadata']['labels']['team'] = team
         return doc
-    @staticmethod
+
     def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo):
         prefixTag = "%s-%s" % (os.environ["CDP_TAG_PREFIX"], self.__getTagSha1())
         source_image_tag = self.__getImageTag(image_repo,  self.__getTagSha1())
         dest_image_tag = self.__getImageTag(image_repo, prefixTag)
         LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
         # Pull de l'image
-        self._cmd.run_command('docker pull %s' % (source_image_tag))
+        try:
+          self._cmd.run_command('docker pull %s' % (source_image_tag))
+        except:
+          raise ValueError('Docker image not found')
         # Tag de l'image
         self._cmd.run_command('docker tag %s %s' % (source_image_tag, dest_image_tag))
         # Push docker image
         self._cmd.run_command('docker push %s' % (dest_image_tag))
-        
+
     def __buildTagAndPushOnDockerRegistry(self, tag):
         os.environ['CDP_TAG'] = tag
         if self._context.opt['--use-docker-compose']:
@@ -669,7 +674,9 @@ class CLIDriver(object):
             # Tag docker image
             docker_build_command = 'docker build -t %s %s' % (image_tag, self._context.opt['--build-context'])
             if self._context.opt['--docker-build-target']:
-                docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
+              docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
+            if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and (self._context.opt['--use-custom-registry'] or self._context.opt['--use-registry'] == 'artifactory' or self._context.opt['--use-registry'] == 'custom'):
+              docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
             self._cmd.run_command(docker_build_command)
 
             # Push docker image
