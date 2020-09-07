@@ -14,6 +14,9 @@ class DockerCommand(object):
         self._volume_from = volume_from
         self._with_entrypoint = with_entrypoint
         self._cmd.run_command('docker pull %s' % docker_image)
+        
+        if "CDP_DEBUG" in os.environ:
+          LOG.setLevel(logging.VERBOSE)
 
     def run(self, prg_cmd, dry_run = None, timeout = None, workingDir = True):
         run_docker_cmd = 'docker run --rm -e DOCKER_HOST'
