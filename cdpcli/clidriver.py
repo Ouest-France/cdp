@@ -484,7 +484,7 @@ class CLIDriver(object):
         command = '%s --namespace=%s' % (command, namespace)
         
         if self._context.opt['--docker-image-helm'].startswith('3',21):
-          command = '%s --create-namespace' % (command)
+          #command = '%s --create-namespace' % (command)
         else:
           command = '%s --force' % command
         
