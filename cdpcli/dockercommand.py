@@ -34,6 +34,7 @@ class DockerCommand(object):
             run_docker_cmd = '%s --volumes-from $(docker ps -aqf "name=${HOSTNAME}-build")' % (run_docker_cmd)
           elif self._volume_from == 'local':
             run_docker_cmd = '%s -v $PWD:$PWD' % (run_docker_cmd)
+            run_docker_cmd = '%s -v /run/secrets/kubernetes.io/serviceaccount:/run/secrets/kubernetes.io/serviceaccount' % (run_docker_cmd)
           else:  
             run_docker_cmd = '%s -v %s' % (run_docker_cmd, self._volume_from)
         
