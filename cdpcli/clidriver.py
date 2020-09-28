@@ -32,7 +32,7 @@ Usage:
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] [--image-tag-prefix]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
@@ -89,6 +89,7 @@ Options:
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
+    --image-tag-prefix                                         Tag prefix for docker image.
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
@@ -361,8 +362,9 @@ class CLIDriver(object):
         elif self._context.opt['--image-tag-sha1']:
             tag = self.__getTagSha1()
             pullPolicy = 'IfNotPresent'
-            if "CDP_TAG_PREFIX" in os.environ:
-              tag = '%s-%s' % (os.environ["CDP_TAG_PREFIX"],self.__getTagSha1())
+            prefix = self._context.getParamOrEnv("image-tag-prefix")
+            if prefix:
+              tag = '%s-%s' % (prefix,self.__getTagSha1())
               if self._context.opt['--use-docker-compose']:
                 LOG.info("Mode docker compose for retag")
                 docker_services = self._cmd.run_command('docker-compose config --services')
@@ -645,7 +647,8 @@ class CLIDriver(object):
         return doc
 
     def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo):
-        prefixTag = "%s-%s" % (os.environ["CDP_TAG_PREFIX"], self.__getTagSha1())
+        prefix = self._context.getParamOrEnv("image-tag-prefix")
+        prefixTag = "%s-%s" % (prefix, self.__getTagSha1())
         source_image_tag = self.__getImageTag(image_repo,  self.__getTagSha1())
         dest_image_tag = self.__getImageTag(image_repo, prefixTag)
         LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
@@ -856,12 +859,12 @@ class CLIDriver(object):
       <charts>   : Tableau des charts à controller
     '''
     def __runConftest(self, chartdir, charts, withWorkingDir=True):
-        no_conftest = self.__getParamOrEnv('no-conftest')
+        no_conftest = self._context.getParamOrEnv('no-conftest')
         if (no_conftest is True or no_conftest == "true"):
             return
 
        
-        conftest_repo = self.__getParamOrEnv('conftest-repo')
+        conftest_repo = self._context.getParamOrEnv('conftest-repo')
         if (conftest_repo != "" and conftest_repo != "none" ):
             try: 
                repo = conftest_repo.split(":")
@@ -891,7 +894,7 @@ class CLIDriver(object):
            cmd = "%s --data data" % cmd
 
         # Boucle sur tous les namespaces
-        conftest_ns = self.__getParamOrEnv('conftest-namespaces').split(",")
+        conftest_ns = self._context.getParamOrEnv('conftest-namespaces').split(",")
         LOG.info("=============================================================")
         LOG.info("== CONFTEST                                               ==")
         LOG.info("=============================================================")
@@ -904,14 +907,6 @@ class CLIDriver(object):
           conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, chartdir if withWorkingDir else False)
 
 
-    ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
-    def __getParamOrEnv(self, param):
-        envvar = "CDP_%s" % param.upper().replace("-","_")
-        commandlineParam = "--%s" % param
-        value = self._context.opt[commandlineParam]
-        if ((not self._context.opt[commandlineParam] or self._context.opt[commandlineParam] == '') and os.getenv(envvar, None) is not None):
-           value = os.getenv(envvar)
-        return value
 
     @staticmethod
     def verbose(verbose):
