@@ -32,7 +32,8 @@ Usage:
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] [--image-tag-prefix]
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
+        [--image-prefix-tag=<tag>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
@@ -89,7 +90,7 @@ Options:
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
-    --image-tag-prefix                                         Tag prefix for docker image.
+    --image-prefix-tag=<tag>                                   Tag prefix for docker image.
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
@@ -362,7 +363,7 @@ class CLIDriver(object):
         elif self._context.opt['--image-tag-sha1']:
             tag = self.__getTagSha1()
             pullPolicy = 'IfNotPresent'
-            prefix = self._context.getParamOrEnv("image-tag-prefix")
+            prefix = self._context.getParamOrEnv("image-prefix-tag")
             if prefix:
               tag = '%s-%s' % (prefix,self.__getTagSha1())
               if self._context.opt['--use-docker-compose']:
@@ -647,7 +648,7 @@ class CLIDriver(object):
         return doc
 
     def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo):
-        prefix = self._context.getParamOrEnv("image-tag-prefix")
+        prefix = self._context.getParamOrEnv("image-prefix-tag")
         prefixTag = "%s-%s" % (prefix, self.__getTagSha1())
         source_image_tag = self.__getImageTag(image_repo,  self.__getTagSha1())
         dest_image_tag = self.__getImageTag(image_repo, prefixTag)
