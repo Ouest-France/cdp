@@ -37,7 +37,8 @@ Usage:
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
+        [--image-prefix-tag=<tag>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
@@ -94,6 +95,7 @@ Options:
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
+    --image-prefix-tag=<tag>                                   Tag prefix for docker image.
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
@@ -170,7 +172,7 @@ docker|k8s:
   - CDP_DNS_SUBDOMAIN – Specify the subdomain of k8s cluster (set by environment variable in runner).
   - CDP_IMAGE_PULL_SECRET – Add the imagePullSecret value to use the helm --wait option instead of patch and rollout.
   - CDP_NAMESPACE – if value = 'project-name', force usage of project name to create k8s namespace.
-  - CDP_TAG_PREFIX - Prefix of the tag when pushing to registry (for --image-tag-sha1 only)
+  - CDP_IMAGE_PREFIX_TAG - Prefix of the tag when pushing to registry (for --image-tag-sha1 only)
   --use-registry=aws-ecr:
     - AWS_ACCESS_KEY_ID (Gitlab-runner env var) – AWS access key.
     - AWS_SECRET_ACCESS_KEY (Gitlab-runner env var) – AWS secret key. Access and secret key variables override credentials stored in credential and config files.
