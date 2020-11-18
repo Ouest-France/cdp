@@ -487,7 +487,13 @@ class CLIDriver(object):
         command = '%s --namespace=%s' % (command, namespace)
         
         if self._context.opt['--docker-image-helm'].startswith('3',21):
-          command = '%s --create-namespace' % (command)
+        
+            try:
+                kubectl_cmd.run('get namespace %s', namespace)
+            except Exception as e:
+                LOG.verbose("Namespace not exists, create it")
+                command = '%s --create-namespace' % (command)
+
         else:
           command = '%s --force' % command
         
