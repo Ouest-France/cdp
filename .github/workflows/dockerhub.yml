@@ -2,7 +2,7 @@ name: Tag
 on:
   push:
      tags-ignore:
-       - *
+       - '**'
   release:
      types: [published,released] 
 jobs:
