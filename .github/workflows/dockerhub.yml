@@ -6,7 +6,9 @@ on:
      tags-ignore:
        - 'v**'
   release:
-     types: [published,released] 
+     types: [prereleased,released] 
+env:
+  IMAGE_PREFIX: ouestfrance/cdp
 jobs:
   build:
     name: Build
@@ -21,16 +23,16 @@ jobs:
         id: get_image_tag
         run:  |
           if [[ "${{github.event_name}}" == "release" ]]; then
-             TAG=ouestfrance/cdp:${{ github.event.release.tag_name }}
+             TAG=$IMAGE_PREFIX:${{ github.event.release.tag_name }}
              if [[ "${{github.event.release.prerelease}}" == "false" ]];then
-                TAG=$TAG,ouestfrance/cdp:stable
+                TAG=$TAG,$IMAGE_PREFIX:stable
              fi
           fi
           if [[ "${{github.event_name}}" != "release" ]]; then
-             TAG=ouestfrance/cdp:${GITHUB_REF#refs/*/}-${{github.run_number}}
+             TAG=$IMAGE_PREFIX:${GITHUB_REF#refs/*/}-${{github.run_number}}
           fi
           if [[ "${{github.event_name}}" == "push" && "${{github.ref}}" == "refs/heads/master" ]]; then
-             TAG=$TAG,ouestfrance/cdp:latest 
+             TAG=$TAG,$IMAGE_PREFIX:latest 
           fi
           echo ::set-output name=TAGS::$TAG       
       - name: Set up Python
