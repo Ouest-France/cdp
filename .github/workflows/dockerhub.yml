@@ -1,7 +1,10 @@
 name: Tag
 on:
   push:
-  
+    branches-ignore: 
+      - master
+  release:
+     types: [created,published] 
 jobs:
   build:
     name: Build
