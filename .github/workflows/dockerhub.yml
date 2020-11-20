@@ -1,8 +1,6 @@
 name: Tag
 on:
   push:
-    branches-ignore: 
-      - master
   release:
      types: [created,published] 
 jobs:
@@ -15,9 +13,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get the version
-        id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/heads/}
+      - name: Get image tag
+        id: get_image_tag
+        run:  |
+          if [[ "${{github.event_name}}" == "release" ]]; then
+             echo ::set-output name=VERSION::${{ github.event.release.tag_name }}
+          fi
+          if [[ "${{github.event_name}}" != "release" ]]; then
+             echo ::set-output name=VERSION::${GITHUB_REF | cut -d / -f 3)}-${{github.job}}
+          fi
+        
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -43,5 +48,5 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          push: true
-          tags: ouestfrance/cdp:${{ steps.get_version.outputs.VERSION }}
+          push: false
+          tags: ouestfrance/cdp:${{ steps.get_image_tag.outputs.VERSION }}
