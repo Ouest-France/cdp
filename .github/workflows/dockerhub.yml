@@ -2,8 +2,6 @@ name: Tag
 on:
   push:
      branches:
-     tags-ignore:
-       - 'v**'
   release:
      types: [published,released] 
 jobs:
