@@ -17,12 +17,15 @@ jobs:
         id: get_image_tag
         run:  |
           if [[ "${{github.event_name}}" == "release" ]]; then
-             echo ::set-output name=VERSION::${{ github.event.release.tag_name }}
+             TAG=ouestfrance/cdp:${{ github.event.release.tag_name }},ouestfrance/cdp:stable
           fi
           if [[ "${{github.event_name}}" != "release" ]]; then
-             echo ::set-output name=VERSION::${GITHUB_REF#refs/*/}-${{github.run_number}}
+             TAG=ouestfrance/cdp:${GITHUB_REF#refs/*/}-${{github.run_number}}
           fi
-        
+          if [[ "${{github.event_name}}" == "push" && "${{github.ref}}" == "refs/heads/master" ]]; then
+             TAG=$TAG,ouestfrance/cdp:latest 
+          fi
+          echo ::set-output name=TAGS::$TAG       
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -49,4 +52,4 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: false
-          tags: ouestfrance/cdp:${{ steps.get_image_tag.outputs.VERSION }}
+          tags: ${{ steps.get_image_tag.outputs.TAGS }}
