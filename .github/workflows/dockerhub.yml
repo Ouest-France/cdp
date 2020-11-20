@@ -20,7 +20,7 @@ jobs:
              echo ::set-output name=VERSION::${{ github.event.release.tag_name }}
           fi
           if [[ "${{github.event_name}}" != "release" ]]; then
-             echo ::set-output name=VERSION::${GITHUB_REF | cut -d / -f 3}-${{github.job}}
+             echo ::set-output name=VERSION::${GITHUB_REF#refs/*/}-${{github.run_number}}
           fi
         
       - name: Set up Python
