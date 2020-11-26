@@ -29,6 +29,9 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
+        # Login to Dockerhub if needed
+        self.__loginDockerhub()
+
         if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
             prefix = self.getParamOrEnv("image-prefix-tag")
             if opt['maven'] or opt['docker'] or (opt['k8s'] and prefix):
@@ -148,6 +151,14 @@ class Context(object):
         if attr is None:
             raise ValueError('Compatible with gitlab >= 10.8 or deploy token with the name gitlab-deploy-token and the scope read_registry must be created in this project.')
         return attr
+
+    def __loginDockerhub(self):
+        registry = os.getenv('CDP_DOCKERHUB_REGISTRY',None)
+        registry_user = os.getenv('CDP_DOCKERHUB_REGISTRY_USER',None)
+        registry_token = os.getenv('CDP_DOCKERHUB_READ_ONLY_TOKEN',None)
+        if registry_user is not None and registry_token is not None and registry is not None:
+           self._cmd.run_secret_command('docker login -u %s -p %s https://%s' % (registry_user, self.string_protected(registry_token), registry))
+
 
     def __login(self, registry, registry_user, registry_token):
         # Activate login, only specific stage.
