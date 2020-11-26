@@ -11,6 +11,7 @@ class Context(object):
     def __init__(self, opt, cmd):
         self._opt = opt
         self._cmd = cmd
+        self._registry = None
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
@@ -89,6 +90,7 @@ class Context(object):
                                         os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None),
                                         os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None))
 
+
     def __set_registry(self,registry,user_ro,token_ro):
         self._registry = registry
         self._registry_user_ro = user_ro
@@ -165,7 +167,7 @@ class Context(object):
         prefix = self.getParamOrEnv("image-prefix-tag")
         if self._opt['maven'] or self._opt['docker'] or (self._opt['k8s'] and prefix):
             if registry_user is not None and registry_token is not None and registry is not None:
-                self._cmd.run_secret_command('docker login -u %s -p %s https://%s' % (registry_user, self.string_protected(registry_token), registry))
+                self._cmd.run_secret_command('docker login -u %s -p %s' % (registry_user, self.string_protected(registry_token)))
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
     def getParamOrEnv(self, param):
         envvar = "CDP_%s" % param.upper().replace("-","_")
