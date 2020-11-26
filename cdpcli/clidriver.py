@@ -22,7 +22,7 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
-        (--image-tag-branch-name | --image-tag-latest | --image-tag-sha1)
+        [--image-tag-branch-name | --image-tag-latest |--image-tag-sha1]
         [--build-context=<path>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--login-registry=<registry_name>]
@@ -32,7 +32,7 @@ Usage:
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
-        (--image-tag-branch-name | --image-tag-latest | --image-tag-sha1)
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
         [--image-prefix-tag=<tag>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
