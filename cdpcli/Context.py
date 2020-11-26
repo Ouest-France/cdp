@@ -155,12 +155,10 @@ class Context(object):
         return attr
 
     def __loginDockerhub(self):
-        registry = os.getenv('CDP_DOCKERHUB_REGISTRY',None)
         registry_user = os.getenv('CDP_DOCKERHUB_REGISTRY_USER',None)
         registry_token = os.getenv('CDP_DOCKERHUB_READ_ONLY_TOKEN',None)
-        if registry_user is not None and registry_token is not None and registry is not None:
+        if registry_user is not None and registry_token is not None:
            self._cmd.run_secret_command('docker login -u %s -p %s' % (registry_user, self.string_protected(registry_token)))
-
 
     def __login(self, registry, registry_user, registry_token):
         # Activate login, only specific stage.
@@ -168,6 +166,7 @@ class Context(object):
         if self._opt['maven'] or self._opt['docker'] or (self._opt['k8s'] and prefix):
             if registry_user is not None and registry_token is not None and registry is not None:
                 self._cmd.run_secret_command('docker login -u %s -p %s https://%s' % (registry_user, self.string_protected(registry_token), registry))
+
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
     def getParamOrEnv(self, param):
         envvar = "CDP_%s" % param.upper().replace("-","_")
