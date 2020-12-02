@@ -698,9 +698,9 @@ class CLIDriver(object):
         self.__runConftest(dir,files,False)
 
     def __callArtifactoryFile(self, tag, upload_file, http_verb):
-        if http_verb is 'PUT':
+        if http_verb == 'PUT':
             self._cmd.run_command('curl --fail -X PUT %s/%s/%s/ -H X-JFrog-Art-Api:%s -T %s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, os.environ['CDP_ARTIFACTORY_TOKEN'], upload_file))
-        elif http_verb is 'DELETE':
+        elif http_verb == 'DELETE':
             self._cmd.run_command('curl --fail -X DELETE %s/%s/%s/%s -H X-JFrog-Art-Api:%s' % (os.environ['CDP_ARTIFACTORY_PATH'], self._context.repository, tag, upload_file, os.environ['CDP_ARTIFACTORY_TOKEN']))
 
     def __validator(self):
