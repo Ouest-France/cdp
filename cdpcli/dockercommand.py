@@ -19,7 +19,7 @@ class DockerCommand(object):
         run_docker_cmd = 'docker run --rm -e DOCKER_HOST'
 
         for env in os.environ:
-            if env.startswith('CI') or env.startswith('CDP') or env.startswith('AWS') or env.startswith('GIT') or env.startswith('KUBERNETES') or or env.startswith('http'):
+            if env.startswith('CI') or env.startswith('CDP') or env.startswith('AWS') or env.startswith('GIT') or env.startswith('KUBERNETES') or env.startswith('http'):
                 run_docker_cmd = '%s -e %s' % (run_docker_cmd, env)
 
         run_docker_cmd = '%s -v /var/run/docker.sock:/var/run/docker.sock' % (run_docker_cmd)
