@@ -5,6 +5,7 @@ import os
 import re
 
 from .dockercommand import DockerCommand
+from .awscommand import AwsCommand
 
 class Context(object):
 
@@ -18,7 +19,7 @@ class Context(object):
 
         if opt['--login-registry'] and opt['--login-registry'] != opt['--use-registry']:
             if opt['--login-registry'] == 'aws-ecr':
-                aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
+                aws_cmd = AwsCommand(cmd, "", None, True)
                 login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', dry_run=False)[0].strip())
                 self._registry = login_regex[0][2]
                 self._registry_user_ro = login_regex[0][0]
@@ -30,15 +31,13 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
-        # Login to Dockerhub if needed
-        self.__loginDockerhub()
 
         if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
             prefix = self.getParamOrEnv("image-prefix-tag")
             if opt['maven'] or opt['docker'] or (opt['k8s'] and prefix):
                 if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr' :
                     ### Get login from AWS-CLI
-                    aws_cmd = DockerCommand(cmd, opt['--docker-image-aws'], None, True)
+                    aws_cmd = AwsCommand(cmd, "", None, True)
                     login_regex = re.findall('docker login -u (.*) -p (.*) https://(.*)', aws_cmd.run('ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', dry_run=False)[0].strip())
                     self._registry = login_regex[0][2]
                     self._registry_user_ro = login_regex[0][0]
@@ -165,7 +164,8 @@ class Context(object):
         prefix = self.getParamOrEnv("image-prefix-tag")
         if self._opt['maven'] or self._opt['docker'] or (self._opt['k8s'] and prefix):
             if registry_user is not None and registry_token is not None and registry is not None:
-                self._cmd.run_secret_command('docker login -u %s -p %s https://%s' % (registry_user, self.string_protected(registry_token), registry))
+                self._cmd.run_secret_command('echo "{\\\"auths\\\":{\\\"%s\\\":{\\\"username\\\":\\\"%s\\\",\\\"password\\\":\\\"%s\\\"}}}" > ~/.docker/config.json' % ( registry, registry_user, registry_token))
+                self._cmd.run('cat ~/.docker/config.json')
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
     def getParamOrEnv(self, param):

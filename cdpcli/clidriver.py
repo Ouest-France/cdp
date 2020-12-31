@@ -1,11 +1,11 @@
 #!/usr/bin/env python3.6
 
 """
-Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
+Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI (V1.0).
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image=<image_name>) (--command=<cmd>)
-        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
+        [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--docker-image-maven=<image_name_maven>|--docker-version=<version>) (--goals=<goals-opts>|--deploy=<type>)
@@ -16,11 +16,10 @@ Usage:
         [--altDeploymentRepository=<repository_name>]
         [--login-registry=<registry_name>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
-        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
+        (--preview | --publish) (--codeclimate | --sast)
+        [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--build-context=<path>]
@@ -30,8 +29,7 @@ Usage:
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
-    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
+    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]        
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
         [--image-prefix-tag=<tag>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
@@ -49,7 +47,7 @@ Usage:
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
         [--image-pull-secret]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
-    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>] 
+    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>)
         [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -74,14 +72,6 @@ Options:
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.16.198].
-    --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.24.1].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.17.0-alpine].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.17.0].
-    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
-    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
-    --docker-image-vault=<image_name_git>                      Docker image which execute vault command [default: vault:1.13.0].
-    --docker-image-conftest=<image_name_conftest>                   Docker image which execute conftest command [default: instrumenta/conftest:v0.18.2].
     --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-build-target=<target_name>                        Specify target in multi stage build
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
@@ -133,6 +123,11 @@ from .Context import Context
 from .clicommand import CLICommand
 from cdpcli import __version__
 from .dockercommand import DockerCommand
+from .gitcommand import GitCommand
+from .awscommand import AwsCommand
+from .kubectlcommand import KubectlCommand
+from .helmcommand import HelmCommand
+from .conftestcommand import ConftestCommand
 from docopt import docopt, DocoptExit
 from .PropertiesParser import PropertiesParser
 from .Yaml import Yaml
@@ -254,11 +249,7 @@ class CLIDriver(object):
 
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
-        if self._context.opt['--docker-version'] is not None and self._context.opt['--docker-version'] != "3.5.3-jdk-8":
-            maven_cmd = DockerCommand(self._cmd, 'maven:%s' % (self._context.opt['--docker-version']), self._context.opt['--volume-from'])
-        else:
-            maven_cmd = DockerCommand(self._cmd, '%s' % (self._context.opt['--docker-image-maven']), self._context.opt['--volume-from'])
-        maven_cmd.run(command)
+        self._cmd.run_command(command)
 
 
     def __sonar(self):
@@ -300,12 +291,12 @@ class CLIDriver(object):
         if self._context.opt['--preview']:
             command = "%s -Dsonar.analysis.mode=preview" % command
 
-        sonar_scanner_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-sonar-scanner'], self._context.opt['--volume-from'], True)
+        sonar_scanner_cmd = DockerCommand(self._cmd, '', self._context.opt['--volume-from'], True)
         sonar_scanner_cmd.run(command)
 
     def __docker(self):
         if self._context.opt['--use-aws-ecr'] or self._context.opt['--use-registry'] == 'aws-ecr':
-            aws_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-aws'], None, True)
+            aws_cmd = AwsCommand(self._cmd, '', None, True)
 
             repos = []
 
@@ -354,8 +345,8 @@ class CLIDriver(object):
             self.__callArtifactoryFile(self.__getTagSha1(), upload_file, http_verb)
 
     def __k8s(self):
-        kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
-        helm_cmd = DockerCommand(self._cmd, self._context.getParamOrEnv('docker-image-helm'), self._context.opt['--volume-from'], True)
+        kubectl_cmd = KubectlCommand(self._cmd, '', self._context.opt['--volume-from'], True)
+        helm_cmd = HelmCommand(self._cmd, '', self._context.opt['--volume-from'], True)
         
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
@@ -415,8 +406,7 @@ class CLIDriver(object):
                         name = os.environ['CI_PROJECT_NAME'],
                         version = '0.1.0'
                     )
-                    if self._context.opt['--docker-image-helm'].startswith('3',21):
-                      data['apiVersion'] = 'v2'
+                    data['apiVersion'] = 'v2'
                     yaml.dump(data, outfile)
 
         final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
@@ -429,28 +419,13 @@ class CLIDriver(object):
 
         command = 'upgrade %s' % release
         command = '%s %s' % (command, final_deploy_spec_dir)
-        if self._context.opt['--docker-image-helm'].startswith('3',21):
-          command = '%s --timeout %ss' % (command, self._context.opt['--timeout'])
-          command = '%s --history-max %s' % (command, 20)
-        else:
-          command = '%s --timeout %s' % (command, self._context.opt['--timeout'])
+        command = '%s --timeout %ss' % (command, self._context.opt['--timeout'])
+        command = '%s --history-max %s' % (command, 20)
         #Don't retain more than 20 release for history
         set_command = '--set namespace=%s' % namespace
 
-        #Deprecated, we will detect if tiller is available in our namespace or in kube-system
-        if self._context.opt['--tiller-namespace'] and self._context.opt['--docker-image-helm'].startswith('2',21):
-            command = '%s --tiller-namespace=%s' % (command, namespace)
-
         tiller_length = 0
         tiller_json = ''
-        try:
-            if not self._context.opt['--tiller-namespace'] and self._context.opt['--docker-image-helm'].startswith('2',21):
-                tiller_json = ''.join(kubectl_cmd.run('get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % ( namespace )))
-                tiller_length = len(pyjq.first('.items[] | .metadata.labels.name', json.loads(tiller_json)))
-                command = '%s --tiller-namespace=%s' % (command, namespace)
-        except Exception as e:
-            # Not present
-            LOG.verbose(str(e))
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
             set_command = '%s --set service.internalPort=%s' % (set_command, self._context.opt['--internal-port'])
@@ -486,16 +461,11 @@ class CLIDriver(object):
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
         
-        if self._context.opt['--docker-image-helm'].startswith('3',21):
-        
-            try:
-                kubectl_cmd.run('get namespace %s' % (namespace))
-            except Exception as e:
-                LOG.verbose("Namespace not exists, create it")
-                command = '%s --create-namespace' % (command)
-
-        else:
-          command = '%s --force' % command
+        try:
+            kubectl_cmd.run('get namespace %s' % (namespace))
+        except Exception as e:
+            LOG.verbose("Namespace not exists, create it")
+            command = '%s --create-namespace' % (command)
         
         command = '%s --wait' % command
         command = '%s --atomic' % command
@@ -509,11 +479,7 @@ class CLIDriver(object):
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
-        if self._context.opt['--docker-image-helm'].startswith('3',21):
-          template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
-        else:
-          template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
-        
+        template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
         template_command = '%s %s' % (template_command, set_command)
 
         if self._context.opt['--values']:
@@ -521,8 +487,6 @@ class CLIDriver(object):
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
             template_command = '%s %s' % (template_command, values)
 
-        if self._context.opt['--docker-image-helm'].startswith('2',21):
-          template_command = '%s --name=%s' % (template_command, release)
         template_command = '%s --namespace=%s' % (template_command, namespace)
         template_command = '%s > %s' % (template_command, tmp_templating_file)
         helm_cmd.run(template_command)
@@ -682,15 +646,12 @@ class CLIDriver(object):
             image_tag = self.__getImageTag(self.__getImageName(), tag)
 
             # Tag docker image
-            docker_build_command = 'docker build -t %s %s' % (image_tag, self._context.opt['--build-context'])
+            docker_build_command = '/kaniko/executor --context %s --dockerfile %s/Dockerfile --destination %s' % (self._context.opt['--build-context'],self._context.opt['--build-context'],image_tag)
             if self._context.opt['--docker-build-target']:
               docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and (self._context.opt['--use-custom-registry'] or self._context.opt['--use-registry'] == 'artifactory' or self._context.opt['--use-registry'] == 'custom'):
               docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
             self._cmd.run_command(docker_build_command)
-
-            # Push docker image
-            self._cmd.run_command('docker push %s' % (image_tag))
             
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']
@@ -797,7 +758,7 @@ class CLIDriver(object):
 
     def __simulate_merge_on(self, force_git_config = False):
         if force_git_config or self._context.opt['--simulate-merge-on']:
-            git_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-git'], self._context.opt['--volume-from'], True)
+            git_cmd = GitCommand(self._cmd, '', self._context.opt['--volume-from'], True)
 
             git_cmd.run('config user.email \"%s\"' % os.environ['GITLAB_USER_EMAIL'])
             git_cmd.run('config user.name \"%s\"' % os.environ['GITLAB_USER_NAME'])
@@ -895,7 +856,7 @@ class CLIDriver(object):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
             return
 
-        conftest_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-conftest'], self._context.opt['--volume-from'], True)
+        conftest_cmd = ConftestCommand(self._cmd,'', self._context.opt['--volume-from'], True)
         cmd = "test --policy policy"
         if (os.path.isdir("%s/data" % chartdir)):
            cmd = "%s --data data" % cmd
