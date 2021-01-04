@@ -4,13 +4,13 @@
 Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI (V1.0).
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--docker-image=<image_name>) (--command=<cmd>)
+        (--command=<cmd>)
         [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--docker-image-maven=<image_name_maven>|--docker-version=<version>) (--goals=<goals-opts>|--deploy=<type>)
+        (--goals=<goals-opts>|--deploy=<type>)
         [--maven-release-plugin=<version>]
-        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
+        [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--altDeploymentRepository=<repository_name>]
@@ -72,7 +72,6 @@ Options:
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --docker-image=<image_name>                                Specify docker image name for build project.
     --docker-build-target=<target_name>                        Specify target in multi stage build
     --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
@@ -122,12 +121,14 @@ import shutil
 from .Context import Context
 from .clicommand import CLICommand
 from cdpcli import __version__
+from .kanikocommand import KanikoCommand
 from .dockercommand import DockerCommand
 from .gitcommand import GitCommand
 from .awscommand import AwsCommand
 from .kubectlcommand import KubectlCommand
 from .helmcommand import HelmCommand
 from .conftestcommand import ConftestCommand
+from .sonarcommand import SonarCommand
 from docopt import docopt, DocoptExit
 from .PropertiesParser import PropertiesParser
 from .Yaml import Yaml
@@ -160,14 +161,6 @@ class CLIDriver(object):
             raise ValueError('TODO')
         else:
             self._cmd = cmd
-
-        # Default value of DOCKER_HOST env var if not set
-        if os.getenv('DOCKER_HOST', None) is None:
-            os.environ['DOCKER_HOST'] = 'unix:///var/run/docker.sock'
-
-        os.environ['CDP_DOCKER_HOST_INTERNAL'] = self._cmd.run_command('ip route | awk \'NR==1 {print $3}\'')[0].strip()
-
-        LOG.verbose('DOCKER_HOST : %s', os.getenv('DOCKER_HOST',''))
 
         if self.verbose(opt['--verbose']):
             self._cmd.run_command('env', dry_run=False)
@@ -213,7 +206,7 @@ class CLIDriver(object):
     def __build(self):
         self.__simulate_merge_on()
 
-        docker_image_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image'], self._context.opt['--volume-from'])
+        docker_image_cmd = KanikoCommand(self._cmd,'', self._context.opt['--volume-from'])
         docker_image_cmd.run(self._context.opt['--command'])
 
     def __maven(self):
@@ -291,7 +284,7 @@ class CLIDriver(object):
         if self._context.opt['--preview']:
             command = "%s -Dsonar.analysis.mode=preview" % command
 
-        sonar_scanner_cmd = DockerCommand(self._cmd, '', self._context.opt['--volume-from'], True)
+        sonar_scanner_cmd = SonarCommand(self._cmd, '', self._context.opt['--volume-from'], True)
         sonar_scanner_cmd.run(command)
 
     def __docker(self):
@@ -634,6 +627,7 @@ class CLIDriver(object):
         self._cmd.run_command('docker push %s' % (dest_image_tag))
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
+        kaniko_cmd = KanikoCommand(self._cmd, '', self._context.opt['--volume-from'], True)
         os.environ['CDP_TAG'] = tag
         if self._context.opt['--use-docker-compose']:
             os.environ['CDP_REGISTRY'] = self.__getImageName()
@@ -646,12 +640,12 @@ class CLIDriver(object):
             image_tag = self.__getImageTag(self.__getImageName(), tag)
 
             # Tag docker image
-            docker_build_command = '/kaniko/executor --context %s --dockerfile %s/Dockerfile --destination %s' % (self._context.opt['--build-context'],self._context.opt['--build-context'],image_tag)
+            docker_build_command = '--context %s --dockerfile %s/Dockerfile --destination %s' % (self._context.opt['--build-context'],self._context.opt['--build-context'],image_tag)
             if self._context.opt['--docker-build-target']:
               docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and (self._context.opt['--use-custom-registry'] or self._context.opt['--use-registry'] == 'artifactory' or self._context.opt['--use-registry'] == 'custom'):
               docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
-            self._cmd.run_command(docker_build_command)
+            kaniko_cmd.run(docker_build_command)
             
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']

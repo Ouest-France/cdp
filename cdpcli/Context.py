@@ -31,6 +31,8 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
+        # Login to Dockerhub if needed
+        self.__loginDockerhub()
 
         if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
             prefix = self.getParamOrEnv("image-prefix-tag")
@@ -156,16 +158,20 @@ class Context(object):
     def __loginDockerhub(self):
         registry_user = os.getenv('CDP_DOCKERHUB_REGISTRY_USER',None)
         registry_token = os.getenv('CDP_DOCKERHUB_READ_ONLY_TOKEN',None)
+        registry_url = os.getenv('CDP_DOCKERHUB_REGISTRY_URL','https://index.docker.io/v1/')
         if registry_user is not None and registry_token is not None:
-           self._cmd.run_secret_command('docker login -u %s -p %s' % (registry_user, self.string_protected(registry_token)))
+           self.__loginRegistry(registry_url, registry_user, registry_token)
 
     def __login(self, registry, registry_user, registry_token):
         # Activate login, only specific stage.
         prefix = self.getParamOrEnv("image-prefix-tag")
         if self._opt['maven'] or self._opt['docker'] or (self._opt['k8s'] and prefix):
             if registry_user is not None and registry_token is not None and registry is not None:
-                self._cmd.run_secret_command('echo "{\\\"auths\\\":{\\\"%s\\\":{\\\"username\\\":\\\"%s\\\",\\\"password\\\":\\\"%s\\\"}}}" > ~/.docker/config.json' % ( registry, registry_user, registry_token))
-                self._cmd.run('cat ~/.docker/config.json')
+               self.__loginRegistry(registry, registry_user, registry_token)
+
+
+    def __loginRegistry(self, registry, registry_user, registry_token):
+          self._cmd.run_secret_command('echo "{\\\"auths\\\":{\\\"%s\\\":{\\\"username\\\":\\\"%s\\\",\\\"password\\\":\\\"%s\\\"}}}" > ~/.docker/config.json' % ( registry, registry_user, registry_token))
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
     def getParamOrEnv(self, param):
