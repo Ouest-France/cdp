@@ -616,15 +616,9 @@ class CLIDriver(object):
         source_image_tag = self.__getImageTag(image_repo,  self.__getTagSha1())
         dest_image_tag = self.__getImageTag(image_repo, prefixTag)
         LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
-        # Pull de l'image
-        try:
-          self._cmd.run_command('docker pull %s' % (source_image_tag))
-        except:
-          raise ValueError('Docker image not found')
-        # Tag de l'image
-        self._cmd.run_command('docker tag %s %s' % (source_image_tag, dest_image_tag))
-        # Push docker image
-        self._cmd.run_command('docker push %s' % (dest_image_tag))
+
+        # Utilisation de Skopeo
+        self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
         kaniko_cmd = KanikoCommand(self._cmd, '', self._context.opt['--volume-from'], True)

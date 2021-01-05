@@ -1804,10 +1804,9 @@ status:
             verif_cmd = [
                  {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [login_cmd], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
                  {'cmd': TestCliDriver.login_string % (aws_host, 'user',"pass"), 'output': 'unnecessary'},
-                 {'cmd': 'docker tag %s %s' % (image_tag, dest_image_tag), 'output': 'unnecessary'},
-                 {'cmd': 'docker push %s' % dest_image_tag, 'output': 'unnecessary'},
-                    {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
-                    {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s-%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
+                 {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag, dest_image_tag), 'output': 'unnecessary'},
+                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s-%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
                       % ( release,
                         deploy_spec_dir,
                         namespace,
@@ -1866,12 +1865,8 @@ status:
                  {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [login_cmd], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
                  {'cmd': TestCliDriver.login_string % (aws_host, 'user',"pass"), 'output': 'unnecessary'},
                  {'cmd': 'docker-compose config --services', 'output': ['service_docker1', 'service_docker2'] },
-                 {'cmd': 'docker pull %s' % image_tag_service1, 'output': 'unnecessary'},
-                 {'cmd': 'docker tag %s %s' % (image_tag_service1, dest_service1_image_tag), 'output': 'unnecessary'},
-                 {'cmd': 'docker push %s' % dest_service1_image_tag, 'output': 'unnecessary'},
-                 {'cmd': 'docker pull %s' % image_tag_service2, 'output': 'unnecessary'},
-                 {'cmd': 'docker tag %s %s' % (image_tag_service2, dest_service2_image_tag), 'output': 'unnecessary'},
-                 {'cmd': 'docker push %s' % dest_service2_image_tag, 'output': 'unnecessary'},
+                 {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag_service1, dest_service1_image_tag), 'output': 'unnecessary'},
+                 {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag_service2, dest_service2_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                  {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s-%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
                       % ( release,
@@ -1933,14 +1928,10 @@ status:
             verif_cmd = [
                  {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [login_cmd], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
                  {'cmd': TestCliDriver.login_string % (aws_host, 'user',"pass"), 'output': 'unnecessary'},
-                 {'cmd': 'docker pull %s' % image_tag, 'output': 'unnecessary','verif_raise_error': False},
+                 {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag_service1, dest_service1_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'docker-compose config --services', 'output': ['service_docker1', 'service_docker2'] },
-                 {'cmd': 'docker pull %s' % image_tag_service1, 'output': 'unnecessary'},
-                 {'cmd': 'docker tag %s %s' % (image_tag_service1, dest_service1_image_tag), 'output': 'unnecessary'},
-                 {'cmd': 'docker push %s' % dest_service1_image_tag, 'output': 'unnecessary'},
-                 {'cmd': 'docker pull %s' % image_tag_service2, 'output': 'unnecessary'},
-                 {'cmd': 'docker tag %s %s' % (image_tag_service2, dest_service2_image_tag), 'output': 'unnecessary'},
-                 {'cmd': 'docker push %s' % dest_service2_image_tag, 'output': 'unnecessary'},
+                 {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag_service1, dest_service1_image_tag), 'output': 'unnecessary'},
+                 {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag_service2, dest_service2_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                  {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s-%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
                       % ( release,
