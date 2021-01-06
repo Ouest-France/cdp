@@ -29,7 +29,7 @@ RUN apk -v --no-cache add tar ca-certificates python3  python3-dev  skopeo coreu
     && if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi \
     && pip install --upgrade pip setuptools \
     && ln -s /usr/lib/libcurl.so.4 /usr/lib/libcurl-gnutls.so.4 \
-    && pip install --upgrade wheel==$VERSION_WHEEL \
+    && pip install --upgrade wheel \
     && pip install awscli \
     && pip install -r requirements.txt \
     && python setup.py install \

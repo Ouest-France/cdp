@@ -9,38 +9,34 @@
 Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image=<image_name>] (--command=<cmd>)
-        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
-        [--volume-from=<host_type>]
+        (--command=<cmd>) [--simulate-merge-on=<branch_name>]
+        [--docker-image=<image_name>]  [--docker-image-git=<image_name_git>] [--volume-from=<host_type>] 
+        
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-maven=<image_name_maven>|--docker-version=<version>] (--goals=<goals-opts>|--deploy=<type>)
+        (--goals=<goals-opts>|--deploy=<type>) [--simulate-merge-on=<branch_name>]
         [--maven-release-plugin=<version>]
-        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
-        [--volume-from=<host_type>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--altDeploymentRepository=<repository_name>]
         [--login-registry=<registry_name>]
+        [--docker-image-maven=<image_name_maven>|--docker-version=<version>] [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
-        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
-        [--volume-from=<host_type>]
+        (--preview | --publish) (--codeclimate | --sast) [--simulate-merge-on=<branch_name>]
+        [--docker-image-sonar-scanner=<image_name_sonar_scanner>] [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-aws=<image_name_aws>]
+        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--build-context=<path>]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--login-registry=<registry_name>]
-        [--docker-build-target=<target_name>]
+        [--docker-build-target=<target_name>] [--docker-image-aws=<image_name_aws>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
+        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--helm-version=<version>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
         [--image-prefix-tag=<tag>]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
         [(--use-docker-compose)]
@@ -49,17 +45,18 @@ Usage:
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
-        [--volume-from=<host_type>]
         [--create-gitlab-secret]
         [--tiller-namespace]
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
         [--image-pull-secret]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
-    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>] 
-        [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>]
+        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
+        [--volume-from=<host_type>]
+    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) 
+        [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>] [--docker-image-conftest=<image_name_conftest>] 
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        [--path=<path>]
         (--validate-configurations)
+        [--path=<path>]
         [--namespace-project-branch-name | --namespace-project-name]
     cdp (-h | --help | --version)
 Options:
