@@ -3,7 +3,6 @@
 """
 Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
 Usage:
-Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--command=<cmd>) [--simulate-merge-on=<branch_name>]
         [--docker-image=<image_name>]  [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]         
