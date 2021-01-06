@@ -1,25 +1,26 @@
 #!/usr/bin/env python3.6
 
 """
-Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI (V1.0).
+Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--command=<cmd>)
-        [--simulate-merge-on=<branch_name>]
+        [--docker-image=<image_name>] (--command=<cmd>)
+        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--goals=<goals-opts>|--deploy=<type>)
+        [--docker-image-maven=<image_name_maven>|--docker-version=<version>] (--goals=<goals-opts>|--deploy=<type>)
         [--maven-release-plugin=<version>]
-        [--simulate-merge-on=<branch_name>]
+        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
         [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
         [--altDeploymentRepository=<repository_name>]
         [--login-registry=<registry_name>]
     cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--preview | --publish) (--codeclimate | --sast)
-        [--simulate-merge-on=<branch_name>]
+        [--docker-image-sonar-scanner=<image_name_sonar_scanner>] (--preview | --publish) (--codeclimate | --sast)
+        [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        [--docker-image-aws=<image_name_aws>]
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--build-context=<path>]
@@ -29,7 +30,9 @@ Usage:
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         (--put=<file> | --delete=<file>)
-    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]        
+    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
+        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
+        [--helm-version=<version>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
         [--image-prefix-tag=<tag>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
@@ -47,7 +50,7 @@ Usage:
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
         [--image-pull-secret]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
-    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>)
+    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>] 
         [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -72,9 +75,18 @@ Options:
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
+    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [DEPRECATED].
+    --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
+    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [DEPRECATED].
+    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [DEPRECATED].
+    --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
+    --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
     --docker-build-target=<target_name>                        Specify target in multi stage build
-    --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
+    --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
+    --helm-version=<version>                                   Major version of Helm. [default: 3]
     --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
@@ -142,6 +154,7 @@ yaml.preserve_quotes = True
 yaml.explicit_start = True
 
 def main():
+
     opt = docopt(__doc__, sys.argv[1:], version=__version__)
 
     # Log management
@@ -170,6 +183,17 @@ class CLIDriver(object):
         else:
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
+
+            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-sonar-scanner','docker-image-conftest','docker-image'}
+            for option in deprecated:
+               if (self._context.getParamOrEnv(option)):
+                 LOG.warn("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
+
+            if self._context.getParamOrEnv("docker-image-helm") :
+                 image_helm_version = self._context.getParamOrEnv("docker-image-helm")
+                 helm_version = image_helm_version[21]
+                 LOG.warn("\x1b[31;1mWARN : Option docker-image-helm is DEPRECATED. Use --helm-version instead. Set to %s\x1b[0m", helm_version)
+                 opt["--helm-version"] = helm_version
 
     def main(self, args=None):
         try:
@@ -339,7 +363,7 @@ class CLIDriver(object):
 
     def __k8s(self):
         kubectl_cmd = KubectlCommand(self._cmd, '', self._context.opt['--volume-from'], True)
-        helm_cmd = HelmCommand(self._cmd, '', self._context.opt['--volume-from'], True)
+        helm_cmd = HelmCommand(self._cmd, self._context.getParamOrEnv("helm-version"), self._context.opt['--volume-from'], True)
         
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
@@ -399,7 +423,8 @@ class CLIDriver(object):
                         name = os.environ['CI_PROJECT_NAME'],
                         version = '0.1.0'
                     )
-                    data['apiVersion'] = 'v2'
+                    if not self.isHelm2():
+                       data['apiVersion'] = 'v2'
                     yaml.dump(data, outfile)
 
         final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
@@ -412,13 +437,27 @@ class CLIDriver(object):
 
         command = 'upgrade %s' % release
         command = '%s %s' % (command, final_deploy_spec_dir)
-        command = '%s --timeout %ss' % (command, self._context.opt['--timeout'])
-        command = '%s --history-max %s' % (command, 20)
+        if not self.isHelm2():
+           command = '%s --timeout %ss' % (command, self._context.opt['--timeout'])
+           command = '%s --history-max %s' % (command, 20)
+        else:
+          command = '%s --timeout %s' % (command, self._context.opt['--timeout'])           
         #Don't retain more than 20 release for history
         set_command = '--set namespace=%s' % namespace
-
+ 
+        if self._context.opt['--tiller-namespace'] and self.isHelm2():
+            command = '%s --tiller-namespace=%s' % (command, namespace)
         tiller_length = 0
         tiller_json = ''
+        try:
+            if not self._context.opt['--tiller-namespace'] and self.isHelm2():
+                tiller_json = ''.join(kubectl_cmd.run('get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % ( namespace )))
+                tiller_length = len(pyjq.first('.items[] | .metadata.labels.name', json.loads(tiller_json)))
+                command = '%s --tiller-namespace=%s' % (command, namespace)
+        except Exception as e:
+            # Not present
+            LOG.verbose(str(e))
+
         # Need to create default helm charts
         if self._context.opt['--create-default-helm']:
             set_command = '%s --set service.internalPort=%s' % (set_command, self._context.opt['--internal-port'])
@@ -454,12 +493,15 @@ class CLIDriver(object):
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
         
-        try:
+        if not self.isHelm2():
+          try:
             kubectl_cmd.run('get namespace %s' % (namespace))
-        except Exception as e:
+          except Exception as e:
             LOG.verbose("Namespace not exists, create it")
             command = '%s --create-namespace' % (command)
-        
+        else:
+            command = '%s --force' % command        
+
         command = '%s --wait' % command
         command = '%s --atomic' % command
 
@@ -472,13 +514,20 @@ class CLIDriver(object):
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
-        template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
+        if not self.isHelm2():
+            template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
+        else:
+            template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
+        
         template_command = '%s %s' % (template_command, set_command)
 
         if self._context.opt['--values']:
             valuesFiles = self._context.opt['--values'].strip().split(',')
             values = '--values %s/' % self._context.opt['--deploy-spec-dir'] + (' --values %s/' % self._context.opt['--deploy-spec-dir']).join(valuesFiles)
             template_command = '%s %s' % (template_command, values)
+
+        if self.isHelm2():
+          template_command = '%s --name=%s' % (template_command, release)
 
         template_command = '%s --namespace=%s' % (template_command, namespace)
         template_command = '%s > %s' % (template_command, tmp_templating_file)
@@ -862,6 +911,8 @@ class CLIDriver(object):
 
           conftest_cmd.run("%s %s" % (cmd, ' '.join(charts)), None, None, chartdir if withWorkingDir else False)
 
+    def isHelm2(self):
+        return self._context.getParamOrEnv("helm-version") == '2'
 
 
     @staticmethod

@@ -9,11 +9,11 @@
 Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--docker-image=<image_name>) (--command=<cmd>)
+        [--docker-image=<image_name>] (--command=<cmd>)
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--docker-image-maven=<image_name_maven>|--docker-version=<version>) (--goals=<goals-opts>|--deploy=<type>)
+        [--docker-image-maven=<image_name_maven>|--docker-version=<version>] (--goals=<goals-opts>|--deploy=<type>)
         [--maven-release-plugin=<version>]
         [--docker-image-git=<image_name_git>] [--simulate-merge-on=<branch_name>]
         [--volume-from=<host_type>]
@@ -29,7 +29,7 @@ Usage:
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--build-context=<path>]
-        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
+        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--login-registry=<registry_name>]
         [--docker-build-target=<target_name>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -37,6 +37,7 @@ Usage:
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
+        [--helm-version=<version>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
         [--image-prefix-tag=<tag>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
@@ -79,18 +80,18 @@ Options:
     --delete=<file>                                            Delete file in artifactory.
     --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
     --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.16.198].
-    --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.24.1].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.17.0-alpine].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.17.0].
-    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
-    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
-    --docker-image-vault=<image_name_git>                      Docker image which execute vault command [default: vault:1.13.0].
-    --docker-image-conftest=<image_name_conftest>                   Docker image which execute conftest command [default: instrumenta/conftest:v0.18.2].
-    --docker-image=<image_name>                                Specify docker image name for build project.
+    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [DEPRECATED].
+    --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
+    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
+    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [DEPRECATED].
+    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [DEPRECATED].
+    --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
+    --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
     --docker-build-target=<target_name>                        Specify target in multi stage build
-    --docker-version=<version>                                 Specify maven docker version. deprecated [default: 3.5.3-jdk-8].
+    --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
+    --helm-version=<version>                                   Major version of Helm. [default: 3]
     --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
@@ -130,9 +131,6 @@ Options:
 Gitlab >= 10.8
 
 ```yaml
-available:
-  - CDP_DOCKER_HOST_INTERNAL – IP of docker host. Could be used in your tests if necessary.
-
 maven:
  - MAVEN_OPTS – Add option for maven command (Optional)
  --deploy=x:

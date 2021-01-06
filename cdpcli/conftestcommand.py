@@ -8,9 +8,9 @@ LOG.setLevel(logging.INFO)
 
 class ConftestCommand(object):
 
-    def __init__(self, cmd, docker_image, volume_from = None, with_entrypoint = False):
+    def __init__(self, cmd, version, volume_from = None, with_entrypoint = False):
         self._cmd = cmd
-        self._docker_image = docker_image
+        self._version = version
         self._volume_from = volume_from
         self._with_entrypoint = with_entrypoint
 
@@ -18,8 +18,7 @@ class ConftestCommand(object):
         prg_cmd = 'cd %s && conftest %s' % ('${PWD}' if workingDir is True else workingDir, prg_cmd )
 
         LOG.info('')
-        LOG.info('******************** Docker command ********************')
-        LOG.info('Image: %s' % self._docker_image)
+        LOG.info('******************** command ********************')
         LOG.info('Command: %s' % prg_cmd)
 
 

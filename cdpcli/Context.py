@@ -171,13 +171,16 @@ class Context(object):
 
 
     def __loginRegistry(self, registry, registry_user, registry_token):
-          self._cmd.run_secret_command('echo "{\\\"auths\\\":{\\\"%s\\\":{\\\"username\\\":\\\"%s\\\",\\\"password\\\":\\\"%s\\\"}}}" > ~/.docker/config.json' % ( registry, registry_user, registry_token))
+          self._cmd.run_secret_command('echo "{\\\"auths\\\":{\\\"%s\\\":{\\\"auth\\\":\\\"$(echo -n %s:%s|base64 -w0)\\\"}}}" > ~/.docker/config.json' % ( registry, registry_user, registry_token))
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
     def getParamOrEnv(self, param):
         envvar = "CDP_%s" % param.upper().replace("-","_")
-        commandlineParam = "--%s" % param
-        value = self._opt[commandlineParam]
-        if ((not self._opt[commandlineParam] or self.opt[commandlineParam] == '') and os.getenv(envvar, None) is not None):
-           value = os.getenv(envvar)
+        try:
+          commandlineParam = "--%s" % param
+          value = self._opt[commandlineParam]
+          if ((not self._opt[commandlineParam] or self.opt[commandlineParam] == '') and os.getenv(envvar, None) is not None):
+             value = os.getenv(envvar)
+        except KeyError: 
+            value = None
         return value
