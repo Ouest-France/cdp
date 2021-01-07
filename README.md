@@ -10,8 +10,7 @@ Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI
 Usage:
     cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--command=<cmd>) [--simulate-merge-on=<branch_name>]
-        [--docker-image=<image_name>]  [--docker-image-git=<image_name_git>] [--volume-from=<host_type>] 
-        
+        [--docker-image=<image_name>]  [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]         
     cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--goals=<goals-opts>|--deploy=<type>) [--simulate-merge-on=<branch_name>]
         [--maven-release-plugin=<version>]
@@ -19,9 +18,6 @@ Usage:
         [--altDeploymentRepository=<repository_name>]
         [--login-registry=<registry_name>]
         [--docker-image-maven=<image_name_maven>|--docker-version=<version>] [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]
-    cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--preview | --publish) (--codeclimate | --sast) [--simulate-merge-on=<branch_name>]
-        [--docker-image-sonar-scanner=<image_name_sonar_scanner>] [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--use-docker | --use-docker-compose]
@@ -66,7 +62,6 @@ Options:
     -d, --dry-run                                              Simulate execution.
     --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
     --build-context=<path>                                     Specify the docker building context [default: .].
-    --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
@@ -82,7 +77,6 @@ Options:
     --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [DEPRECATED].
-    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [DEPRECATED].
     --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
     --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
     --docker-build-target=<target_name>                        Specify target in multi stage build
@@ -101,13 +95,10 @@ Options:
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
-    --preview                                                  Run issues mode (Preview).
-    --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
-    --sast                                                     Static Application Security Testing mode.
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
@@ -122,7 +113,6 @@ Options:
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
     --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [default: k8s]
 ```
-
 ### _Prerequisites_
 
 Gitlab >= 10.8

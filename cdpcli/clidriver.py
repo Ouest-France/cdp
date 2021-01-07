@@ -13,9 +13,6 @@ Usage:
         [--altDeploymentRepository=<repository_name>]
         [--login-registry=<registry_name>]
         [--docker-image-maven=<image_name_maven>|--docker-version=<version>] [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]
-    cdp sonar [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--preview | --publish) (--codeclimate | --sast) [--simulate-merge-on=<branch_name>]
-        [--docker-image-sonar-scanner=<image_name_sonar_scanner>] [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--use-docker | --use-docker-compose]
@@ -60,7 +57,6 @@ Options:
     -d, --dry-run                                              Simulate execution.
     --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
     --build-context=<path>                                     Specify the docker building context [default: .].
-    --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
@@ -76,7 +72,6 @@ Options:
     --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
     --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [DEPRECATED].
-    --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [DEPRECATED].
     --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
     --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
     --docker-build-target=<target_name>                        Specify target in multi stage build
@@ -95,13 +90,10 @@ Options:
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
-    --preview                                                  Run issues mode (Preview).
-    --publish                                                  Run publish mode (Analyse).
     --put=<file>                                               Put file to artifactory.
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
-    --sast                                                     Static Application Security Testing mode.
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
@@ -136,7 +128,6 @@ from .awscommand import AwsCommand
 from .kubectlcommand import KubectlCommand
 from .helmcommand import HelmCommand
 from .conftestcommand import ConftestCommand
-from .sonarcommand import SonarCommand
 from docopt import docopt, DocoptExit
 from .PropertiesParser import PropertiesParser
 from .Yaml import Yaml
@@ -180,7 +171,7 @@ class CLIDriver(object):
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
 
-            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-sonar-scanner','docker-image-conftest','docker-image'}
+            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-conftest','docker-image'}
             for option in deprecated:
                if (self._context.getParamOrEnv(option)):
                  LOG.warn("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
@@ -188,7 +179,7 @@ class CLIDriver(object):
             if self._context.getParamOrEnv("docker-image-helm") :
                  image_helm_version = self._context.getParamOrEnv("docker-image-helm")
                  helm_version = image_helm_version[21]
-                 LOG.warn("\x1b[31;1mWARN : Option docker-image-helm is DEPRECATED. Use --helm-version instead. Set to %s\x1b[0m", helm_version)
+                 LOG.warning("\x1b[31;1mWARN : Option docker-image-helm is DEPRECATED. Use --helm-version instead. Set to %s\x1b[0m", helm_version)
                  opt["--helm-version"] = helm_version
 
     def main(self, args=None):
@@ -198,9 +189,6 @@ class CLIDriver(object):
 
             if self._context.opt['maven']:
                 self.__maven()
-
-            if self._context.opt['sonar']:
-                self.__sonar()
 
             if self._context.opt['docker']:
                 self.__docker()
@@ -263,49 +251,6 @@ class CLIDriver(object):
         self._cmd.run_command('cp /cdp/maven/settings.xml %s' % settings)
 
         self._cmd.run_command(command)
-
-
-    def __sonar(self):
-        self.__simulate_merge_on()
-
-        sonar_file = 'sonar-project.properties'
-        project_key = None
-        sources = None
-
-        command = '-Dsonar.login=%s' % os.environ['CDP_SONAR_LOGIN']
-        command = '%s -Dsonar.host.url=%s' % (command, os.environ['CDP_SONAR_URL'])
-        command = '%s -Dsonar.gitlab.user_token=%s' % (command, os.environ['GITLAB_USER_TOKEN'])
-        command = '%s -Dsonar.gitlab.commit_sha=%s' % (command, os.environ['CI_COMMIT_SHA'])
-        command = '%s -Dsonar.gitlab.ref_name=%s' % (command, os.environ['CI_COMMIT_REF_NAME'])
-        command = '%s -Dsonar.gitlab.project_id=%s' % (command, os.environ['CI_PROJECT_PATH_SLUG'])
-        command = '%s -Dsonar.branch.name=%s' % (command, self.__getTagBranchName())
-
-        # Check if mandatory properties are setted
-        if os.path.isfile(sonar_file):
-            LOG.verbose('Read : %s', sonar_file)
-            cfg = PropertiesParser()
-            cfg.read(sonar_file)
-            project_key = cfg.get('sonar.projectKey')
-            sources = cfg.get('sonar.sources')
-
-        # Set property if not setted
-        if not (project_key and project_key.strip()):
-            command = "%s -Dsonar.projectKey=%s" % (command, os.environ['CI_PROJECT_PATH_SLUG'])
-
-        # Set property if not setted
-        if not (sources and sources.strip()):
-            command = "%s -Dsonar.sources=." % command
-
-        if self._context.opt['--sast']:
-            command = "%s -Dsonar.gitlab.json_mode=SAST" % command
-        else:
-            command = "%s -Dsonar.gitlab.json_mode=CODECLIMATE" % command
-
-        if self._context.opt['--preview']:
-            command = "%s -Dsonar.analysis.mode=preview" % command
-
-        sonar_scanner_cmd = SonarCommand(self._cmd, '', self._context.opt['--volume-from'], True)
-        sonar_scanner_cmd.run(command)
 
     def __docker(self):
         if self._context.opt['--use-aws-ecr'] or self._context.opt['--use-registry'] == 'aws-ecr':
@@ -663,7 +608,13 @@ class CLIDriver(object):
         LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
 
         # Utilisation de Skopeo
-        self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
+        try:
+          self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
+        except BaseException as e:
+            print('************************** SKPEO *******************************')
+            print(e)
+            print('****************************************************************')
+            raise e          
 
     def __buildTagAndPushOnDockerRegistry(self, tag):
         kaniko_cmd = KanikoCommand(self._cmd, '', self._context.opt['--volume-from'], True)

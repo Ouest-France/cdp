@@ -3,8 +3,9 @@
 from __future__ import absolute_import
 import os
 import re
+import json
+import base64
 
-from .dockercommand import DockerCommand
 from .awscommand import AwsCommand
 
 class Context(object):
@@ -13,6 +14,8 @@ class Context(object):
         self._opt = opt
         self._cmd = cmd
         self._registry = None
+        self.auths = {}
+        self.auths["auths"] = {}
 
         if opt['--put'] or opt['--delete']:
             self._registry = os.environ['CI_REGISTRY']
@@ -30,9 +33,6 @@ class Context(object):
                 self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--login-registry'].upper(), None),
                              os.getenv('CDP_%s_REGISTRY_USER' % opt['--login-registry'].upper(), None),
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
-
-        # Login to Dockerhub if needed
-        self.__loginDockerhub()
 
         if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
             prefix = self.getParamOrEnv("image-prefix-tag")
@@ -171,7 +171,15 @@ class Context(object):
 
 
     def __loginRegistry(self, registry, registry_user, registry_token):
-          self._cmd.run_secret_command('echo "{\\\"auths\\\":{\\\"%s\\\":{\\\"auth\\\":\\\"$(echo -n %s:%s|base64 -w0)\\\"}}}" > ~/.docker/config.json' % ( registry, registry_user, registry_token))
+          auth = registry_user + ":" + registry_token
+          encodedBytes = base64.b64encode(auth.encode("ascii"))
+          encodedStr = str(encodedBytes, "ascii")
+
+          self.auths["auths"][registry] = {"auth": encodedStr}
+         # with open(os.path.expanduser('~') + '/.docker/config.json', 'w') as outfile:
+        #       json.dump(self.auths, outfile)          
+
+          self._cmd.run_secret_command("echo '%s' > ~/.docker/config.json" % ( json.dumps(self.auths)))
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
     def getParamOrEnv(self, param):

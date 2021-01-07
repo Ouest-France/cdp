@@ -15,10 +15,10 @@ class HelmCommand(object):
         self._with_entrypoint = with_entrypoint
 
     def run(self, prg_cmd, dry_run = None, timeout = None, workingDir = True):
-        prg_cmd = '%s %s' % ("helm" if self._version == "3" else "helm2", prg_cmd)
+        prg_cmd = '%s %s' % ("helm3" if self._version == "3" else "helm2", prg_cmd)
 
         LOG.info('')
-        LOG.info('******************** Docker command ********************')
+        LOG.info('******************** command ********************')
         LOG.info('Version: %s' % self._version)
         LOG.info('Command: %s' % prg_cmd)
 

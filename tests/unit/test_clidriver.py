@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 import unittest
-import os, sys, re
+import os, sys, re, base64, json
 import datetime
 
 from cdpcli.clicommand import CLICommand
@@ -33,7 +33,6 @@ class FakeCommand(object):
         return self.run(cmd, dry_run, timeout, raise_error)
 
     def run(self, cmd, dry_run = None, timeout = None, raise_error = True):
-        print(cmd)
         try:
             image = self._verif_cmd[self._index]['docker_image']
         except KeyError:
@@ -62,20 +61,18 @@ class FakeCommand(object):
 
             commandes = {
                TestCliDriver.image_name_git : "git ",
-               TestCliDriver.image_name_helm : "helm ",
+               TestCliDriver.image_name_helm : "helm3 ",
                TestCliDriver.image_name_helm2 : "helm2 ",
                TestCliDriver.image_name_kubectl : "kubectl ",
                TestCliDriver.image_name_kaniko : "/kaniko/executor ",
                TestCliDriver.image_name_aws : "aws ",
-               TestCliDriver.image_name_sonar_scanner : "sonar-scanner ",
                TestCliDriver.image_name_conftest : 'cd %s && conftest ' % ('${PWD}' if workingDir_from_assert is True else workingDir_from_assert)
             }
 
             cmd_assert = "%s%s" % (commandes.get(image, ""), self._verif_cmd[self._index]['cmd'])
-#            try:
-#                cmd_assert = self.__get_rundocker_cmd(self._verif_cmd[self._index]['docker_image'], self._verif_cmd[self._index]['cmd'], volume_from = volume_from_assert, with_entrypoint = with_entrypoint_assert,workingDir=workingDir_from_assert )
-#            except KeyError:
-#                cmd_assert = self._verif_cmd[self._index]['cmd']
+
+            print("Attendu : %s", cmd_assert)
+            print("recu    : %s", cmd)
 
             # Check cmd parameter
             self._tc.assertEqual(cmd_assert, cmd)
@@ -116,8 +113,6 @@ class FakeCommand(object):
         self._tc.assertEqual(len(self._verif_cmd), self._index)
 
     def __get_rundocker_cmd(self, docker_image, prg_cmd, volume_from = None, with_entrypoint = True, workingDir=True):
-
-#        run_docker_cmd = 'docker run --rm -e DOCKER_HOST'
 
         for env in os.environ:
             if env.startswith('CI') or env.startswith('CDP') or env.startswith('AWS') or env.startswith('GIT') or env.startswith('KUBERNETES'):
@@ -179,24 +174,24 @@ class TestCliDriver(unittest.TestCase):
     cdp_repository_url = 'http://repo.fr'
     cdp_repository_maven_snapshot = 'libs-snapshot-local'
     cdp_repository_maven_release = 'libs-release-local'
-    cdp_sonar_url = "https://sonar:9000"
-    cdp_sonar_login = "987656436908"
     cdp_gitlab_api_url = 'https://www.gitlab.com'
     cdp_gitlab_api_token = 'azlemksiu84dza'
     cdp_bp_validator_host = 'https://validator-server.com'
     image_name_git = 'ouestfrance/cdp-git:2.24.1'
-    image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:3.1.0'
     image_name_aws = 'ouestfrance/cdp-aws:1.16.198'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.17.0'
     image_name_helm = 'ouestfrance/cdp-helm:3.2.4'
     image_name_helm2 = 'ouestfrance/cdp-helm:2.16.3'
     image_name_conftest = 'instrumenta/conftest:v0.18.2'
     image_name_kaniko = 'kaniko'
-    login_string = 'echo "{\\\"auths\\\":{\\\"%s\\\":{\\\"auth\\\":\\\"$(echo -n %s:%s|base64 -w0)\\\"}}}" > ~/.docker/config.json'
+    login_string = "echo '{\\\"auths\\\": {\\\"%s\\\": {\\\"auth\\\": \\\"%s\\\"}}}' > ~/.docker/config.json"
     kaniko_full_build = '--context . --dockerfile ./Dockerfile --destination %s/%s:%s'
     kaniko_build = '--context . --dockerfile ./Dockerfile --destination %s:%s'
     env_cdp_tag = 'CDP_TAG'
     env_cdp_registry = 'CDP_REGISTRY'
+    fakeauths = {}
+    fakeauths["auths"] = {}
+
     cronjob_yaml_without_secret = """---
     kind: CronJob
     apiVersion: batch/v1beta1
@@ -550,8 +545,6 @@ status:
         os.environ['CDP_REPOSITORY_URL'] = TestCliDriver.cdp_repository_url
         os.environ['CDP_REPOSITORY_MAVEN_SNAPSHOT'] = TestCliDriver.cdp_repository_maven_snapshot
         os.environ['CDP_REPOSITORY_MAVEN_RELEASE'] = TestCliDriver.cdp_repository_maven_release
-        os.environ['CDP_SONAR_URL'] = TestCliDriver.cdp_sonar_url
-        os.environ['CDP_SONAR_LOGIN'] = TestCliDriver.cdp_sonar_login
         os.environ['CDP_GITLAB_API_URL'] = TestCliDriver.cdp_gitlab_api_url
         os.environ['CDP_GITLAB_API_TOKEN'] = TestCliDriver.cdp_gitlab_api_token
         os.environ['CDP_BP_VALIDATOR_HOST'] = TestCliDriver.cdp_bp_validator_host
@@ -670,54 +663,9 @@ status:
 
         self.__run_CLIDriver({ 'maven',  '--deploy=snapshot' }, verif_cmd)
 
-    @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
-    def test_sonar_preview_codeclimate_verbose_simulatemergeon_sleep(self, mock_isfile):
-        # Create FakeCommand
-        branch_name = 'master'
-        sleep = 10
-        verif_cmd = [
-            {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
-            {'cmd': 'config user.email \"%s\"' % TestCliDriver.gitlab_user_email, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'config user.name \"%s\"' % TestCliDriver.gitlab_user_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'fetch', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'checkout %s' % branch_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'reset --hard origin/%s' % branch_name, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': 'merge %s --no-commit --no-ff' % TestCliDriver.ci_commit_sha, 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_git},
-            {'cmd': '-Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.projectKey=%s -Dsonar.sources=. -Dsonar.gitlab.json_mode=CODECLIMATE -Dsonar.analysis.mode=preview'
-                % (TestCliDriver.cdp_sonar_login,
-                    TestCliDriver.cdp_sonar_url,
-                    TestCliDriver.gitlab_user_token,
-                    TestCliDriver.ci_commit_sha,
-                    TestCliDriver.ci_commit_ref_name,
-                    TestCliDriver.ci_project_path_slug,
-                    TestCliDriver.ci_commit_ref_slug,
-                    TestCliDriver.ci_project_path_slug), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_sonar_scanner},
-            {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
-        ]
-        self.__run_CLIDriver({ 'sonar', '--preview', '--codeclimate', '--verbose', '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
-        mock_isfile.assert_called_with('sonar-project.properties')
-
-    @patch('cdpcli.clidriver.os.path.isfile', return_value=True)
-    @patch('cdpcli.clidriver.PropertiesParser.get')
-    def test_sonar_publish_sast(self, mock_get, mock_isfile):
-        mock_get.side_effect = ['project_key', 'sources']
-        # Create FakeCommand
-        verif_cmd = [
-            {'cmd': '-Dsonar.login=%s -Dsonar.host.url=%s -Dsonar.gitlab.user_token=%s -Dsonar.gitlab.commit_sha=%s -Dsonar.gitlab.ref_name=%s -Dsonar.gitlab.project_id=%s -Dsonar.branch.name=%s -Dsonar.gitlab.json_mode=SAST'
-                % (TestCliDriver.cdp_sonar_login,
-                    TestCliDriver.cdp_sonar_url,
-                    TestCliDriver.gitlab_user_token,
-                    TestCliDriver.ci_commit_sha,
-                    TestCliDriver.ci_commit_ref_name,
-                    TestCliDriver.ci_project_path_slug,
-                    TestCliDriver.ci_commit_ref_slug), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_sonar_scanner}
-        ]
-        self.__run_CLIDriver({ 'sonar', '--publish', '--sast' }, verif_cmd)
-        mock_isfile.assert_called_with('sonar-project.properties')
-        mock_get.assert_has_calls([call('sonar.projectKey'), call('sonar.sources')])
-
     def test_docker_usedocker_imagetagbranchname_usegitlabregistry_sleep_docker_host(self):
         # Create FakeCommand
+        self.fakeauths["auths"] = {}
         aws_host = 'ecr.amazonaws.com'
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         sleep = 10
@@ -725,8 +673,8 @@ status:
         docker_host = 'unix:///var/run/docker.sock'
 
         verif_cmd = [
-            {'cmd': TestCliDriver.login_string % (TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.login_string % (TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
+            {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
+            {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': TestCliDriver.kaniko_build % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
@@ -736,28 +684,19 @@ status:
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry(self):
         # Create FakeCommand
+        self.fakeauths["auths"] = {}
         verif_cmd = [
-            {'cmd': TestCliDriver.login_string % ( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
+            {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': TestCliDriver.kaniko_full_build % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
 
-    def test_docker_usedocker_imagetagsha1_usecustomregistry_with_dockerhub_login(self):
-        registry_user='dockerhub'
-        registry_token="token"
-        verif_cmd = [
-            {'cmd': TestCliDriver.login_string % ('https://index.docker.io/v1/',registry_user, registry_token), 'output': 'unnecessary'},
-            {'cmd': TestCliDriver.login_string % (TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
-            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
-            {'cmd': TestCliDriver.kaniko_full_build % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
-        ]
-        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd,env_vars = {'CDP_DOCKERHUB_REGISTRY_USER': registry_user,'CDP_DOCKERHUB_READ_ONLY_TOKEN': registry_token })
-
     def test_docker_usedocker_imagetagsha1_usecustomregistry_stage(self):
         # Create FakeCommand
+        self.fakeauths["auths"] = {}
         verif_cmd = [
-            {'cmd': TestCliDriver.login_string % (TestCliDriver.cdp_custom_registry,TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
+            {'cmd': self.__getLoginString(TestCliDriver.cdp_custom_registry,TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': (TestCliDriver.kaniko_full_build + " --target cdp") % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower() + "/cdp" , TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
         ]
@@ -766,10 +705,11 @@ status:
     def test_docker_imagetagsha1_useawsecr(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
+        self.fakeauths["auths"] = {}
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
             {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
-            {'cmd': TestCliDriver.login_string % (aws_host, 'user',"pass"), 'output': 'unnecessary'},
+            {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': TestCliDriver.kaniko_full_build % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
@@ -780,11 +720,12 @@ status:
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withrepo(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
+        self.fakeauths["auths"] = {}
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
             {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
-            {'cmd': TestCliDriver.login_string % (aws_host, 'user',"pass"), 'output': 'unnecessary'},
+            {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': ['test', 'test2']},
             {'cmd': 'ecr list-images --repository-name %s/test --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'ecr list-images --repository-name %s/test2 --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
@@ -799,11 +740,12 @@ status:
     def test_docker_verbose_usedockercompose_imagetaglatest_imagetagsha1_useawsecr_withoutrepo(self):
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
+        self.fakeauths["auths"] = {}
         login_cmd = 'docker login -u user -p pass https://%s' % aws_host
         verif_cmd = [
             {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
             {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
-            {'cmd': TestCliDriver.login_string % (aws_host, 'user',"pass"), 'output': 'unnecessary'},
+            {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
             {'cmd': 'docker-compose config --services', 'output': ['test', 'test2']},
             {'cmd': 'ecr list-images --repository-name %s/test --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'throw': ValueError, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': 'ecr create-repository --repository-name %s/test' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
@@ -820,6 +762,7 @@ status:
     def test_artifactory_put_imagetagsha1_imagetaglatest_dockerhost(self):
         # Create FakeCommand
         upload_file = 'config/values.yaml'
+        self.fakeauths["auths"] = {}
 
         docker_host = 'unix:///var/run/docker.sock'
 
@@ -878,6 +821,7 @@ status:
         date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration=240
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
+        self.fakeauths["auths"] = {}
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -955,6 +899,7 @@ status:
         date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration=240
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
+        self.fakeauths["auths"] = {}
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -1035,6 +980,7 @@ status:
         date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration = 240
         date_delete = (date_now + datetime.timedelta(minutes=deleteDuration))
+        self.fakeauths["auths"] = {}
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -1107,6 +1053,7 @@ status:
         date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration=240
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
+        self.fakeauths["auths"] = {}
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -1177,6 +1124,7 @@ status:
         deleteDuration=240
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
         env_name = 'staging'
+        self.fakeauths["auths"] = {}
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
@@ -1253,6 +1201,7 @@ status:
         deleteDuration = 240
         date_delete = (date_now + datetime.timedelta(minutes=deleteDuration))
         env_name = 'staging'
+        self.fakeauths["auths"] = {}
         # Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
@@ -1339,6 +1288,7 @@ status:
         date_format = '%Y-%m-%dT%H%M%SZ'
         deleteDuration=240
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
+        self.fakeauths["auths"] = {}
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -1409,6 +1359,7 @@ status:
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         date_now = datetime.datetime.utcnow()
         deleteDuration=240
+        self.fakeauths["auths"] = {}
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -1474,6 +1425,7 @@ status:
         date_delete = (date_now + datetime.timedelta(minutes = delete_minutes))
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+        self.fakeauths["auths"] = {}
 
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
@@ -1547,6 +1499,7 @@ status:
             final_deploy_spec_dir = '%s_final' % deploy_spec_dir
             sleep = 10
             sleep_override = 20
+            self.fakeauths["auths"] = {}
 
             verif_cmd = [
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
@@ -1621,6 +1574,7 @@ status:
             deploy_spec_dir = 'chart'
             final_deploy_spec_dir = '%s_final' % deploy_spec_dir
             sleep = 10
+            self.fakeauths["auths"] = {}
 
             verif_cmd = [
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
@@ -1674,6 +1628,7 @@ status:
     @patch("cdpcli.clidriver.yaml.dump_all")
     def test_k8s_releaseprojectbranchname_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
         env_name = 'staging'
+        self.fakeauths["auths"] = {}
 
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
@@ -1729,6 +1684,7 @@ status:
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_releaseprojectenvname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
             env_name = 'review/test'
+            self.fakeauths["auths"] = {}
 
             #Get Mock
             mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
@@ -1789,6 +1745,7 @@ status:
     def test_k8s_releasecustomname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname_with_retag(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
         env_name = 'review/test'
         prefix = "nonprod"
+        self.fakeauths["auths"] = {}
         # Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
         # Create FakeCommand
@@ -1806,7 +1763,7 @@ status:
             login_cmd = 'docker login -u user -p pass https://%s' % aws_host
             verif_cmd = [
                  {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [login_cmd], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
-                 {'cmd': TestCliDriver.login_string % (aws_host, 'user',"pass"), 'output': 'unnecessary'},
+                 {'cmd': self.__getLoginString(aws_host, 'user','pass'), 'output': 'unnecessary'},
                  {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag, dest_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from': 'k8s', 'output': [TestCliDriver.tiller_found], 'docker_image': TestCliDriver.image_name_kubectl},
                  {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s-%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
@@ -1849,6 +1806,7 @@ status:
     def test_k8s_releasecustomname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname_with_retag_docker_compose(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
         env_name = 'review/test'
         prefix = "nonprod"
+        self.fakeauths["auths"] = {}
         # Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
         # Create FakeCommand
@@ -1868,7 +1826,7 @@ status:
             login_cmd = 'docker login -u user -p pass https://%s' % aws_host
             verif_cmd = [
                  {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [login_cmd], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
-                 {'cmd': TestCliDriver.login_string % (aws_host, 'user',"pass"), 'output': 'unnecessary'},
+                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                  {'cmd': 'docker-compose config --services', 'output': ['service_docker1', 'service_docker2'] },
                  {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag_service1, dest_service1_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag_service2, dest_service2_image_tag), 'output': 'unnecessary'},
@@ -1913,6 +1871,7 @@ status:
     def test_k8s_releasecustomname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname_with_retag_docker_compose_autodetect(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
         env_name = 'review/test'
         prefix = "nonprod"
+        self.fakeauths["auths"] = {}
         # Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name)
         # Create FakeCommand
@@ -1933,7 +1892,7 @@ status:
             login_cmd = 'docker login -u user -p pass https://%s' % aws_host
             verif_cmd = [
                  {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [login_cmd], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
-                 {'cmd': TestCliDriver.login_string % (aws_host, 'user',"pass"), 'output': 'unnecessary'},
+                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                  {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag_service1, dest_service1_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'docker-compose config --services', 'output': ['service_docker1', 'service_docker2'] },
                  {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag_service1, dest_service1_image_tag), 'output': 'unnecessary'},
@@ -1980,6 +1939,7 @@ status:
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_releasecustomname_auto_tillernamespace_imagetagsha1_useawsecr_namespaceprojectname(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
         env_name = 'review/test'
+        self.fakeauths["auths"] = {}
 
         #Get Mock
         mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab, env_name,["team=infra"])
@@ -2032,6 +1992,7 @@ status:
 
     def test_validator_validateconfigurations_dockerhost(self):
         docker_host = 'unix:///var/run/docker.sock'
+        self.fakeauths["auths"] = {}
 
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
@@ -2149,6 +2110,14 @@ status:
                 for key,val in env_vars.items():
                     del os.environ[key]
 
+    def __getLoginString(self,registry, user, password): 
+          auth = user + ":" + password
+          encodedBytes = base64.b64encode(auth.encode("ascii"))
+          encodedStr = str(encodedBytes, "ascii")
+
+          self.fakeauths["auths"][registry] = {"auth": encodedStr}        
+          return "echo '" + json.dumps(self.fakeauths) + "' > ~/.docker/config.json"
+
     def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2',tag_list = []):
         mock_env1 = Mock()
         mock_env1.name = 'test'
@@ -2168,3 +2137,4 @@ status:
         mock_Gitlab.return_value.projects = mock_projects
 
         return mock_projects, mock_environments, mock_env1, mock_env2
+
