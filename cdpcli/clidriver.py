@@ -359,13 +359,11 @@ class CLIDriver(object):
                 self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
                 with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], 'w') as outfile:
                     data = dict(
-                        apiVersion = 'v1',
+                        apiVersion = 'v1' if self.isHelm2() else 'v2',
                         description = 'A Helm chart for Kubernetes',
                         name = os.environ['CI_PROJECT_NAME'],
                         version = '0.1.0'
                     )
-                    if not self.isHelm2():
-                       data['apiVersion'] = 'v2'
                     yaml.dump(data, outfile)
 
         final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']

@@ -61,7 +61,7 @@ class FakeCommand(object):
 
             commandes = {
                TestCliDriver.image_name_git : "git ",
-               TestCliDriver.image_name_helm : "helm3 ",
+               TestCliDriver.image_name_helm3 : "helm3 ",
                TestCliDriver.image_name_helm2 : "helm2 ",
                TestCliDriver.image_name_kubectl : "kubectl ",
                TestCliDriver.image_name_kaniko : "/kaniko/executor ",
@@ -180,7 +180,7 @@ class TestCliDriver(unittest.TestCase):
     image_name_git = 'ouestfrance/cdp-git:2.24.1'
     image_name_aws = 'ouestfrance/cdp-aws:1.16.198'
     image_name_kubectl = 'ouestfrance/cdp-kubectl:1.17.0'
-    image_name_helm = 'ouestfrance/cdp-helm:3.2.4'
+    image_name_helm3 = 'ouestfrance/cdp-helm:3.2.4'
     image_name_helm2 = 'ouestfrance/cdp-helm:2.16.3'
     image_name_conftest = 'instrumenta/conftest:v0.18.2'
     image_name_kaniko = 'kaniko'
@@ -849,12 +849,12 @@ status:
                         staging_file,
                         int_file,
                         namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
-                        date_delete.strftime(date_format)), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        date_delete.strftime(date_format)), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
                     % (namespace,
                         date_now.strftime(date_format),
@@ -930,14 +930,14 @@ status:
                         staging_file,
                         int_file,
                         namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': cmdcurl, 'output': 'unnecessary'},                
                 {'cmd': 'test --policy policy --data data all_resources.yaml', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_conftest,'workingDir':chartdir},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
-                        date_delete.strftime(date_format)), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        date_delete.strftime(date_format)), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
                     % (namespace,
                         date_now.strftime(date_format),
@@ -1081,13 +1081,13 @@ status:
                         staging_file,
                         int_file,
                         namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
                         date_delete.strftime(date_format)),
-                        'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
                     % (namespace,
                         date_now.strftime(date_format),
@@ -1155,13 +1155,13 @@ status:
                         staging_file,
                         int_file,
                         namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
                         date_delete.strftime(date_format)),
-                        'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
                     % (namespace,
                         date_now.strftime(date_format),
@@ -1234,14 +1234,14 @@ status:
                               int_file,
                               namespace,
                               final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary',
-                    'docker_image': TestCliDriver.image_name_helm},
+                    'docker_image': TestCliDriver.image_name_helm3},
                 {
                     'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic --description deletionTimestamp=%s'
                            % (release,
                               final_deploy_spec_dir,
                               namespace,
                               date_delete.strftime(date_format)),
-                    'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                    'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {
                     'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
                            % (namespace,
@@ -1316,13 +1316,13 @@ status:
                         staging_file,
                         int_file,
                         namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         namespace,
                         date_delete.strftime(date_format))
-                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
                     % (namespace,
                         date_now.strftime(date_format),
@@ -1387,12 +1387,12 @@ status:
                         staging_file,
                         int_file,
                         namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace)
-                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm}
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
             self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
@@ -1449,13 +1449,13 @@ status:
                         deploy_spec_dir,
                         values,
                         namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'upgrade %s %s --timeout %ss --history-max 20 -i --namespace=%s --wait --atomic --description deletionTimestamp=%s'
                     % (release,
                         final_deploy_spec_dir,
                         timeout,
                         namespace,
-                        date_delete.strftime(date_format)), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        date_delete.strftime(date_format)), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'label namespace %s deletable=true creationTimestamp=%s deletionTimestamp=%s --namespace=%s --overwrite'
                     % (namespace,
                         date_now.strftime(date_format),
@@ -1516,12 +1516,12 @@ status:
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
                         namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
                         namespace)
-                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'sleep %s' % sleep_override, 'output': 'unnecessary'}
             ]
             self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep},
@@ -1592,11 +1592,11 @@ status:
                         TestCliDriver.ci_project_path.lower(),
                         TestCliDriver.ci_commit_sha,
                         namespace,
-                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
                     % (release,
                         final_deploy_spec_dir,
-                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
+                        namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
             ]
             self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--internal-port=%s' % internal_port, '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
