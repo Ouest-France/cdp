@@ -871,3 +871,4 @@ class CLIDriver(object):
     @staticmethod
     def warning(quiet):
         return quiet or os.getenv('CDP_LOG_LEVEL', None) == 'warning'
+
