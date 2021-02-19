@@ -675,7 +675,7 @@ status:
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
             {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
-            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': TestCliDriver.kaniko_build % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
@@ -687,7 +687,7 @@ status:
         self.fakeauths["auths"] = {}
         verif_cmd = [
             {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
-            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': TestCliDriver.kaniko_full_build % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko}
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
@@ -697,7 +697,7 @@ status:
         self.fakeauths["auths"] = {}
         verif_cmd = [
             {'cmd': self.__getLoginString(TestCliDriver.cdp_custom_registry,TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
-            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': (TestCliDriver.kaniko_full_build + " --target cdp") % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower() + "/cdp" , TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1','--docker-build-target=cdp'}, verif_cmd)
@@ -711,7 +711,7 @@ status:
             {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
             {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
             {'cmd': 'ecr list-images --repository-name %s --max-items 0' % (TestCliDriver.ci_project_path.lower()), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_aws},
-            {'cmd': 'hadolint Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': TestCliDriver.kaniko_full_build % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
         ]
         self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
