@@ -480,14 +480,12 @@ class CLIDriver(object):
             final_docs = []
             for doc in docs:
                 if doc is not None:
-                    LOG.verbose(doc)
                     # Ajout du label deletable sur tous les objets si la release est temporaire
                     if "metadata" in doc and "labels" in doc['metadata']:
                        doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--delete-labels'] else "false"
 
                     final_docs.append(doc)
-                    if self.__get_team() != "empty_team":
-                        doc= CLIDriver.addTeamLabel(doc,self.__get_team())
+                    CLIDriver.addGitlabLabels(doc)
                     #Manage Deployement and
                     if os.getenv('CDP_MONITORING')and os.getenv('CDP_MONITORING', 'TRUE').upper() != "FALSE":
                         if os.getenv('CDP_ALERTING', 'TRUE').upper()=="FALSE":
@@ -496,7 +494,8 @@ class CLIDriver(object):
                             doc = CLIDriver.addMonitoringLabel(doc, True)
                     if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr' and 'kind' in doc and  'spec' in doc and ('template' in doc['spec'] or 'jobTemplate' in doc['spec']):
                         doc=CLIDriver.addImageSecret(doc,image_pull_secret_value)
-
+                    
+                    LOG.verbose(doc)
 
         with open('%s/all_resources.yaml' % final_template_deploy_spec_dir, 'w') as outfile:
             LOG.info(yaml.dump_all(final_docs))
@@ -590,12 +589,17 @@ class CLIDriver(object):
                     doc['spec']['template']['metadata']['labels']['owner-escalation'] = 'false'
         return doc
 
-    @staticmethod
-    def addTeamLabel(doc,team):
+    def addGitlabLabels(doc):
         if doc['kind'] == 'Deployment' or doc['kind'] == 'StatefulSet' or doc['kind'] == 'Service':
-             doc['metadata']['labels']['team'] = team
-             if 'template' in doc['spec'].keys():
-                doc['spec']['template']['metadata']['labels']['team'] = team
+           gl = gitlab.Gitlab(os.environ['CDP_GITLAB_API_URL'], private_token=os.environ['CDP_GITLAB_API_TOKEN'])
+           project = gl.projects.get(os.environ['CI_PROJECT_ID'])
+           labels={}
+           for index, value in enumerate(project.attributes['tag_list']):
+               if "=" in value:
+                  tag = value.split("=")
+                  doc['metadata']['labels'][tag[0]] = tag[1]
+                  if 'template' in doc['spec'].keys():
+                      doc['spec']['template']['metadata']['labels'][tag[0]] = tag[1]
         return doc
 
     def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo):
@@ -623,7 +627,7 @@ class CLIDriver(object):
             self._cmd.run_command('docker-compose push')
         else:
             # Hadolint
-            self._cmd.run_command('hadolint Dockerfile', raise_error = False)
+            self._cmd.run_command('hadolint %s/Dockerfile' % ((self._context.opt['--build-context']), raise_error = False)
 
             image_tag = self.__getImageTag(self.__getImageName(), tag)
 
