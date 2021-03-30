@@ -1,8 +1,8 @@
 FROM gcr.io/kaniko-project/executor:latest AS kaniko
 FROM instrumenta/conftest:v0.18.2 AS conftest
-FROM alpine:3.12
+FROM alpine:3.13.3
 
-ARG VERSION_HADOLINT="v1.16.0"
+ARG VERSION_HADOLINT="v2.0.0"
 ARG VERSION_KUBECTL="v1.17.2"
 ARG VERSION_HELM="v3.4.2"
 ARG VERSION_HELM2="v2.17.0"
