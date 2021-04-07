@@ -69,12 +69,13 @@ class Context(object):
 
                 else:
                     ### Used by '--use-registry' params
-                    self.__set_registry(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(),None),
-                                        os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None),
-                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None))
-                    self.__login(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(), None),
-                                 os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(), None),
-                                 os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--use-registry'].upper(), None))
+                    registry = opt['--use-registry'].upper()
+                    self.__set_registry(os.getenv('CDP_%s_REGISTRY' % registry,None),
+                                        self.getRegistryReadOnlyUser(registry),
+                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % registry,None))
+                    self.__login(os.getenv('CDP_%s_REGISTRY' % registry, None),
+                                 os.getenv('CDP_%s_REGISTRY_USER' % registry, None),
+                                 os.getenv('CDP_%s_REGISTRY_TOKEN' % registry, None))
             elif  opt['k8s']:
                 if  opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr':
                     self._registry = os.getenv('CDP_ECR_PATH')
@@ -192,3 +193,11 @@ class Context(object):
         except KeyError: 
             value = None
         return value
+
+    def getRegistryReadOnlyUser(self,registry):
+        user_ro = os.getenv('CDP_%s_REGISTRY_READ_ONLY_USER' % registry,None)
+        if (user_ro is None or user_ro == ''):
+            # Pour retro-compatibilté
+            user_ro = os.getenv('CDP_%s_REGISTRY_USER'% registry,None)
+
+        return user_ro
