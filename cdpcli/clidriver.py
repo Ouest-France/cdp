@@ -103,7 +103,7 @@ Options:
     --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
-    --use-docker-compose                                       Use docker-compose to build / push image / retag container
+    --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
@@ -173,7 +173,7 @@ class CLIDriver(object):
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
 
-            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-conftest','docker-image'}
+            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-conftest','docker-image','use-docker-compose'}
             for option in deprecated:
                if (self._context.getParamOrEnv(option)):
                  LOG.warn("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
@@ -265,9 +265,7 @@ class CLIDriver(object):
             elif (self._context.opt['--docker-build-target']):
                 repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
-                docker_services = self._cmd.run_command('docker-compose config --services')
-                for docker_service in docker_services:
-                    repos.append('%s/%s' % (self._context.repository, docker_service.strip()))
+                raise ValueError('docker-compose is deprecated.')
 
             for repo in repos:
                 try:
@@ -328,27 +326,12 @@ class CLIDriver(object):
             
             prefix = self._context.getParamOrEnv("image-prefix-tag")
             if prefix:
-              tag = '%s-%s' % (prefix,self.__getTagSha1())
-              if self._context.opt['--use-docker-compose']:
-                LOG.info("Mode docker compose for retag")
-                docker_services = self._cmd.run_command('docker-compose config --services')
-                for docker_service in docker_services:
-                  image_repo = self.__getImageName() + '/%s' % docker_service
-                  self.__buildTagAndPushOnDockerRegistryWithPrefix(image_repo)
-              else:
-                try:
-                  LOG.info("default check for image")
-                  self.__buildTagAndPushOnDockerRegistryWithPrefix(self.__getImageName())
-                except Exception as e:
-                  LOG.info(str(e))
-                  try:
-                    LOG.info("Mode docker compose for retag if we can't find the image in the default path ( maybe a package error or --use-docker-compose parameter is missing on cdp k8s ?)")
-                    docker_services = self._cmd.run_command('docker-compose config --services')
-                    for docker_service in docker_services:
-                      image_repo = self.__getImageName() + '/%s' % docker_service
-                      self.__buildTagAndPushOnDockerRegistryWithPrefix(image_repo)
-                  except Exception as e:
-                    LOG.error(str(e))
+              tag = '%s-%s' % (prefix,tag)
+              try:
+                LOG.info("default check for image")
+                self.__buildTagAndPushOnDockerRegistryWithPrefix(self.__getImageName(), tag)
+              except Exception as e:
+                LOG.info(str(e))
                 
 
         # Use release name instead of the namespace name for release
@@ -615,10 +598,10 @@ class CLIDriver(object):
                       doc['spec']['template']['metadata']['labels'][tag[0]] = tag[1]
         return doc
 
-    def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo):
+    def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo, tag):
         prefix = self._context.getParamOrEnv("image-prefix-tag")
-        prefixTag = "%s-%s" % (prefix, self.__getTagSha1())
-        source_image_tag = self.__getImageTag(image_repo,  self.__getTagSha1())
+        prefixTag = "%s-%s" % (prefix, tag)
+        source_image_tag = self.__getImageTag(image_repo,  tag)
         dest_image_tag = self.__getImageTag(image_repo, prefixTag)
         LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
 
@@ -635,9 +618,7 @@ class CLIDriver(object):
         kaniko_cmd = KanikoCommand(self._cmd, '', self._context.opt['--volume-from'], True)
         os.environ['CDP_TAG'] = tag
         if self._context.opt['--use-docker-compose']:
-            os.environ['CDP_REGISTRY'] = self.__getImageName()
-            self._cmd.run_command('docker-compose build')
-            self._cmd.run_command('docker-compose push')
+             raise ValueError('docker-compose is deprecated.')
         else:
             # Hadolint
             self._cmd.run_command('hadolint %s/Dockerfile' % (self._context.opt['--build-context']), raise_error = False)
