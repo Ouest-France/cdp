@@ -326,10 +326,9 @@ class CLIDriver(object):
             
             prefix = self._context.getParamOrEnv("image-prefix-tag")
             if prefix:
-              tag = '%s-%s' % (prefix,tag)
               try:
                 LOG.info("default check for image")
-                self.__buildTagAndPushOnDockerRegistryWithPrefix(self.__getImageName(), tag)
+                tag = self.__buildTagAndPushOnDockerRegistryWithPrefix(self.__getImageName(), tag)
               except Exception as e:
                 LOG.info(str(e))
                 
@@ -613,7 +612,8 @@ class CLIDriver(object):
             print(e)
             print('****************************************************************')
             raise e          
-
+        return prefixTag
+        
     def __buildTagAndPushOnDockerRegistry(self, tag):
         kaniko_cmd = KanikoCommand(self._cmd, '', self._context.opt['--volume-from'], True)
         os.environ['CDP_TAG'] = tag
