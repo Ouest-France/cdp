@@ -16,17 +16,17 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--use-docker | --use-docker-compose]
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
         [--build-context=<path>]
         [--login-registry=<registry_name>]
         [--docker-build-target=<target_name>] [--docker-image-aws=<image_name_aws>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--put=<file> | --delete=<file>)
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--helm-version=<version>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1 | --image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
@@ -82,6 +82,7 @@ Options:
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
+    --image-tag=<tag>                                          Tag name
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
     --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
@@ -276,13 +277,15 @@ class CLIDriver(object):
                     aws_cmd.run('ecr create-repository --repository-name %s' % repo)
 
         # Tag and push docker image
-        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
+        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
             # Default if none option selected
             self.__buildTagAndPushOnDockerRegistry(self.__getTagBranchName())
         if self._context.opt['--image-tag-latest']:
             self.__buildTagAndPushOnDockerRegistry(self.__getTagLatest())
         if self._context.opt['--image-tag-sha1']:
             self.__buildTagAndPushOnDockerRegistry(self.__getTagSha1())
+        if self._context.opt['--image-tag']:
+            self.__buildTagAndPushOnDockerRegistry(self._context.opt['--image-tag'])
 
     def __artifactory(self):
         if self._context.opt['--put']:
@@ -295,13 +298,15 @@ class CLIDriver(object):
             raise ValueError('Incorrect option with artifactory command.')
 
         # Tag and push docker image
-        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
+        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
             # Default if none option selected
             self.__callArtifactoryFile(self.__getTagBranchName(), upload_file, http_verb)
         if self._context.opt['--image-tag-latest']:
             self.__callArtifactoryFile(self.__getTagLatest(), upload_file, http_verb)
         if self._context.opt['--image-tag-sha1']:
             self.__callArtifactoryFile(self.__getTagSha1(), upload_file, http_verb)
+        if self._context.opt['--image-tag']:
+            self.__callArtifactoryFile(self._context.opt['--image-tag'], upload_file, http_verb)
 
     def __k8s(self):
         kubectl_cmd = KubectlCommand(self._cmd, '', self._context.opt['--volume-from'], True)
@@ -310,9 +315,17 @@ class CLIDriver(object):
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
             pullPolicy = 'Always'
-        elif self._context.opt['--image-tag-sha1']:
-            tag = self.__getTagSha1()
-            pullPolicy = 'IfNotPresent'
+        else:
+            if self._context.opt['--image-tag-sha1']:
+               tag = self.__getTagSha1()
+               pullPolicy = 'IfNotPresent'
+            elif self._context.opt['--image-tag']:
+               tag = self._context.opt['--image-tag']
+               pullPolicy = 'IfNotPresent'
+            else:
+               tag = self.__getTagBranchName()
+               pullPolicy = 'Always'
+            
             prefix = self._context.getParamOrEnv("image-prefix-tag")
             if prefix:
               tag = '%s-%s' % (prefix,self.__getTagSha1())
@@ -337,9 +350,6 @@ class CLIDriver(object):
                   except Exception as e:
                     LOG.error(str(e))
                 
-        else:
-          tag = self.__getTagBranchName()
-          pullPolicy = 'Always'
 
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
