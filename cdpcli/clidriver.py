@@ -697,9 +697,13 @@ class CLIDriver(object):
         elif self._context.opt['--release-project-env-name']:
             return self.__getEnvName()[:53]
         elif self._context.opt['--release-custom-name']:
-            return  self.__getNamespace()[:53]+'-'+self._context.opt['--release-custom-name']
+            return  (self.__getShortNamespaceName() +'-'+ self._context.opt['--release-custom-name'])[:53]
         else:
             return self.__getNamespace()[:53]
+
+    def __getShortNamespaceName(self):
+        projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', os.environ['CI_PROJECT_NAME'])]) 
+        return projectFistLetterEachWord + os.environ['CI_PROJECT_ID']
 
     def __getName(self, condition):
         # Get k8s namespace
@@ -707,8 +711,8 @@ class CLIDriver(object):
             name = os.environ['CI_PROJECT_NAME']
         else:
             # Get first letter for each word
-            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', os.environ['CI_PROJECT_NAME'])])
-            name = '%s%s-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
+            projectFistLetterEachWord = self.__getShortNamespaceName()
+            name = '%s-%s' % (projectFistLetterEachWord, os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
 
         return name.replace('_', '-')
 
