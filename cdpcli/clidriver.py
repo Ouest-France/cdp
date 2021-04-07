@@ -39,7 +39,7 @@ Usage:
         [--create-gitlab-secret]
         [--tiller-namespace]
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
-        [--image-pull-secret]
+        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -83,6 +83,7 @@ Options:
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
+    --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
@@ -408,7 +409,9 @@ class CLIDriver(object):
         set_command = '%s --set image.repository=%s' % (set_command, self._context.registryRepositoryName)
         set_command = '%s --set image.tag=%s' % (set_command, tag)
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
-
+        tlsSecretName = self._context.getParamOrEnv("ingress-tlsSecretName")
+        if (tlsSecretName):
+            set_command = '%s --set ingress.tlsSecretName=%s' % (set_command, tlsSecretName)
         # Need to add secret file for docker registry
         if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr':
             # Add secret (Only if secret is not exist )
