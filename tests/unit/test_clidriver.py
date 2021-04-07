@@ -1826,7 +1826,7 @@ status:
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         namespace = TestCliDriver.ci_project_name
-        release = '%s-%s'[:53] % (TestCliDriver.ci_project_name, "test")
+        release = '%s-%s'[:53] % (self.__getShortNamespaceName(), "test")
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha)
@@ -1891,7 +1891,7 @@ status:
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         namespace = TestCliDriver.ci_project_name
-        release = '%s-%s'[:53] % (TestCliDriver.ci_project_name, "test")
+        release = '%s-%s'[:53] % (self.__getShortNamespaceName(), "test")
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         image_tag_service1 = "%s/%s/service_docker1:%s" % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha)
@@ -1962,7 +1962,7 @@ status:
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         namespace = TestCliDriver.ci_project_name
-        release = '%s-%s'[:53] % (TestCliDriver.ci_project_name, "test")
+        release = '%s-%s'[:53] % (self.__getShortNamespaceName(), "test")
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha)
@@ -2036,7 +2036,7 @@ status:
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         namespace = TestCliDriver.ci_project_name
-        release = '%s-%s'[:53] % (TestCliDriver.ci_project_name,"test")
+        release = '%s-%s'[:53] % (self.__getShortNamespaceName(), "test")
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
 
@@ -2219,3 +2219,7 @@ status:
         mock_Gitlab.return_value.projects = mock_projects
 
         return mock_projects, mock_environments, mock_env1, mock_env2
+    
+    def __getShortNamespaceName(self):
+        projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', os.environ['CI_PROJECT_NAME'])]) 
+        return projectFistLetterEachWord + os.environ['CI_PROJECT_ID']
