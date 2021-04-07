@@ -720,8 +720,8 @@ class CLIDriver(object):
         # Get k8s namespace
         if(self.__getEnvironmentName() is not None):
             # Get first letter for each word
-            projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', os.environ['CI_PROJECT_NAME'])])
-            name = '%s%s-env-%s' % (projectFistLetterEachWord, os.environ['CI_PROJECT_ID'], self.__getEnvironmentName().replace('/', '-'))    # Get deployment host
+            projectFistLetterEachWord = self.__getShortNamespaceName()
+            name = '%s-env-%s' % (projectFistLetterEachWord, self.__getEnvironmentName().replace('/', '-'))    # Get deployment host
         elif(self.__getEnvironmentName() is None):
             LOG.err('can not use environnement release option because environment is not defined in gitlab job.')
 
