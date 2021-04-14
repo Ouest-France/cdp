@@ -139,6 +139,7 @@ class FakeCommand(object):
 
 
 class TestCliDriver(unittest.TestCase):
+    unittest.TestCase.maxDiff = None
     ci_job_token = 'gitlab-ci'
     ci_commit_sha = '0123456789abcdef0123456789abcdef01234567'
     ci_registry_user = 'gitlab-ci'
@@ -1479,8 +1480,11 @@ status:
 
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        namespace = TestCliDriver.ci_project_name
-        release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
+#        namespace = 'hw14-branch-helloworld-with-many-characters-because-helm-k8s-be' #TestCliDriver.ci_project_name
+#        release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
         timeout = 180
         values = 'values.staging.yaml'
         delete_minutes = 60
@@ -1526,7 +1530,7 @@ status:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes }, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-branch-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes }, verif_cmd,
                 env_vars = {'CDP_ECR_PATH' : aws_host,'CI_RUNNER_TAGS': 'test, test2'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)

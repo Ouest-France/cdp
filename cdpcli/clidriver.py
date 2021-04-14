@@ -515,13 +515,11 @@ class CLIDriver(object):
         # Install or Upgrade environnement
         helm_cmd.run(command)
 
-        # Add label registry
-        if self._context.opt['--delete-labels']:
+        # Add label registry sur les namespaces différents du nom du projet Gitlab (cas AXS)
+        if namespace[:53] == self.__getName(False)[:53]:
+            delta = int(self._context.opt['--delete-labels']) if self._context.opt['--delete-labels'] else 240
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
-                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
-        elif not self._context.opt['--delete-labels'] and namespace[:53] == self.__getName(False)[:53]:
-            kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
-                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(240))).strftime(date_format), namespace))
+                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(delta))).strftime(date_format), namespace))
 
         self.__update_environment()
 
