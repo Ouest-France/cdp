@@ -24,6 +24,7 @@ Usage:
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
         [--build-context=<path>]
+        [--build-arg=<arg>]...
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--login-registry=<registry_name>]
         [--docker-build-target=<target_name>]
@@ -63,6 +64,7 @@ Options:
     -d, --dry-run                                              Simulate execution.
     --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
     --build-context=<path>                                     Specify the docker building context [default: .].
+    --build-arg=<arg>                                          Build args docker arguments
     --codeclimate                                              Codeclimate mode.
     --command=<cmd>                                            Command to run in the docker image.
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
@@ -576,13 +578,11 @@ class CLIDriver(object):
         # Install or Upgrade environnement
         helm_cmd.run(command)
 
-        # Add label registry
-        if self._context.opt['--delete-labels']:
+        # Add label registry sur les namespaces différents du nom du projet Gitlab (cas AXS)
+        if namespace[:53] == self.__getName(False)[:53]:
+            delta = int(self._context.opt['--delete-labels']) if self._context.opt['--delete-labels'] else 240
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
-                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
-        elif not self._context.opt['--delete-labels'] and namespace[:53] == self.__getName(False)[:53]:
-            kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
-                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(240))).strftime(date_format), namespace))
+                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(delta))).strftime(date_format), namespace))
 
         self.__update_environment()
 
@@ -687,7 +687,13 @@ class CLIDriver(object):
               docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and (self._context.opt['--use-custom-registry'] or self._context.opt['--use-registry'] == 'artifactory' or self._context.opt['--use-registry'] == 'custom'):
               docker_build_command = '%s --label com.jfrog.artifactory.retention.maxCount="%s"' % (docker_build_command, os.environ['CDP_ARTIFACTORY_TAG_RETENTION'])
+
+            if self._context.opt['--build-arg']:
+                self._context.opt['--build-arg'].sort()
+                for buildarg in self._context.opt['--build-arg']:
+                    docker_build_command = '%s --build-arg %s' % (docker_build_command, buildarg)
             self._cmd.run_command(docker_build_command)
+
 
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
