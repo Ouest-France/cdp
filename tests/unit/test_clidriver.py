@@ -739,6 +739,16 @@ status:
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
 
+    def test_docker_usedocker_imagetagsha1_usecustomregistry_with_buildargs(self):
+        # Create FakeCommand
+        verif_cmd = [
+            {'cmd': 'docker login -u %s -p \'%s\' https://%s' % (TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token, TestCliDriver.cdp_custom_registry), 'output': 'unnecessary'},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': 'docker build -t %s/%s:%s . --build-arg %s --build-arg %s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary'},
+            {'cmd': 'docker push %s/%s:%s' % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary'}
+        ]
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1', '--build-arg=param1=value1','--build-arg=param2=value2' }, verif_cmd)
+
     def test_docker_usedocker_imagetagsha1_usecustomregistry_with_dockerhub_login(self):
         registry_user='dockerhub'
         registry_token="token"
@@ -1486,8 +1496,9 @@ status:
 
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
-        namespace = TestCliDriver.ci_project_name
-        release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
+        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
         timeout = 180
         values = 'values.staging.yaml'
         delete_minutes = 60
@@ -1534,7 +1545,7 @@ status:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4' }, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-branch-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes, '--docker-image-helm=ouestfrance/cdp-helm:3.2.4' }, verif_cmd,
                 env_vars = {'CDP_ECR_PATH' : aws_host,'CI_RUNNER_TAGS': 'test, test2'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1543,6 +1554,7 @@ status:
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -2199,7 +2211,7 @@ status:
             finally:
                 for key,val in env_vars.items():
                     del os.environ[key]
-
+ 
     def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2',tag_list = []):
         mock_env1 = Mock()
         mock_env1.name = 'test'
