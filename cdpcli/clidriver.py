@@ -16,17 +16,17 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--use-docker | --use-docker-compose]
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
         [--build-context=<path>]
         [--login-registry=<registry_name>]
         [--docker-build-target=<target_name>] [--docker-image-aws=<image_name_aws>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--put=<file> | --delete=<file>)
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--helm-version=<version>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1 | --image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
@@ -39,7 +39,7 @@ Usage:
         [--create-gitlab-secret]
         [--tiller-namespace]
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
-        [--image-pull-secret]
+        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -82,7 +82,9 @@ Options:
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
+    --image-tag=<tag>                                          Tag name
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
+    --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
@@ -101,7 +103,7 @@ Options:
     --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
-    --use-docker-compose                                       Use docker-compose to build / push image / retag container
+    --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
@@ -171,7 +173,7 @@ class CLIDriver(object):
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
 
-            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-conftest','docker-image'}
+            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-conftest','docker-image','use-docker-compose'}
             for option in deprecated:
                if (self._context.getParamOrEnv(option)):
                  LOG.warn("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
@@ -263,9 +265,7 @@ class CLIDriver(object):
             elif (self._context.opt['--docker-build-target']):
                 repos.append('%s/%s' % (self._context.repository, self._context.opt['--docker-build-target']))
             elif self._context.opt['--use-docker-compose']:
-                docker_services = self._cmd.run_command('docker-compose config --services')
-                for docker_service in docker_services:
-                    repos.append('%s/%s' % (self._context.repository, docker_service.strip()))
+                raise ValueError('docker-compose is deprecated.')
 
             for repo in repos:
                 try:
@@ -275,13 +275,15 @@ class CLIDriver(object):
                     aws_cmd.run('ecr create-repository --repository-name %s' % repo)
 
         # Tag and push docker image
-        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
+        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
             # Default if none option selected
             self.__buildTagAndPushOnDockerRegistry(self.__getTagBranchName())
         if self._context.opt['--image-tag-latest']:
             self.__buildTagAndPushOnDockerRegistry(self.__getTagLatest())
         if self._context.opt['--image-tag-sha1']:
             self.__buildTagAndPushOnDockerRegistry(self.__getTagSha1())
+        if self._context.opt['--image-tag']:
+            self.__buildTagAndPushOnDockerRegistry(self._context.opt['--image-tag'])
 
     def __artifactory(self):
         if self._context.opt['--put']:
@@ -294,13 +296,15 @@ class CLIDriver(object):
             raise ValueError('Incorrect option with artifactory command.')
 
         # Tag and push docker image
-        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1']) or self._context.opt['--image-tag-branch-name']:
+        if not (self._context.opt['--image-tag-branch-name'] or self._context.opt['--image-tag-latest'] or self._context.opt['--image-tag-sha1'] or self._context.opt['--image-tag']) or self._context.opt['--image-tag-branch-name']:
             # Default if none option selected
             self.__callArtifactoryFile(self.__getTagBranchName(), upload_file, http_verb)
         if self._context.opt['--image-tag-latest']:
             self.__callArtifactoryFile(self.__getTagLatest(), upload_file, http_verb)
         if self._context.opt['--image-tag-sha1']:
             self.__callArtifactoryFile(self.__getTagSha1(), upload_file, http_verb)
+        if self._context.opt['--image-tag']:
+            self.__callArtifactoryFile(self._context.opt['--image-tag'], upload_file, http_verb)
 
     def __k8s(self):
         kubectl_cmd = KubectlCommand(self._cmd, '', self._context.opt['--volume-from'], True)
@@ -309,36 +313,25 @@ class CLIDriver(object):
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
             pullPolicy = 'Always'
-        elif self._context.opt['--image-tag-sha1']:
-            tag = self.__getTagSha1()
-            pullPolicy = 'IfNotPresent'
+        else:
+            if self._context.opt['--image-tag-sha1']:
+               tag = self.__getTagSha1()
+               pullPolicy = 'IfNotPresent'
+            elif self._context.opt['--image-tag']:
+               tag = self._context.opt['--image-tag']
+               pullPolicy = 'IfNotPresent'
+            else:
+               tag = self.__getTagBranchName()
+               pullPolicy = 'Always'
+            
             prefix = self._context.getParamOrEnv("image-prefix-tag")
             if prefix:
-              tag = '%s-%s' % (prefix,self.__getTagSha1())
-              if self._context.opt['--use-docker-compose']:
-                LOG.info("Mode docker compose for retag")
-                docker_services = self._cmd.run_command('docker-compose config --services')
-                for docker_service in docker_services:
-                  image_repo = self.__getImageName() + '/%s' % docker_service
-                  self.__buildTagAndPushOnDockerRegistryWithPrefix(image_repo)
-              else:
-                try:
-                  LOG.info("default check for image")
-                  self.__buildTagAndPushOnDockerRegistryWithPrefix(self.__getImageName())
-                except Exception as e:
-                  LOG.info(str(e))
-                  try:
-                    LOG.info("Mode docker compose for retag if we can't find the image in the default path ( maybe a package error or --use-docker-compose parameter is missing on cdp k8s ?)")
-                    docker_services = self._cmd.run_command('docker-compose config --services')
-                    for docker_service in docker_services:
-                      image_repo = self.__getImageName() + '/%s' % docker_service
-                      self.__buildTagAndPushOnDockerRegistryWithPrefix(image_repo)
-                  except Exception as e:
-                    LOG.error(str(e))
+              try:
+                LOG.info("default check for image")
+                tag = self.__buildTagAndPushOnDockerRegistryWithPrefix(self.__getImageName(), tag)
+              except Exception as e:
+                LOG.info(str(e))
                 
-        else:
-          tag = self.__getTagBranchName()
-          pullPolicy = 'Always'
 
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
@@ -408,7 +401,9 @@ class CLIDriver(object):
         set_command = '%s --set image.repository=%s' % (set_command, self._context.registryRepositoryName)
         set_command = '%s --set image.tag=%s' % (set_command, tag)
         set_command = '%s --set image.pullPolicy=%s' % (set_command, pullPolicy)
-
+        tlsSecretName = self._context.getParamOrEnv("ingress-tlsSecretName")
+        if (tlsSecretName):
+            set_command = '%s --set ingress.tlsSecretName=%s' % (set_command, tlsSecretName)
         # Need to add secret file for docker registry
         if not self._context.opt['--use-aws-ecr'] and not self._context.opt['--use-registry'] == 'aws-ecr':
             # Add secret (Only if secret is not exist )
@@ -520,13 +515,11 @@ class CLIDriver(object):
         # Install or Upgrade environnement
         helm_cmd.run(command)
 
-        # Add label registry
-        if self._context.opt['--delete-labels']:
+        # Add label registry sur les namespaces différents du nom du projet Gitlab (cas AXS)
+        if namespace[:53] == self.__getName(False)[:53]:
+            delta = int(self._context.opt['--delete-labels']) if self._context.opt['--delete-labels'] else 240
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
-                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format), namespace))
-        elif not self._context.opt['--delete-labels'] and namespace[:53] == self.__getName(False)[:53]:
-            kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
-                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(240))).strftime(date_format), namespace))
+                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(delta))).strftime(date_format), namespace))
 
         self.__update_environment()
 
@@ -602,10 +595,10 @@ class CLIDriver(object):
                       doc['spec']['template']['metadata']['labels'][tag[0]] = tag[1]
         return doc
 
-    def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo):
+    def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo, tag):
         prefix = self._context.getParamOrEnv("image-prefix-tag")
-        prefixTag = "%s-%s" % (prefix, self.__getTagSha1())
-        source_image_tag = self.__getImageTag(image_repo,  self.__getTagSha1())
+        prefixTag = "%s-%s" % (prefix, tag)
+        source_image_tag = self.__getImageTag(image_repo,  tag)
         dest_image_tag = self.__getImageTag(image_repo, prefixTag)
         LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
 
@@ -617,14 +610,13 @@ class CLIDriver(object):
             print(e)
             print('****************************************************************')
             raise e          
-
+        return prefixTag
+        
     def __buildTagAndPushOnDockerRegistry(self, tag):
         kaniko_cmd = KanikoCommand(self._cmd, '', self._context.opt['--volume-from'], True)
         os.environ['CDP_TAG'] = tag
         if self._context.opt['--use-docker-compose']:
-            os.environ['CDP_REGISTRY'] = self.__getImageName()
-            self._cmd.run_command('docker-compose build')
-            self._cmd.run_command('docker-compose push')
+             raise ValueError('docker-compose is deprecated.')
         else:
             # Hadolint
             self._cmd.run_command('hadolint %s/Dockerfile' % (self._context.opt['--build-context']), raise_error = False)
