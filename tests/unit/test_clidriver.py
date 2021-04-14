@@ -714,6 +714,16 @@ status:
         ]
         self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
 
+    def test_docker_usedocker_imagetagsha1_usecustomregistry_with_buildargs(self):
+        # Create FakeCommand
+        self.fakeauths["auths"] = {}
+        verif_cmd = [
+            {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
+            {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
+            {'cmd': (TestCliDriver.kaniko_full_build + " --build-arg %s --build-arg %s") % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko}
+        ]
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1', '--build-arg=param1=value1', '--build-arg=param2=value2' }, verif_cmd)
+
     def test_docker_usedocker_imagetagsha1_useharboregistryWithTagname(self):
         # Create FakeCommand
         self.fakeauths["auths"] = {}
