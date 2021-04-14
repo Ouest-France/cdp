@@ -677,7 +677,7 @@ class CLIDriver(object):
             self._cmd.run_command('docker-compose push')
         else:
             # Hadolint
-            self._cmd.run_command('hadolint Dockerfile', raise_error = False)
+            self._cmd.run_command('hadolint %s/Dockerfile' % (self._context.opt['--build-context']), raise_error = False)
 
             image_tag = self.__getImageTag(self.__getImageName(), tag)
 
