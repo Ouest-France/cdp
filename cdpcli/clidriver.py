@@ -34,7 +34,6 @@ Usage:
         [(--use-docker-compose)]
         [--values=<files>]
         [--delete-labels=<minutes>]
-        [--chart-helm-repo=<repo>] [--chart-version=<version>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
@@ -60,8 +59,6 @@ Options:
     --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
     --build-context=<path>                                     Specify the docker building context [default: .].
     --build-arg=<arg>                                          Build args for docker
-    --chart-helm-repo=<repo>                                   Url of the dependent chart repository 
-    --chart-version=<version>                                  Version of the dependant chart
     --command=<cmd>                                            Command to run in the docker image.
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
