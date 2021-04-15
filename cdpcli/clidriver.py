@@ -34,6 +34,7 @@ Usage:
         [(--use-docker-compose)]
         [--values=<files>]
         [--delete-labels=<minutes>]
+        [--chart-helm-repo=<repo>] [--chart-version=<version>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--timeout=<timeout>]
@@ -59,6 +60,8 @@ Options:
     --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
     --build-context=<path>                                     Specify the docker building context [default: .].
     --build-arg=<arg>                                          Build args for docker
+    --chart-helm-repo=<repo>                                   Url of the dependent chart repository 
+    --chart-version=<version>                                  Version of the dependant chart
     --command=<cmd>                                            Command to run in the docker image.
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
@@ -366,6 +369,14 @@ class CLIDriver(object):
         try:
             os.makedirs(final_template_deploy_spec_dir)
             shutil.copyfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], '%s/Chart.yaml' % final_deploy_spec_dir)
+            # Suppression de l'entrée dependencies car le helm upgrade écrase les modifications apportées après le helm tempate
+            if os.path.isdir('%s/charts' % self._context.opt['--deploy-spec-dir']):
+               with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']) as chartyml:
+                 data = yaml.load(chartyml)
+                 if 'dependencies' in data:
+                    del data['dependencies']
+                    with open('%s/Chart.yaml' % final_deploy_spec_dir, "w") as f:
+                        yaml.dump(data, f)
         except OSError as e:
             LOG.error(str(e))
 
@@ -373,11 +384,21 @@ class CLIDriver(object):
         command = '%s %s' % (command, final_deploy_spec_dir)
         if not self.isHelm2():
            command = '%s --timeout %ss' % (command, self._context.opt['--timeout'])
+           #Don't retain more than 20 release for history
            command = '%s --history-max %s' % (command, 20)
         else:
           command = '%s --timeout %s' % (command, self._context.opt['--timeout'])           
-        #Don't retain more than 20 release for history
+          if self._context.opt['--chart-helm-repo']:
+              command = '%s --repo %s' %(command, self._context.opt['--chart-helm-repo'])
+          if self._context.opt['--chart-version']:
+              command = '%s --vesrion %s' %(command, self._context.opt['--chart-version'])
+   
         set_command = '--set namespace=%s' % namespace
+        if self.isHelm3():
+          if self._context.opt['--chart-helm-repo']:
+              set_command = '%s --repo %s' %(set_command, self._context.opt['--chart-helm-repo'])
+          if self._context.opt['--chart-version']:
+              set_command = '%s --version %s' %(set_command, self._context.opt['--chart-version'])
  
         if self._context.opt['--tiller-namespace'] and self.isHelm2():
             command = '%s --tiller-namespace=%s' % (command, namespace)
@@ -467,6 +488,7 @@ class CLIDriver(object):
 
         template_command = '%s --namespace=%s' % (template_command, namespace)
         template_command = '%s > %s' % (template_command, tmp_templating_file)
+        helm_cmd.run("dependency update %s" % self._context.opt['--deploy-spec-dir'])
         helm_cmd.run(template_command)
 
         image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
@@ -867,6 +889,8 @@ class CLIDriver(object):
     def isHelm2(self):
         return self._context.getParamOrEnv("helm-version") == '2'
 
+    def isHelm3(self):
+        return self._context.getParamOrEnv("helm-version") == '3'
 
     @staticmethod
     def verbose(verbose):

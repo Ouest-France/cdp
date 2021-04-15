@@ -513,7 +513,18 @@ spec:
 status:
   lastScheduleTime: '2019-09-10T09:50:00Z'
 """
-
+    chart_yaml = """
+apiVersion: v2
+name: charts
+description: A Helm chart to deploy Kibana
+type: application
+version: 0.1.0
+appVersion: 1.12.0
+dependencies:
+- name: kibana
+  version: 7.10.1
+  repository: https://helm.elastic.co
+"""   
     def setUp(self):
         os.environ['CI_JOB_TOKEN'] = TestCliDriver.ci_job_token
         os.environ['CI_COMMIT_SHA'] = TestCliDriver.ci_commit_sha
@@ -827,11 +838,13 @@ status:
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        
         with patch("builtins.open", m):
 
             verif_cmd = [
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -878,7 +891,7 @@ status:
     @patch("cdpcli.clidriver.shutil.copytree")
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
-    @patch('cdpcli.clidriver.os.path.isdir', return_value=True)
+    @patch('cdpcli.clidriver.os.path.isdir',  return_value=True)
     @freeze_time("2019-06-25 11:55:27")
     def test_k8s_usegitlabregistry_namespaceprojectbranchname_values_dockerhost_with_conftest(self, mock_isdir, mock_dump_all, mock_copyfile, mock_copytree,mock_makedirs, mock_Gitlab):
         env_name = 'production'
@@ -902,9 +915,11 @@ status:
         date_delete = (date_now + datetime.timedelta(minutes = deleteDuration))
         self.fakeauths["auths"] = {}
 
-        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
+        m = mock_all_resources_tmp2 = mock_open(read_data=TestCliDriver.chart_yaml)
+        mock_all_resources_yaml2 = mock_open()
+        mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
-        m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        m.side_effect=[mock_all_resources_tmp2.return_value,mock_all_resources_yaml2.return_value,mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
         chartdir = os.path.abspath('%s_conftest' % deploy_spec_dir)
         cmdcurl = 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz%s | tar zx --wildcards --strip %s -C %s' % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], os.environ['CDP_CONFTEST_REPO'].replace("/","%2F"),"", 1, chartdir )
 
@@ -913,6 +928,7 @@ status:
             verif_cmd = [
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -990,6 +1006,7 @@ status:
             verif_cmd = [
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [TestCliDriver.tiller_not_found], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --name=%s --namespace=%s > %s/all_resources.tmp'
                         % (
                            deploy_spec_dir,
@@ -1064,6 +1081,7 @@ status:
             verif_cmd = [
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -1137,6 +1155,7 @@ status:
             verif_cmd = [
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set ingress.tlsSecretName=%s --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -1212,6 +1231,7 @@ status:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret.yaml', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -1290,6 +1310,7 @@ status:
                 {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-secret-hook.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret-hook.yaml', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                            % (release,
                               deploy_spec_dir,
@@ -1373,6 +1394,7 @@ status:
             verif_cmd = [
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -1444,6 +1466,7 @@ status:
             verif_cmd = [
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -1483,6 +1506,74 @@ status:
     @patch('cdpcli.clidriver.os.makedirs')
     @patch("cdpcli.clidriver.shutil.copyfile")
     @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
+    def test_k8s_usecustomregistry_forcebyenvnamespaceprojectname_values_with_repo(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
+        # Create FakeCommand
+        namespace = TestCliDriver.ci_project_name
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        deploy_spec_dir = 'charts'
+        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+        date_now = datetime.datetime.utcnow()
+        deleteDuration=240
+        self.fakeauths["auths"] = {}
+
+        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
+        mock_all_resources_yaml = mock_open()
+        m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        with patch("builtins.open", m):
+
+            verif_cmd = [
+                {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+                {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'template %s %s --set namespace=%s --repo %s --version %s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
+                        namespace,
+                        'https://helm.repo.fr/chart',
+                        'v1.0.0',
+                        release,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.cdp_custom_registry,
+                        TestCliDriver.ci_project_path.lower(),
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_custom_registry_user,
+                        TestCliDriver.cdp_custom_registry_read_only_token,
+                        TestCliDriver.cdp_custom_registry.replace(':', '-'),
+                        release,
+                        staging_file,
+                        int_file,
+                        namespace,
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
+                    % (release,
+                        final_deploy_spec_dir,
+                        namespace)
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
+            ]
+            self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--chart-helm-repo=https://helm.repo.fr/chart','--chart-version=v1.0.0','--values=%s' % values}, verif_cmd,
+                env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
+
+            mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
+            mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)        
+
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
+    @patch('cdpcli.clidriver.os.makedirs')
+    @patch("cdpcli.clidriver.shutil.copyfile")
+    @patch("cdpcli.clidriver.yaml.dump_all")
     @freeze_time("2018-02-14 11:55:27")
     def test_k8s_verbose_imagetagsha1_useawsecr_namespaceprojectname_deployspecdir_timeout_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
         #Get Mock
@@ -1513,6 +1604,7 @@ status:
             verif_cmd = [
                 {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -1582,6 +1674,7 @@ status:
             verif_cmd = [
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set service.internalPort=8080 --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -1657,6 +1750,7 @@ status:
             verif_cmd = [
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set service.internalPort=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
                     % ( release,
                         deploy_spec_dir,
@@ -1723,6 +1817,7 @@ status:
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
         with patch("builtins.open", m):
             verif_cmd = [
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                     % ( 
                         deploy_spec_dir,
@@ -1781,6 +1876,7 @@ status:
             with patch("builtins.open", m):
                 verif_cmd = [
                     {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+                    {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
                     {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                         % ( 
                             deploy_spec_dir,
@@ -1844,6 +1940,7 @@ status:
                  {'cmd': self.__getLoginString(aws_host, 'user','pass'), 'output': 'unnecessary'},
                  {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag, dest_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from': 'k8s', 'output': [TestCliDriver.tiller_found], 'docker_image': TestCliDriver.image_name_kubectl},
+                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
                  {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s-%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                          % (
                             deploy_spec_dir,
@@ -1903,6 +2000,7 @@ status:
 
             verif_cmd = [
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                     % ( 
                         deploy_spec_dir,
