@@ -373,10 +373,11 @@ class CLIDriver(object):
         command = '%s %s' % (command, final_deploy_spec_dir)
         if not self.isHelm2():
            command = '%s --timeout %ss' % (command, self._context.opt['--timeout'])
+           #Don't retain more than 20 release for history
            command = '%s --history-max %s' % (command, 20)
         else:
           command = '%s --timeout %s' % (command, self._context.opt['--timeout'])           
-        #Don't retain more than 20 release for history
+   
         set_command = '--set namespace=%s' % namespace
  
         if self._context.opt['--tiller-namespace'] and self.isHelm2():
@@ -467,6 +468,18 @@ class CLIDriver(object):
 
         template_command = '%s --namespace=%s' % (template_command, namespace)
         template_command = '%s > %s' % (template_command, tmp_templating_file)
+        helm_cmd.run("dependency update %s" % self._context.opt['--deploy-spec-dir'])
+        try:
+            # Suppression de l'entrée dependencies car le helm upgrade écrase les modifications apportées après le helm tempate
+            if os.path.isdir('%s/charts' % self._context.opt['--deploy-spec-dir']):
+               with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']) as chartyml:
+                 data = yaml.load(chartyml)
+                 if 'dependencies' in data:
+                    del data['dependencies']
+                    with open('%s/Chart.yaml' % final_deploy_spec_dir, "w") as f:
+                        yaml.dump(data, f)
+        except OSError as e:
+            LOG.error(str(e))        
         helm_cmd.run(template_command)
 
         image_pull_secret_value = 'cdp-%s-%s' % (self._context.registry, release)
@@ -867,6 +880,8 @@ class CLIDriver(object):
     def isHelm2(self):
         return self._context.getParamOrEnv("helm-version") == '2'
 
+    def isHelm3(self):
+        return self._context.getParamOrEnv("helm-version") == '3'
 
     @staticmethod
     def verbose(verbose):
