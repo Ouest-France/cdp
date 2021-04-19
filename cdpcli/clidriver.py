@@ -325,16 +325,20 @@ class CLIDriver(object):
             else:
                tag = self.__getTagBranchName()
                pullPolicy = 'Always'
-            
-            prefix = self._context.getParamOrEnv("image-prefix-tag")
-            if prefix:
-              try:
-                LOG.info("default check for image")
-                tag = self.__buildTagAndPushOnDockerRegistryWithPrefix(self.__getImageName(), tag)
-              except Exception as e:
-                LOG.info(str(e))
-                
 
+        # Gestion des prefix des tags pour la retention auto de Harbor            
+        prefixs = []
+        # Ajout systématique pour les releases tempo 
+        if self._context.opt['--delete-labels']:
+              prefixs.append("fb")
+
+        prefix = self._context.getParamOrEnv("image-prefix-tag")
+        if prefix:
+           prefixs.append(prefix)
+
+        if len(prefixs) > 0:
+            tag = self.__addPrefixToTag(self.__getImageName(), tag, prefixs)
+            
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
         namespace = self.__getNamespace()
@@ -610,22 +614,33 @@ class CLIDriver(object):
                       doc['spec']['template']['metadata']['labels'][tag[0]] = tag[1]
         return doc
 
-    def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo, tag):
-        prefix = self._context.getParamOrEnv("image-prefix-tag")
-        prefixTag = "%s-%s" % (prefix, tag)
-        source_image_tag = self.__getImageTag(image_repo,  tag)
-        dest_image_tag = self.__getImageTag(image_repo, prefixTag)
-        LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
-
-        # Utilisation de Skopeo
-        try:
-          self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
-        except BaseException as e:
-            print('************************** SKPEO *******************************')
-            print(e)
-            print('****************************************************************')
-            raise e          
-        return prefixTag
+    def __addPrefixToTag(self, image_repo, tag, prefixs):
+      try:
+        for prefix in prefixs:
+           prefixTag = "%s-%s" % (prefix, tag)
+           source_image_tag = self.__getImageTag(image_repo,  tag)
+           dest_image_tag = self.__getImageTag(image_repo, prefixTag)
+           LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
+           if self._context.opt['--use-registry']=="harbor":
+               cmd = 'curl -u "%s:%s" -skL -X POST "%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s/tags" -H "accept: application/json" -H "Content-Type: application/json" -d \'{ "name": "%s"}\'' % (
+                      os.getenv('CDP_HARBOR_REGISTRY_USER'),
+                      os.getenv('CDP_HARBOR_REGISTRY_TOKEN'),
+                      os.getenv('CDP_HARBOR_REGISTRY_API_URL'),
+                      self.__getNamespace(),
+                      self.__getNamespace(),
+                      tag,
+                      prefixTag)
+               self._cmd.run_secret_command(cmd.strip())
+           else:
+               # Utilisation de Skopeo
+               self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
+      except BaseException as e:
+               print('************************** SKPEO *******************************')
+               print(e)
+               print('****************************************************************')
+               raise e          
+        
+      return prefixTag
         
     def __buildTagAndPushOnDockerRegistry(self, tag):
         kaniko_cmd = KanikoCommand(self._cmd, '', self._context.opt['--volume-from'], True)

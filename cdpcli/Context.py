@@ -35,8 +35,7 @@ class Context(object):
                              os.getenv('CDP_%s_REGISTRY_TOKEN' % opt['--login-registry'].upper(), None))
 
         if opt['--use-aws-ecr'] or opt['--use-custom-registry'] or opt['--use-gitlab-registry'] or opt['--use-registry'] != 'none':
-            prefix = self.getParamOrEnv("image-prefix-tag")
-            if opt['maven'] or opt['docker'] or (opt['k8s'] and prefix):
+            if opt['maven'] or opt['docker'] or opt['k8s']:
                 if opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr' :
                     ### Get login from AWS-CLI
                     aws_cmd = AwsCommand(cmd, "", None, True)
@@ -76,21 +75,6 @@ class Context(object):
                     self.__login(os.getenv('CDP_%s_REGISTRY' % registry, None),
                                  os.getenv('CDP_%s_REGISTRY_USER' % registry, None),
                                  os.getenv('CDP_%s_REGISTRY_TOKEN' % registry, None))
-            elif  opt['k8s']:
-                if  opt['--use-aws-ecr'] or opt['--use-registry'] == 'aws-ecr' or opt['--use-custom-registry'] == 'aws-ecr':
-                    self._registry = os.getenv('CDP_ECR_PATH')
-                elif opt['--use-gitlab-registry'] or opt['--use-registry'] == 'gitlab' or opt['--use-custom-registry'] == 'gitlab':
-                    self.__set_registry(os.getenv('CI_REGISTRY', None),
-                                        os.getenv('CI_DEPLOY_USER', None),
-                                        os.getenv('CI_DEPLOY_PASSWORD', None))
-                elif opt['--use-custom-registry']:
-                    self.__set_registry(os.getenv('CDP_CUSTOM_REGISTRY',None),
-                                               os.getenv('CDP_CUSTOM_REGISTRY_USER', None),
-                                               os.getenv('CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN',None))
-                else:
-                    self.__set_registry(os.getenv('CDP_%s_REGISTRY' % opt['--use-registry'].upper(),None),
-                                        os.getenv('CDP_%s_REGISTRY_USER' % opt['--use-registry'].upper(),None),
-                                        os.getenv('CDP_%s_REGISTRY_READ_ONLY_TOKEN' % opt['--use-registry'].upper(),None))
 
 
     def __set_registry(self,registry,user_ro,token_ro):
@@ -165,8 +149,7 @@ class Context(object):
 
     def __login(self, registry, registry_user, registry_token):
         # Activate login, only specific stage.
-        prefix = self.getParamOrEnv("image-prefix-tag")
-        if self._opt['maven'] or self._opt['docker'] or (self._opt['k8s'] and prefix):
+        if self._opt['maven'] or self._opt['docker'] or self._opt['k8s']:
             if registry_user is not None and registry_token is not None and registry is not None:
                self.__loginRegistry(registry, registry_user, registry_token)
 
@@ -177,9 +160,6 @@ class Context(object):
           encodedStr = str(encodedBytes, "ascii")
 
           self.auths["auths"][registry] = {"auth": encodedStr}
-         # with open(os.path.expanduser('~') + '/.docker/config.json', 'w') as outfile:
-        #       json.dump(self.auths, outfile)          
-
           self._cmd.run_secret_command("echo '%s' > ~/.docker/config.json" % ( json.dumps(self.auths)))
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
