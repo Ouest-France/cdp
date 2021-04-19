@@ -170,6 +170,7 @@ class TestCliDriver(unittest.TestCase):
     cdp_harbor_registry_token = '1298937676109092094'
     cdp_harbor_registry_read_only_token = '1298937676109092095'
     cdp_harbor_registry = 'harbor.io:8123'
+    cdp_harbor_registry_api_url = 'https://harbor.io:8123'
     cdp_artifactory_path = 'http://repo.fr/test'
     cdp_artifactory_token = '29873678036783'
     cdp_repository_url = 'http://repo.fr'
@@ -549,11 +550,12 @@ dependencies:
         os.environ['CDP_CUSTOM_REGISTRY_TOKEN'] = TestCliDriver.cdp_custom_registry_token
         os.environ['CDP_CUSTOM_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_custom_registry_read_only_token
         os.environ['CDP_CUSTOM_REGISTRY'] = TestCliDriver.cdp_custom_registry
-        os.environ['CDP_HARBOR_REGISTRY_READ_ONLY_USER'] = 'TestCliDriver.cdp_harbor_registry_user'
+        os.environ['CDP_HARBOR_REGISTRY_READ_ONLY_USER'] = TestCliDriver.cdp_harbor_registry_user
         os.environ['CDP_HARBOR_REGISTRY_USER'] = TestCliDriver.cdp_harbor_registry_user
         os.environ['CDP_HARBOR_REGISTRY_TOKEN'] = TestCliDriver.cdp_harbor_registry_token
         os.environ['CDP_HARBOR_REGISTRY_READ_ONLY_TOKEN'] = TestCliDriver.cdp_harbor_registry_read_only_token
         os.environ['CDP_HARBOR_REGISTRY'] = TestCliDriver.cdp_harbor_registry
+        os.environ['CDP_HARBOR_REGISTRY_API_URL'] = TestCliDriver.cdp_harbor_registry_api_url
         os.environ['CDP_ARTIFACTORY_PATH'] = TestCliDriver.cdp_artifactory_path
         os.environ['CDP_ARTIFACTORY_TOKEN'] = TestCliDriver.cdp_artifactory_token
         os.environ['CDP_REPOSITORY_URL'] = TestCliDriver.cdp_repository_url
@@ -842,6 +844,7 @@ dependencies:
         with patch("builtins.open", m):
 
             verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -926,6 +929,7 @@ dependencies:
         with patch("builtins.open", m):
 
             verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -1004,6 +1008,7 @@ dependencies:
         m.side_effect = [mock_all_resources_tmp.return_value, mock_all_resources_yaml.return_value]
         with patch("builtins.open", m):
             verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'output': [TestCliDriver.tiller_not_found], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
@@ -1079,6 +1084,7 @@ dependencies:
         with patch("builtins.open", m):
 
             verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -1153,6 +1159,7 @@ dependencies:
         with patch("builtins.open", m):
 
             verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -1227,6 +1234,7 @@ dependencies:
         with patch("builtins.open", m):
 
             verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret.yaml', 'output': 'unnecessary'},
@@ -1304,6 +1312,7 @@ dependencies:
         m.side_effect = [mock_all_resources_tmp.return_value, mock_all_resources_yaml.return_value]
         with patch("builtins.open", m):
             verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.ci_registry,TestCliDriver.ci_registry_user, TestCliDriver.ci_job_token), 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-gitlab-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'echo "  KEY: \'value 1\'" >> charts/templates/cdp-gitlab-secret.yaml','output': 'unnecessary'},
@@ -1392,6 +1401,7 @@ dependencies:
         with patch("builtins.open", m):
 
             verif_cmd = [
+                {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -1464,6 +1474,7 @@ dependencies:
         with patch("builtins.open", m):
 
             verif_cmd = [
+                {'cmd': self.__getLoginString( TestCliDriver.cdp_custom_registry, TestCliDriver.cdp_custom_registry_user, TestCliDriver.cdp_custom_registry_token), 'output': 'unnecessary'},
                 {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -1502,6 +1513,148 @@ dependencies:
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
 
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
+    @patch('cdpcli.clidriver.os.makedirs')
+    @patch("cdpcli.clidriver.shutil.copyfile")
+    @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
+    def test_k8s_harbor_forcebyenvnamespaceprojectname_values(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
+        # Create FakeCommand
+        namespace = TestCliDriver.ci_project_name
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        deploy_spec_dir = 'charts'
+        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+        date_now = datetime.datetime.utcnow()
+        deleteDuration=240
+        self.fakeauths["auths"] = {}
+
+        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
+        mock_all_resources_yaml = mock_open()
+        m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        with patch("builtins.open", m):
+
+            verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
+                {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+                {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
+                        namespace,
+                        release,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry_user,
+                        TestCliDriver.cdp_harbor_registry_read_only_token,
+                        TestCliDriver.cdp_harbor_registry.replace(':', '-'),
+                        release,
+                        staging_file,
+                        int_file,
+                        namespace,
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
+                    % (release,
+                        final_deploy_spec_dir,
+                        namespace)
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
+            ]
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name', '--values=%s' % values}, verif_cmd,
+                env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
+
+            mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
+            mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
+    @patch('cdpcli.clidriver.os.makedirs')
+    @patch("cdpcli.clidriver.shutil.copyfile")
+    @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
+    def test_k8s_harbor_forcebyenvnamespaceprojectname_values_with_prefix(self, mock_dump_all, mock_copyfile, mock_makedirs, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+
+        # Create FakeCommand
+        namespace = TestCliDriver.ci_project_name
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        deploy_spec_dir = 'charts'
+        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+        date_now = datetime.datetime.utcnow()
+        deleteDuration=240
+        self.fakeauths["auths"] = {}
+
+        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
+        mock_all_resources_yaml = mock_open()
+        m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        with patch("builtins.open", m):
+
+            verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
+                {'cmd': 'curl -u "%s:%s" -skL -X POST "%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s/tags" -H "accept: application/json" -H "Content-Type: application/json" -d \'{ "name": "%s"}\'' % (
+                      os.getenv('CDP_HARBOR_REGISTRY_USER'),
+                      os.getenv('CDP_HARBOR_REGISTRY_TOKEN'),
+                      os.getenv('CDP_HARBOR_REGISTRY_API_URL'),
+                      namespace,
+                      namespace,
+                      TestCliDriver.ci_commit_ref_slug,
+                      "prod-" + TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary'},
+                {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+                {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
+                        namespace,
+                        release,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        "prod-" + TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry_user,
+                        TestCliDriver.cdp_harbor_registry_read_only_token,
+                        TestCliDriver.cdp_harbor_registry.replace(':', '-'),
+                        release,
+                        staging_file,
+                        int_file,
+                        namespace,
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
+                    % (release,
+                        final_deploy_spec_dir,
+                        namespace)
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
+            ]
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name', '--image-prefix-tag=prod','--values=%s' % values}, verif_cmd,
+                env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
+
+            mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
+            mock_copyfile.assert_any_call('%s/Chart.yaml' % deploy_spec_dir, '%s/Chart.yaml' % final_deploy_spec_dir)
+
+        # GITLAB API check
+        mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
+        mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -1517,8 +1670,6 @@ dependencies:
         namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
         namespace = namespace.replace('_', '-')[:63]
         release = namespace[:53]
-#        namespace = 'hw14-branch-helloworld-with-many-characters-because-helm-k8s-be' #TestCliDriver.ci_project_name
-#        release = TestCliDriver.ci_project_name.replace('_', '-')[:53]
         timeout = 180
         values = 'values.staging.yaml'
         delete_minutes = 60
@@ -1528,14 +1679,21 @@ dependencies:
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         self.fakeauths["auths"] = {}
-
         m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        prefix="fb"
+        image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha)
+        dest_image_tag = "%s/%s:%s-%s" % (aws_host, TestCliDriver.ci_project_path.lower(), prefix, TestCliDriver.ci_commit_sha)
+        login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+
         with patch("builtins.open", m):
 
             verif_cmd = [
                 {'cmd': 'env', 'dry_run': False, 'output': 'unnecessary'},
+                {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+                {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
+                {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag, dest_image_tag), 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --values %s/%s --namespace=%s > %s/all_resources.tmp'
@@ -1548,7 +1706,7 @@ dependencies:
                         TestCliDriver.ci_commit_sha[:8],
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
-                        TestCliDriver.ci_commit_sha,
+                        prefix + "-" + TestCliDriver.ci_commit_sha,
                         deploy_spec_dir,
                         values,
                         namespace,
@@ -1574,6 +1732,7 @@ dependencies:
         # GITLAB API check
         mock_Gitlab.assert_called_with(TestCliDriver.cdp_gitlab_api_url, private_token=TestCliDriver.cdp_gitlab_api_token)
         mock_projects.get.assert_called_with(TestCliDriver.ci_project_id)
+
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
@@ -1603,8 +1762,11 @@ dependencies:
             sleep = 10
             sleep_override = 20
             self.fakeauths["auths"] = {}
+            login_cmd = 'docker login -u user -p pass https://%s' % aws_host
 
             verif_cmd = [
+                {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+                {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -1679,8 +1841,11 @@ dependencies:
             final_deploy_spec_dir = '%s_final' % deploy_spec_dir
             sleep = 10
             self.fakeauths["auths"] = {}
+            login_cmd = 'docker login -u user -p pass https://%s' % aws_host
 
             verif_cmd = [
+                {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+                {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
@@ -1749,7 +1914,11 @@ dependencies:
         mock_all_resources_yaml = mock_open()
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
         with patch("builtins.open", m):
+            login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+
             verif_cmd = [
+                {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+                {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                     % ( 
@@ -1807,7 +1976,11 @@ dependencies:
             m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
 
             with patch("builtins.open", m):
+                login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+
                 verif_cmd = [
+                    {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+                    {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                     {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                     {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
                     {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
@@ -1931,7 +2104,11 @@ dependencies:
         m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
         with patch("builtins.open", m):
 
+            login_cmd = 'docker login -u user -p pass https://%s' % aws_host
+
             verif_cmd = [
+                {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
+                {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
