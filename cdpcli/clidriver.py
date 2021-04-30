@@ -36,6 +36,7 @@ Usage:
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
+        [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--create-gitlab-secret]
         [--tiller-namespace]
@@ -60,6 +61,8 @@ Options:
     --build-context=<path>                                     Specify the docker building context [default: .].
     --build-arg=<arg>                                          Build args for docker
     --command=<cmd>                                            Command to run in the docker image.
+    --chart-repo=<repo>                                        Path of the repository of default charts
+    --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
     --create-default-helm                                      Create default helm for simple project (One docker image).
@@ -183,8 +186,12 @@ class CLIDriver(object):
             if self._context.getParamOrEnv("docker-image-helm") :
                  image_helm_version = self._context.getParamOrEnv("docker-image-helm")
                  helm_version = image_helm_version[21]
-                 LOG.warning("\x1b[31;1mWARN : Option docker-image-helm is DEPRECATED. Use --helm-version instead. Set to %s\x1b[0m", helm_version)
+                 LOG.warning("\x1b[31;1mWARN : Option docker-image-helm is DEPRECATED. Use --helm-version instead. Set to %s\x1b[0m")
                  opt["--helm-version"] = helm_version
+
+            if self._context.opt['--create-default-helm']:
+                 LOG.warn("\x1b[31;1mWARN : Option -create-default-helm is DEPRECATED and is replaced by --use-chart=default\x1b[0m")
+                 opt["--use-chart"] = "default"
 
     def main(self, args=None):
         try:
@@ -345,17 +352,16 @@ class CLIDriver(object):
         host = self.__getHost()
 
         # Need to create default helm charts
-        if self._context.opt['--create-default-helm']:
+        if self._context.opt['--use-chart']:
             # Check that the chart dir no exists
-            if os.path.isdir('%s/templates' % self._context.opt['--deploy-spec-dir']):
-                raise ValueError('Directory %s/templates already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
-            elif os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
+            if os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
                 raise ValueError('File %s/values.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
             elif os.path.isfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']):
                 raise ValueError('File %s/Chart.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
             else:
-                os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'])
-                self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
+                os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'],0o777, True)
+                #self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
+                self.downloadChart(self._context.opt['--deploy-spec-dir'])
                 with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], 'w') as outfile:
                     data = dict(
                         apiVersion = 'v1' if self.isHelm2() else 'v2',
@@ -621,19 +627,8 @@ class CLIDriver(object):
            source_image_tag = self.__getImageTag(image_repo,  tag)
            dest_image_tag = self.__getImageTag(image_repo, prefixTag)
            LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
-           if self._context.opt['--use-registry']=="harbor":
-               cmd = 'curl -u "%s:%s" -skL -X POST "%s/api/v2.0/projects/%s/repositories/%s/artifacts/%s/tags" -H "accept: application/json" -H "Content-Type: application/json" -d \'{ "name": "%s"}\'' % (
-                      os.getenv('CDP_HARBOR_REGISTRY_USER'),
-                      os.getenv('CDP_HARBOR_REGISTRY_TOKEN'),
-                      os.getenv('CDP_HARBOR_REGISTRY_API_URL'),
-                      self.__getNamespace(),
-                      self.__getNamespace(),
-                      tag,
-                      prefixTag)
-               self._cmd.run_secret_command(cmd.strip())
-           else:
-               # Utilisation de Skopeo
-               self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
+           # Utilisation de Skopeo
+           self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
       except BaseException as e:
                print('************************** SKPEO *******************************')
                print(e)
@@ -905,3 +900,24 @@ class CLIDriver(object):
     @staticmethod
     def warning(quiet):
         return quiet or os.getenv('CDP_LOG_LEVEL', None) == 'warning'
+
+    def downloadChart(self, chartdir):
+        chart_repo = self._context.getParamOrEnv('chart-repo')
+        if (chart_repo == "" or chart_repo == "none" ):
+            return
+
+        chart_repo = chart_repo.replace("/","%2F")
+        use_chart = self._context.getParamOrEnv('use-chart')
+        if (use_chart != "" and use_chart != "none" ):
+
+            try: 
+               helm_chart = use_chart.split(":")
+               chart_name = helm_chart[0]
+               chart_sha = "master" if len(helm_chart) == 1 else helm_chart[1]
+               strip=chart_name.count("/") + 2 # Pour ne créer le répertoire du chart
+
+               cmd = 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=%s | tar zx --wildcards --strip %s -C %s \'*/%s\'' % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], chart_repo,chart_sha, strip, chartdir, chart_name)
+               self._cmd.run_secret_command(cmd.strip())
+            except Exception as e:
+                LOG.error("Error when downloading %s - Pass - %s/%s" % (chart_repo, use_chart,str(e)))               
+
