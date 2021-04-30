@@ -1,14 +1,11 @@
 FROM gcr.io/kaniko-project/executor:latest AS kaniko
-FROM instrumenta/conftest:v0.18.2 AS conftest
-FROM alpine:3.13.3
+FROM openpolicyagent/conftest:v0.24.0 AS conftest
+FROM alpine:3.13.5
 
-ARG VERSION_HADOLINT="v2.0.0"
-ARG VERSION_KUBECTL="v1.17.2"
-ARG VERSION_HELM="v3.4.2"
+ARG VERSION_HADOLINT="v2.3.0"
+ARG VERSION_KUBECTL="v1.21.0"
+ARG VERSION_HELM="v3.5.4"
 ARG VERSION_HELM2="v2.17.0"
-ARG VERSION_AWSCLI="1.18.134"
-ARG VERSION_SONAR_SCANNER="3.1.0.1141"
-ARG DIR_SONAR_SCANNER="/root"
 
 COPY . cdp/
 COPY --from=kaniko /kaniko /kaniko
