@@ -21,17 +21,18 @@ Usage:
     cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--use-docker | --use-docker-compose]
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
         [--build-context=<path>]
+        [--build-arg=<arg>]...
         [--login-registry=<registry_name>]
         [--docker-build-target=<target_name>] [--docker-image-aws=<image_name_aws>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--put=<file> | --delete=<file>)
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1]
+        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [--helm-version=<version>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1 | --image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
@@ -40,11 +41,12 @@ Usage:
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
+        [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--create-gitlab-secret]
         [--tiller-namespace]
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
-        [--image-pull-secret]
+        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
         [--volume-from=<host_type>]
@@ -62,10 +64,13 @@ Options:
     -d, --dry-run                                              Simulate execution.
     --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
     --build-context=<path>                                     Specify the docker building context [default: .].
+    --build-arg=<arg>                                          Build args for docker
     --command=<cmd>                                            Command to run in the docker image.
+    --chart-repo=<repo>                                        Path of the repository of default charts
+    --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
-    --create-default-helm                                      Create default helm for simple project (One docker image).
+    --create-default-helm                                      Create default helm for simple project (One docker image) [DEPRECATED].
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
@@ -87,7 +92,9 @@ Options:
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
+    --image-tag=<tag>                                          Tag name
     --image-prefix-tag=<tag>                                   Tag prefix for docker image.
+    --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
@@ -106,7 +113,7 @@ Options:
     --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
-    --use-docker-compose                                       Use docker-compose to build / push image / retag container
+    --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
     --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
@@ -150,8 +157,9 @@ docker:
     - CDP_<REGISTRY_NAME>_REGISTRY_USER (Gitlab-runner env var) – User used for authentication on docker registry.
 
 k8s:
-  without: --create-default-helm:
     - Helm and k8s files to configure the deployment. Must be present in the directory configured by the --deploy-spec-dir=<dir> option.
+    -- repo-chart : Path of the charts repository in Gitlab
+    --use-chart: Name of chart in the repo to use. Can be written as chart:version where version is the tag or branch in the repository
 
 docker|k8s:
   - CDP_DNS_SUBDOMAIN – Specify the subdomain of k8s cluster (set by environment variable in runner).
