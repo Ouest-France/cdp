@@ -190,7 +190,7 @@ class CLIDriver(object):
                  opt["--helm-version"] = helm_version
 
             if self._context.opt['--create-default-helm']:
-                 LOG.warn("\x1b[31;1mWARN : Option -create-default-helm is DEPRECATED and is replaced by --use-chart=default\x1b[0m")
+                 LOG.warning("\x1b[31;1mWARN : Option -create-default-helm is DEPRECATED and is replaced by --use-chart=default\x1b[0m")
                  opt["--use-chart"] = "default"
 
     def main(self, args=None):
@@ -351,33 +351,42 @@ class CLIDriver(object):
         namespace = self.__getNamespace()
         host = self.__getHost()
 
+        final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
+        final_template_deploy_spec_dir = '%s/templates' % final_deploy_spec_dir
+        tmp_chart_dir = "/cdp/k8s/charts"
+
+        chart_placeholders = ['{{project.name}}']
+        chart_replacement = [os.environ['CI_PROJECT_NAME']]
+
+        os.makedirs(final_template_deploy_spec_dir)
         # Need to create default helm charts
         if self._context.opt['--use-chart']:
+            os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'],0o777, True)
             # Check that the chart dir no exists
             if os.path.isfile('%s/values.yaml' % self._context.opt['--deploy-spec-dir']):
                 raise ValueError('File %s/values.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
-            elif os.path.isfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']):
-                raise ValueError('File %s/Chart.yaml already exists, while --deploy-spec-dir has been selected.' % self._context.opt['--deploy-spec-dir'])
             else:
-                os.makedirs('%s/templates' % self._context.opt['--deploy-spec-dir'],0o777, True)
-                #self._cmd.run_command('cp -R /cdp/k8s/charts/* %s/' % self._context.opt['--deploy-spec-dir'])
-                self.downloadChart(self._context.opt['--deploy-spec-dir'])
-                with open('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], 'w') as outfile:
-                    data = dict(
-                        apiVersion = 'v1' if self.isHelm2() else 'v2',
-                        description = 'A Helm chart for Kubernetes',
-                        name = os.environ['CI_PROJECT_NAME'],
-                        version = '0.1.0'
-                    )
-                    yaml.dump(data, outfile)
+                chartIsPresent = False
+                #Download predefined chart in a temporary directory
+                self.downloadChart(tmp_chart_dir)
+                if os.path.isfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir']):
+                   chartIsPresent = True
+                   # We delete default Chart.yaml cause it exists in working directory
+                   os.remove(tmp_chart_dir + "/Chart.yaml")
+                else:
+                   # replace placeholders
+                   with open('%s/Chart.yaml' % tmp_chart_dir, 'r+') as f:
+                       text = f.read()
+                       for i in range(0,len(chart_placeholders)):
+                           text = text.replace(chart_placeholders[i], chart_replacement[i])
+                       f.seek(0)
+                       f.write(text)
+                       f.truncate()
+            self._cmd.run_command('cp -R %s/* %s/' % (tmp_chart_dir, self._context.opt['--deploy-spec-dir']))
+            #shutil.copytree('%s' % tmp_chart_dir, '%s' % self._context.opt['--deploy-spec-dir'])
 
-        final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
-        final_template_deploy_spec_dir = '%s/templates' % final_deploy_spec_dir
-        try:
-            os.makedirs(final_template_deploy_spec_dir)
-            shutil.copyfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], '%s/Chart.yaml' % final_deploy_spec_dir)
-        except OSError as e:
-            LOG.error(str(e))
+
+        shutil.copyfile('%s/Chart.yaml' % self._context.opt['--deploy-spec-dir'], '%s/Chart.yaml' % final_deploy_spec_dir)
 
         command = 'upgrade %s' % release
         command = '%s %s' % (command, final_deploy_spec_dir)

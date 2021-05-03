@@ -1,0 +1,253 @@
+Warning: 'classifiers' should be a list, got type 'tuple'
+running pytest
+Searching for freezegun
+Best match: freezegun 1.1.0
+Processing freezegun-1.1.0-py3.8.egg
+
+Using /home/mxmorin/github/cdp/.eggs/freezegun-1.1.0-py3.8.egg
+Searching for pytest
+Best match: pytest 6.2.2
+Processing pytest-6.2.2-py3.8.egg
+
+Using /home/mxmorin/github/cdp/.eggs/pytest-6.2.2-py3.8.egg
+Searching for python-dateutil>=2.7
+Best match: python-dateutil 2.8.1
+Processing python_dateutil-2.8.1-py3.8.egg
+
+Using /home/mxmorin/github/cdp/.eggs/python_dateutil-2.8.1-py3.8.egg
+Searching for toml
+Best match: toml 0.10.2
+Processing toml-0.10.2-py3.8.egg
+
+Using /home/mxmorin/github/cdp/.eggs/toml-0.10.2-py3.8.egg
+Searching for py>=1.8.2
+Best match: py 1.10.0
+Processing py-1.10.0-py3.8.egg
+
+Using /home/mxmorin/github/cdp/.eggs/py-1.10.0-py3.8.egg
+Searching for pluggy<1.0.0a1,>=0.12
+Best match: pluggy 1.0.0.dev0
+Processing pluggy-1.0.0.dev0-py3.8.egg
+
+Using /home/mxmorin/github/cdp/.eggs/pluggy-1.0.0.dev0-py3.8.egg
+Searching for packaging
+Best match: packaging 20.9
+Processing packaging-20.9-py3.8.egg
+
+Using /home/mxmorin/github/cdp/.eggs/packaging-20.9-py3.8.egg
+Searching for iniconfig
+Best match: iniconfig 1.1.1
+Processing iniconfig-1.1.1-py3.8.egg
+
+Using /home/mxmorin/github/cdp/.eggs/iniconfig-1.1.1-py3.8.egg
+Searching for pyparsing>=2.0.2
+Best match: pyparsing 3.0.0b2
+Processing pyparsing-3.0.0b2-py3.8.egg
+
+Using /home/mxmorin/github/cdp/.eggs/pyparsing-3.0.0b2-py3.8.egg
+running egg_info
+writing cdpcli.egg-info/PKG-INFO
+writing dependency_links to cdpcli.egg-info/dependency_links.txt
+writing requirements to cdpcli.egg-info/requires.txt
+writing top-level names to cdpcli.egg-info/top_level.txt
+reading manifest file 'cdpcli.egg-info/SOURCES.txt'
+writing manifest file 'cdpcli.egg-info/SOURCES.txt'
+running build_ext
+============================= test session starts ==============================
+platform linux -- Python 3.8.5, pytest-6.2.2, py-1.10.0, pluggy-1.0.0.dev0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/mxmorin/github/cdp, configfile: setup.cfg
+collecting ... collected 1 item
+
+tests/unit/test_clidriver.py::TestCliDriver::test_k8s_harbor_forcebyenvnamespaceprojectname_with_default_chart FAILED [100%]
+
+=================================== FAILURES ===================================
+_ TestCliDriver.test_k8s_harbor_forcebyenvnamespaceprojectname_with_default_chart _
+
+self = <tests.unit.test_clidriver.TestCliDriver testMethod=test_k8s_harbor_forcebyenvnamespaceprojectname_with_default_chart>
+mock_dump_all = <MagicMock name='dump_all' id='139872580628096'>
+mock_copyfile = <MagicMock name='copyfile' id='139872580734448'>
+mock_dump = <MagicMock name='dump' id='139872580744240'>
+mock_makedirs = <MagicMock name='makedirs' id='139872580756288'>
+mock_isfile = <MagicMock name='isfile' id='139872580248144'>
+mock_isdir = <MagicMock name='isdir' id='139872580264288'>
+mock_Gitlab = <MagicMock name='Gitlab' id='139872580276336'>
+
+    @patch('cdpcli.clidriver.gitlab.Gitlab')
+    @patch('cdpcli.clidriver.os.path.isdir', return_value=False)
+    @patch('cdpcli.clidriver.os.path.isfile', return_value=False)
+    @patch('cdpcli.clidriver.os.makedirs')
+    @patch("cdpcli.clidriver.yaml.dump")
+    @patch("cdpcli.clidriver.shutil.copyfile")
+    @patch("cdpcli.clidriver.yaml.dump_all")
+    @freeze_time("2019-06-25 11:55:27")
+    def test_k8s_harbor_forcebyenvnamespaceprojectname_with_default_chart(self, mock_dump_all, mock_copyfile, mock_dump, mock_makedirs, mock_isfile, mock_isdir, mock_Gitlab):
+        #Get Mock
+        mock_projects, mock_environments, mock_env1, mock_env2 = self.__get_gitlab_mock(mock_Gitlab)
+    
+        # Create FakeCommand
+        namespace = TestCliDriver.ci_project_name
+        namespace = namespace.replace('_', '-')[:63]
+        release = namespace[:53]
+        staging_file = 'values.staging.yaml'
+        int_file = 'values.int.yaml'
+        values = ','.join([staging_file, int_file])
+        deploy_spec_dir = 'charts'
+        final_deploy_spec_dir = '%s_final' % deploy_spec_dir
+        tmp_chart_dir="/cdp/k8s/charts"
+        date_now = datetime.datetime.utcnow()
+        deleteDuration=240
+        self.fakeauths["auths"] = {}
+        mock_makedirs.maxDiff = None
+        m = mock_all_resources_tmp = mock_open(read_data=TestCliDriver.all_resources_tmp)
+        mock_all_resources_yaml = mock_open()
+        #m.side_effect=[mock_all_resources_tmp.return_value,mock_all_resources_yaml.return_value]
+        with patch("builtins.open", m):
+            verif_cmd = [
+                {'cmd': self.__getLoginString(TestCliDriver.cdp_harbor_registry,TestCliDriver.cdp_harbor_registry_user, TestCliDriver.cdp_harbor_registry_token), 'output': 'unnecessary'},
+                {'cmd': 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=master | tar zx --wildcards --strip 2 -C %s \'*/default\''
+                  % (TestCliDriver.cdp_gitlab_api_token, TestCliDriver.cdp_gitlab_api_url, TestCliDriver.chart_repo, tmp_chart_dir), 'output': 'unnecessary'},
+                {'cmd': 'cp -R /cdp/k8s/charts/* charts/', 'output': 'unnecessary'},
+                {'cmd': 'cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/', 'output': 'unnecessary'},
+                {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
+                {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=Always --set image.credentials.username=%s --set image.credentials.password=\'%s\' --set image.imagePullSecrets=cdp-%s-%s --values charts/%s --values charts/%s --namespace=%s > %s/all_resources.tmp'
+                    % ( release,
+                        deploy_spec_dir,
+                        namespace,
+                        release,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.cdp_dns_subdomain_staging,
+                        TestCliDriver.ci_commit_sha[:8],
+                        TestCliDriver.cdp_harbor_registry,
+                        TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
+                        TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.cdp_harbor_registry_user,
+                        TestCliDriver.cdp_harbor_registry_read_only_token,
+                        TestCliDriver.cdp_harbor_registry.replace(':', '-'),
+                        release,
+                        staging_file,
+                        int_file,
+                        namespace,
+                        final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
+                {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --wait --atomic'
+                    % (release,
+                        final_deploy_spec_dir,
+                        namespace)
+                        , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
+            ]
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name',  '--use-chart=default','--values=%s' % values}, verif_cmd,
+                env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
+    
+            mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
+>           mock_makedirs.assert_has_calls([call('%s/templates,0o777, True' % deploy_spec_dir), call('%s/templates' % final_deploy_spec_dir)],True)
+
+tests/unit/test_clidriver.py:1652: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <MagicMock name='makedirs' id='139872580756288'>
+calls = [call('charts/templates,0o777, True'), call('charts_final/templates')]
+any_order = True
+
+    def assert_has_calls(self, calls, any_order=False):
+        """assert the mock has been called with the specified calls.
+        The `mock_calls` list is checked for the calls.
+    
+        If `any_order` is False (the default) then the calls must be
+        sequential. There can be extra calls before or after the
+        specified calls.
+    
+        If `any_order` is True then the calls can be in any order, but
+        they must all appear in `mock_calls`."""
+        expected = [self._call_matcher(c) for c in calls]
+        cause = next((e for e in expected if isinstance(e, Exception)), None)
+        all_calls = _CallList(self._call_matcher(c) for c in self.mock_calls)
+        if not any_order:
+            if expected not in all_calls:
+                if cause is None:
+                    problem = 'Calls not found.'
+                else:
+                    problem = ('Error processing expected calls.\n'
+                               'Errors: {}').format(
+                                   [e if isinstance(e, Exception) else None
+                                    for e in expected])
+                raise AssertionError(
+                    f'{problem}\n'
+                    f'Expected: {_CallList(calls)}'
+                    f'{self._calls_repr(prefix="Actual").rstrip(".")}'
+                ) from cause
+            return
+    
+        all_calls = list(all_calls)
+    
+        not_found = []
+        for kall in expected:
+            try:
+                all_calls.remove(kall)
+            except ValueError:
+                not_found.append(kall)
+        if not_found:
+>           raise AssertionError(
+                '%r does not contain all of %r in its call list, '
+                'found %r instead' % (self._mock_name or 'mock',
+                                      tuple(not_found), all_calls)
+            ) from cause
+E           AssertionError: 'makedirs' does not contain all of (call('charts/templates,0o777, True'),) in its call list, found [call('charts/templates', 511, True), call('charts_conftest')] instead
+
+/usr/local/lib/python3.8/dist-packages/mock/mock.py:967: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Attendu : %s echo '{"auths": {"harbor.io:8123": {"auth": "aGFyYm9yX3VzZXI6MTI5ODkzNzY3NjEwOTA5MjA5NA=="}}}' > ~/.docker/config.json
+recu    : %s echo '{"auths": {"harbor.io:8123": {"auth": "aGFyYm9yX3VzZXI6MTI5ODkzNzY3NjEwOTA5MjA5NA=="}}}' > ~/.docker/config.json
+Attendu : %s curl -H "PRIVATE-TOKEN: azlemksiu84dza" -skL https://www.gitlab.com/api/v4/projects/infrastructure-repository-helm-charts%2Finfrastructure-repository-helm-charts/repository/archive.tar.gz?sha=master | tar zx --wildcards --strip 2 -C /cdp/k8s/charts '*/default'
+recu    : %s curl -H "PRIVATE-TOKEN: azlemksiu84dza" -skL https://www.gitlab.com/api/v4/projects/infrastructure-repository-helm-charts%2Finfrastructure-repository-helm-charts/repository/archive.tar.gz?sha=master | tar zx --wildcards --strip 2 -C /cdp/k8s/charts '*/default'
+Attendu : %s cp -R /cdp/k8s/charts/* charts/
+recu    : %s cp -R /cdp/k8s/charts/* charts/
+Attendu : %s cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/
+recu    : %s cp /cdp/k8s/secret/cdp-secret.yaml charts/templates/
+Attendu : %s kubectl get namespace hello-world
+recu    : %s kubectl get namespace hello-world
+Attendu : %s helm3 dependency update charts
+recu    : %s helm3 dependency update charts
+Attendu : %s helm3 template hello-world charts --set namespace=hello-world --set ingress.host=hello-world.staging.example.com --set ingress.subdomain=staging.example.com --set image.commit.sha=sha-01234567 --set image.registry=harbor.io:8123 --set image.repository=hello-world/hello-world --set image.tag=branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_63 --set image.pullPolicy=Always --set image.credentials.username=harbor_user --set image.credentials.password='1298937676109092095' --set image.imagePullSecrets=cdp-harbor.io-8123-hello-world --values charts/values.staging.yaml --values charts/values.int.yaml --namespace=hello-world > charts_final/all_resources.tmp
+recu    : %s helm3 template hello-world charts --set namespace=hello-world --set ingress.host=hello-world.staging.example.com --set ingress.subdomain=staging.example.com --set image.commit.sha=sha-01234567 --set image.registry=harbor.io:8123 --set image.repository=hello-world/hello-world --set image.tag=branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_63 --set image.pullPolicy=Always --set image.credentials.username=harbor_user --set image.credentials.password='1298937676109092095' --set image.imagePullSecrets=cdp-harbor.io-8123-hello-world --values charts/values.staging.yaml --values charts/values.int.yaml --namespace=hello-world > charts_final/all_resources.tmp
+Attendu : %s helm3 upgrade hello-world charts_final --timeout 600s --history-max 20 -i --namespace=hello-world --wait --atomic
+recu    : %s helm3 upgrade hello-world charts_final --timeout 600s --history-max 20 -i --namespace=hello-world --wait --atomic
+----------------------------- Captured stderr call -----------------------------
+
+******************** command ********************
+Command: kubectl get namespace hello-world
+
+******************** command ********************
+Version: 3
+Command: helm3 dependency update charts
+
+******************** command ********************
+Version: 3
+Command: helm3 template hello-world charts --set namespace=hello-world --set ingress.host=hello-world.staging.example.com --set ingress.subdomain=staging.example.com --set image.commit.sha=sha-01234567 --set image.registry=harbor.io:8123 --set image.repository=hello-world/hello-world --set image.tag=branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_63 --set image.pullPolicy=Always --set image.credentials.username=harbor_user --set image.credentials.password='1298937676109092095' --set image.imagePullSecrets=cdp-harbor.io-8123-hello-world --values charts/values.staging.yaml --values charts/values.int.yaml --namespace=hello-world > charts_final/all_resources.tmp
+Add imagePullSecret
+<MagicMock name='dump_all()' id='139872579190944'>
+
+******************** command ********************
+Version: 3
+Command: helm3 upgrade hello-world charts_final --timeout 600s --history-max 20 -i --namespace=hello-world --wait --atomic
+------------------------------ Captured log call -------------------------------
+INFO     dockercommand:kubectlcommand.py:20 
+INFO     dockercommand:kubectlcommand.py:21 ******************** command ********************
+INFO     dockercommand:kubectlcommand.py:22 Command: kubectl get namespace hello-world
+INFO     dockercommand:helmcommand.py:20 
+INFO     dockercommand:helmcommand.py:21 ******************** command ********************
+INFO     dockercommand:helmcommand.py:22 Version: 3
+INFO     dockercommand:helmcommand.py:23 Command: helm3 dependency update charts
+INFO     dockercommand:helmcommand.py:20 
+INFO     dockercommand:helmcommand.py:21 ******************** command ********************
+INFO     dockercommand:helmcommand.py:22 Version: 3
+INFO     dockercommand:helmcommand.py:23 Command: helm3 template hello-world charts --set namespace=hello-world --set ingress.host=hello-world.staging.example.com --set ingress.subdomain=staging.example.com --set image.commit.sha=sha-01234567 --set image.registry=harbor.io:8123 --set image.repository=hello-world/hello-world --set image.tag=branch_helloworld_with_many-characters_because_helm_k8s_because_the_length_must_not_longer_than_63 --set image.pullPolicy=Always --set image.credentials.username=harbor_user --set image.credentials.password='1298937676109092095' --set image.imagePullSecrets=cdp-harbor.io-8123-hello-world --values charts/values.staging.yaml --values charts/values.int.yaml --namespace=hello-world > charts_final/all_resources.tmp
+INFO     clidriver:clidriver.py:585 Add imagePullSecret
+INFO     clidriver:clidriver.py:530 <MagicMock name='dump_all()' id='139872579190944'>
+INFO     dockercommand:helmcommand.py:20 
+INFO     dockercommand:helmcommand.py:21 ******************** command ********************
+INFO     dockercommand:helmcommand.py:22 Version: 3
+INFO     dockercommand:helmcommand.py:23 Command: helm3 upgrade hello-world charts_final --timeout 600s --history-max 20 -i --namespace=hello-world --wait --atomic
+=========================== short test summary info ============================
+FAILED tests/unit/test_clidriver.py::TestCliDriver::test_k8s_harbor_forcebyenvnamespaceprojectname_with_default_chart
+============================== 1 failed in 3.76s ===============================
