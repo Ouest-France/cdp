@@ -1776,7 +1776,7 @@ dependencies:
                         TestCliDriver.ci_commit_sha[:8],
                         TestCliDriver.cdp_harbor_registry,
                         TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name,
-                        prefix + "-" + TestCliDriver.ci_commit_ref_slug,
+                        TestCliDriver.ci_commit_ref_slug,
                         TestCliDriver.cdp_harbor_registry_user,
                         TestCliDriver.cdp_harbor_registry_read_only_token,
                         TestCliDriver.cdp_harbor_registry.replace(':', '-'),
@@ -1852,7 +1852,7 @@ dependencies:
                         TestCliDriver.ci_commit_sha[:8],
                         aws_host,
                         TestCliDriver.ci_project_path.lower(),
-                        prefix + "-" + TestCliDriver.ci_commit_sha,
+                        TestCliDriver.ci_commit_sha,
                         deploy_spec_dir,
                         values,
                         namespace,
@@ -2179,7 +2179,7 @@ dependencies:
                  {'cmd': 'skopeo copy docker://%s docker://%s'  % (image_tag, dest_image_tag), 'output': 'unnecessary'},
                  {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from': 'k8s', 'output': [TestCliDriver.tiller_found], 'docker_image': TestCliDriver.image_name_kubectl},
                  {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},
-                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s-%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
+                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
                          % (
                             deploy_spec_dir,
                             namespace,
@@ -2189,7 +2189,7 @@ dependencies:
                             TestCliDriver.ci_commit_sha[:8],
                             aws_host,
                             TestCliDriver.ci_project_path.lower(),
-                            prefix,TestCliDriver.ci_commit_sha,
+                            TestCliDriver.ci_commit_sha,
                             release,
                             namespace,
                             final_deploy_spec_dir), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2},

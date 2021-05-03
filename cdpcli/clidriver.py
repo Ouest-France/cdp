@@ -355,7 +355,7 @@ class CLIDriver(object):
         final_template_deploy_spec_dir = '%s/templates' % final_deploy_spec_dir
         tmp_chart_dir = "/cdp/k8s/charts"
 
-        chart_placeholders = ['{{project.name}}']
+        chart_placeholders = ['<project.name>']
         chart_replacement = [os.environ['CI_PROJECT_NAME']]
 
         os.makedirs(final_template_deploy_spec_dir)
@@ -725,13 +725,15 @@ class CLIDriver(object):
     def __getRelease(self):
         if self._context.opt['--release-project-branch-name']:
             # https://github.com/kubernetes/helm/issues/1528
-            return self.__getName(False)[:53]
+            release = self.__getName(False)[:53]
         elif self._context.opt['--release-project-env-name']:
-            return self.__getEnvName()[:53]
+            release = self.__getEnvName()[:53]
         elif self._context.opt['--release-custom-name']:
-            return  (self.__getShortNamespaceName() +'-'+ self._context.opt['--release-custom-name'])[:53]
+            release =  (self.__getShortNamespaceName() +'-'+ self._context.opt['--release-custom-name'])[:53]
         else:
-            return self.__getNamespace()[:53]
+            release = self.__getNamespace()[:53]
+        # K8s ne supporte plus les . dans les noms de release
+        return release.replace(".","-")
 
     def __getShortNamespaceName(self):
         projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', os.environ['CI_PROJECT_NAME'])]) 
