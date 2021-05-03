@@ -355,8 +355,8 @@ class CLIDriver(object):
         final_template_deploy_spec_dir = '%s/templates' % final_deploy_spec_dir
         tmp_chart_dir = "/cdp/k8s/charts"
 
-        chart_placeholders = ['<project.name>']
-        chart_replacement = [os.environ['CI_PROJECT_NAME']]
+        chart_placeholders = ['<project.name>','<helm.version>']
+        chart_replacement = [os.environ['CI_PROJECT_NAME'], "v1" if self.isHelm2 else "v2"]
 
         os.makedirs(final_template_deploy_spec_dir)
         # Need to create default helm charts
