@@ -344,7 +344,7 @@ class CLIDriver(object):
            prefixs.append(prefix)
 
         if len(prefixs) > 0:
-            tag = self.__addPrefixToTag(self.__getImageName(), tag, prefixs)
+            self.__addPrefixToTag(self.__getImageName(), tag, prefixs)
             
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
