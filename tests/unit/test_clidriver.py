@@ -1913,7 +1913,7 @@ dependencies:
             verif_cmd = [
                 {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
-                {'cmd': 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=master | tar zx --wildcards --strip 2 -C %s \'*/default\''
+                {'cmd': 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=master | tar zx --wildcards --strip 2 -C %s \'*/legacy\''
                   % (TestCliDriver.cdp_gitlab_api_token, TestCliDriver.cdp_gitlab_api_url, TestCliDriver.chart_repo, '/cdp/k8s/charts'), 'output': 'unnecessary'},
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
@@ -1984,7 +1984,7 @@ dependencies:
             verif_cmd = [
                 {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
-                {'cmd': 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=master | tar zx --wildcards --strip 2 -C %s \'*/default\''
+                {'cmd': 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz?sha=master | tar zx --wildcards --strip 2 -C %s \'*/legacy\''
                   % (TestCliDriver.cdp_gitlab_api_token, TestCliDriver.cdp_gitlab_api_url, TestCliDriver.chart_repo, deploy_spec_dir), 'output': 'unnecessary'},
                 {'cmd': 'cp -R /cdp/k8s/charts/* %s/' % deploy_spec_dir, 'output': 'unnecessary'},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},

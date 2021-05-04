@@ -190,8 +190,8 @@ class CLIDriver(object):
                  opt["--helm-version"] = helm_version
 
             if self._context.opt['--create-default-helm']:
-                 LOG.warning("\x1b[31;1mWARN : Option -create-default-helm is DEPRECATED and is replaced by --use-chart=default\x1b[0m")
-                 opt["--use-chart"] = "default"
+                 LOG.warning("\x1b[31;1mWARN : Option -create-default-helm is DEPRECATED and is replaced by --use-chart=legacy\x1b[0m")
+                 opt["--use-chart"] = "legacy"
 
     def main(self, args=None):
         try:
@@ -356,7 +356,7 @@ class CLIDriver(object):
         tmp_chart_dir = "/cdp/k8s/charts"
 
         chart_placeholders = ['<project.name>','<helm.version>']
-        chart_replacement = [os.environ['CI_PROJECT_NAME'], "v1" if self.isHelm2 else "v2"]
+        chart_replacement = [os.environ['CI_PROJECT_NAME'], "v1" if self.isHelm2() else "v2"]
 
         os.makedirs(final_template_deploy_spec_dir)
         # Need to create default helm charts
