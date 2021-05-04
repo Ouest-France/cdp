@@ -29,7 +29,7 @@ jobs:
              fi
           fi
           if [[ "${{github.event_name}}" != "release" ]]; then
-             TAG=$IMAGE_PREFIX:${GITHUB_REF#refs/*/}:latest,$IMAGE_PREFIX:${GITHUB_REF#refs/*/}-${{github.run_number}}
+             TAG=$IMAGE_PREFIX:${GITHUB_REF#refs/*/},$IMAGE_PREFIX:${GITHUB_REF#refs/*/}-${{github.run_number}}
           fi
           if [[ "${{github.event_name}}" == "push" && "${{github.ref}}" == "refs/heads/master" ]]; then
              TAG=$TAG,$IMAGE_PREFIX:latest 
