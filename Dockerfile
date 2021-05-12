@@ -8,6 +8,7 @@ ARG VERSION_HELM="v3.5.4"
 ARG VERSION_HELM2="v2.17.0"
 
 COPY . cdp/
+RUN mkdir -p /cdp/k8s/charts
 COPY --from=kaniko /kaniko /kaniko
 COPY --from=conftest /conftest /bin/conftest
 
