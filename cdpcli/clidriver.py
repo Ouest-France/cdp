@@ -36,6 +36,7 @@ Usage:
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
+        [--helm-migration]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--create-gitlab-secret]
@@ -83,6 +84,7 @@ Options:
     --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
+    --helm-migration                                           Do helm 2 to Helm 3 migration
     --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
@@ -317,7 +319,7 @@ class CLIDriver(object):
 
     def __k8s(self):
         kubectl_cmd = KubectlCommand(self._cmd, '', self._context.opt['--volume-from'], True)
-        helm_cmd = HelmCommand(self._cmd, self._context.getParamOrEnv("helm-version"), self._context.opt['--volume-from'], True)
+        helm_migration = self._context.getParamOrEnv("helm-migration")
         
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
@@ -354,7 +356,22 @@ class CLIDriver(object):
         final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
         final_template_deploy_spec_dir = '%s/templates' % final_deploy_spec_dir
         tmp_chart_dir = "/cdp/k8s/charts"
+        cleanupHelm2 = False
 
+        # Helm2to3 migration
+        if helm_migration:
+           try:
+              output = self._cmd.run_command('/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release))            
+           except OSError as e:            
+              if e.errno > 1:
+                 raise ValueError('Migration to helm 3 of release %s has failed : %s' % (release, str(e)))
+              if e.errno == 1:
+                 cleanupHelm2 = True
+
+           # migration effectuee ou non nécessaire, on force la version de Helm à 3 
+           self._context.opt["--helm-version"] = '3' 
+
+        helm_cmd = HelmCommand(self._cmd, self._context.getParamOrEnv("helm-version"), self._context.opt['--volume-from'], True)
         chart_placeholders = ['<project.name>','<helm.version>']
         chart_replacement = [os.environ['CI_PROJECT_NAME'], "v1" if self.isHelm2() else "v2"]
 
@@ -549,11 +566,15 @@ class CLIDriver(object):
         # Install or Upgrade environnement
         helm_cmd.run(command)
 
-        # Add label registry sur les namespaces différents du nom du projet Gitlab (cas AXS)
+        # Add label registry sur les namespaces différents du nom du projet Gitlab (cas AWS)
         if namespace[:53] == self.__getName(False)[:53]:
             delta = int(self._context.opt['--delete-labels']) if self._context.opt['--delete-labels'] else 240
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(delta))).strftime(date_format), namespace))
+
+        # Tout s'est bien passé, on clean la release
+        if cleanupHelm2:
+           helm_cmd.run("2to cleanup -t %s --name %s --skip-confirmation" % (namespace, release))            
 
         self.__update_environment()
 
@@ -638,7 +659,7 @@ class CLIDriver(object):
            LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
            # Utilisation de Skopeo
            self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
-      except BaseException as e:
+      except OSError as e:
                print('************************** SKPEO *******************************')
                print(e)
                print('****************************************************************')
