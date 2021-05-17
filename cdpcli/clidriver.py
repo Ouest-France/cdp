@@ -36,7 +36,7 @@ Usage:
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
-        [--helm-migration]
+        [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--create-gitlab-secret]
@@ -84,7 +84,7 @@ Options:
     --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
-    --helm-migration                                           Do helm 2 to Helm 3 migration
+    --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
     --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
@@ -319,7 +319,7 @@ class CLIDriver(object):
 
     def __k8s(self):
         kubectl_cmd = KubectlCommand(self._cmd, '', self._context.opt['--volume-from'], True)
-        helm_migration = self._context.getParamOrEnv("helm-migration")
+        helm_migration = True if self._context.getParamOrEnv("helm-migration") == "true" else False
         
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
@@ -572,9 +572,9 @@ class CLIDriver(object):
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(delta))).strftime(date_format), namespace))
 
-        # Tout s'est bien passé, on clean la release
+        # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
-           helm_cmd.run("2to cleanup -t %s --name %s --skip-confirmation" % (namespace, release))            
+           self._cmd.run_command("/cdp/scripts/cleanup.sh -n %s -r %s" % (namespace, release))            
 
         self.__update_environment()
 
@@ -877,7 +877,7 @@ class CLIDriver(object):
             return
 
        
-        conftest_repo = self._context.getParamOrEnv('conftest-repo')
+        conftest_repo = self._context.getParamOrEnv('conftest-repo','')
         if (conftest_repo != "" and conftest_repo != "none" ):
             try: 
                repo = conftest_repo.split(":")
@@ -907,7 +907,7 @@ class CLIDriver(object):
            cmd = "%s --data data" % cmd
 
         # Boucle sur tous les namespaces
-        conftest_ns = self._context.getParamOrEnv('conftest-namespaces').split(",")
+        conftest_ns = self._context.getParamOrEnv('conftest-namespaces','').split(",")
         LOG.info("=============================================================")
         LOG.info("== CONFTEST                                               ==")
         LOG.info("=============================================================")
@@ -934,12 +934,12 @@ class CLIDriver(object):
         return quiet or os.getenv('CDP_LOG_LEVEL', None) == 'warning'
 
     def downloadChart(self, chartdir):
-        chart_repo = self._context.getParamOrEnv('chart-repo')
+        chart_repo = self._context.getParamOrEnv('chart-repo',"")
         if (chart_repo == "" or chart_repo == "none" ):
             return
 
         chart_repo = chart_repo.replace("/","%2F")
-        use_chart = self._context.getParamOrEnv('use-chart')
+        use_chart = self._context.getParamOrEnv('use-chart',"")
         if (use_chart != "" and use_chart != "none" ):
 
             try: 

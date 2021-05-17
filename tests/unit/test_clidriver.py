@@ -70,8 +70,8 @@ class FakeCommand(object):
 
             cmd_assert = "%s%s" % (commandes.get(image, ""), self._verif_cmd[self._index]['cmd'])
 
-            print("Attendu : %s", cmd_assert)
-            print("recu    : %s", cmd)
+            print("Attendu : %s" % cmd_assert)
+            print("recu    : %s" % cmd)
 
             # Check cmd parameter
             self._tc.assertEqual(cmd_assert, cmd)
@@ -98,7 +98,6 @@ class FakeCommand(object):
 
             # Return mock output
             output = self._verif_cmd[self._index]['output']
-            print(output)
 
             try:
                 raise self._verif_cmd[self._index]['throw']
@@ -2112,7 +2111,7 @@ dependencies:
             verif_cmd = [
                 {'cmd': 'ecr get-login --no-include-email --cli-read-timeout 30 --cli-connect-timeout 30', 'output': [ login_cmd ], 'dry_run': False, 'docker_image': TestCliDriver.image_name_aws},
                 {'cmd': self.__getLoginString(aws_host, 'user',"pass"), 'output': 'unnecessary'},
-                {'cmd': '/cdp/scripts/migrate_helm.sh -n %s -r %s' % ( namespace, release ), 'output': [1,'jkjk'],'throw':OSError(1,'toto')},
+                {'cmd': '/cdp/scripts/migrate_helm.sh -n %s -r %s' % ( namespace, release ), 'output': 'unnecessarry','throw':OSError(1,'effectuee')},
                 {'cmd': 'get namespace %s' % ( namespace), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'dependency update %s' % ( deploy_spec_dir ), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'template %s %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --namespace=%s > %s/all_resources.tmp'
@@ -2132,10 +2131,10 @@ dependencies:
                     % (release,
                         final_deploy_spec_dir,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
-                {'cmd': '2to cleanup -t %s --name %s --skip-confirmation' % (namespace, release), 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
+                {'cmd': '/cdp/scripts/cleanup.sh -n %s -r %s' % ( namespace, release ), 'output': 'unnecessarry'}
 
             ]
-            self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name', '--helm-migration','--tiller-namespace','--docker-image-helm=ouestfrance/cdp-helm:2.16.3' },
+            self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name', '--helm-migration=true','--tiller-namespace','--docker-image-helm=ouestfrance/cdp-helm:2.16.3' },
                 verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test', 'CI_ENVIRONMENT_NAME': 'staging','CDP_ECR_PATH' : aws_host })
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
