@@ -36,6 +36,7 @@ Usage:
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
+        [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--create-gitlab-secret]
@@ -83,6 +84,7 @@ Options:
     --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
+    --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
     --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
@@ -319,7 +321,7 @@ class CLIDriver(object):
 
     def __k8s(self):
         kubectl_cmd = KubectlCommand(self._cmd, '', self._context.opt['--volume-from'], True)
-        helm_cmd = HelmCommand(self._cmd, self._context.getParamOrEnv("helm-version"), self._context.opt['--volume-from'], True)
+        helm_migration = True if self._context.getParamOrEnv("helm-migration") == "true" else False
         
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
@@ -356,7 +358,22 @@ class CLIDriver(object):
         final_deploy_spec_dir = '%s_final' % self._context.opt['--deploy-spec-dir']
         final_template_deploy_spec_dir = '%s/templates' % final_deploy_spec_dir
         tmp_chart_dir = "/cdp/k8s/charts"
+        cleanupHelm2 = False
 
+        # Helm2to3 migration
+        if helm_migration:
+           try:
+              output = self._cmd.run_command('/cdp/scripts/migrate_helm.sh -n %s -r %s' % (namespace, release))            
+           except OSError as e:            
+              if e.errno > 1:
+                 raise ValueError('Migration to helm 3 of release %s has failed : %s' % (release, str(e)))
+              if e.errno == 1:
+                 cleanupHelm2 = True
+
+           # migration effectuee ou non nécessaire, on force la version de Helm à 3 
+           self._context.opt["--helm-version"] = '3' 
+
+        helm_cmd = HelmCommand(self._cmd, self._context.getParamOrEnv("helm-version"), self._context.opt['--volume-from'], True)
         chart_placeholders = ['<project.name>','<helm.version>']
         chart_replacement = [os.environ['CI_PROJECT_NAME'], "v1" if self.isHelm2() else "v2"]
 
@@ -551,11 +568,15 @@ class CLIDriver(object):
         # Install or Upgrade environnement
         helm_cmd.run(command)
 
-        # Add label registry sur les namespaces différents du nom du projet Gitlab (cas AXS)
+        # Add label registry sur les namespaces différents du nom du projet Gitlab (cas AWS)
         if namespace[:53] == self.__getName(False)[:53]:
             delta = int(self._context.opt['--delete-labels']) if self._context.opt['--delete-labels'] else 240
             kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
                 % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(delta))).strftime(date_format), namespace))
+
+        # Tout s'est bien passé, on clean la release ou le namespace si dernière release
+        if cleanupHelm2:
+           self._cmd.run_command("/cdp/scripts/cleanup.sh -n %s -r %s" % (namespace, release))            
 
         self.__update_environment()
 
@@ -640,7 +661,7 @@ class CLIDriver(object):
            LOG.info("Nouveau tag %s sur l'image %s" % (dest_image_tag, source_image_tag))
            # Utilisation de Skopeo
            self._cmd.run_command('skopeo copy docker://%s docker://%s' % (source_image_tag, dest_image_tag))
-      except BaseException as e:
+      except OSError as e:
                print('************************** SKPEO *******************************')
                print(e)
                print('****************************************************************')
@@ -862,7 +883,7 @@ class CLIDriver(object):
             return
 
        
-        conftest_repo = self._context.getParamOrEnv('conftest-repo')
+        conftest_repo = self._context.getParamOrEnv('conftest-repo','')
         if (conftest_repo != "" and conftest_repo != "none" ):
             try: 
                repo = conftest_repo.split(":")
@@ -892,7 +913,7 @@ class CLIDriver(object):
            cmd = "%s --data data" % cmd
 
         # Boucle sur tous les namespaces
-        conftest_ns = self._context.getParamOrEnv('conftest-namespaces').split(",")
+        conftest_ns = self._context.getParamOrEnv('conftest-namespaces','').split(",")
         LOG.info("=============================================================")
         LOG.info("== CONFTEST                                               ==")
         LOG.info("=============================================================")
@@ -919,12 +940,12 @@ class CLIDriver(object):
         return quiet or os.getenv('CDP_LOG_LEVEL', None) == 'warning'
 
     def downloadChart(self, chartdir):
-        chart_repo = self._context.getParamOrEnv('chart-repo')
+        chart_repo = self._context.getParamOrEnv('chart-repo',"")
         if (chart_repo == "" or chart_repo == "none" ):
             return
 
         chart_repo = chart_repo.replace("/","%2F")
-        use_chart = self._context.getParamOrEnv('use-chart')
+        use_chart = self._context.getParamOrEnv('use-chart',"")
         if (use_chart != "" and use_chart != "none" ):
 
             try: 
