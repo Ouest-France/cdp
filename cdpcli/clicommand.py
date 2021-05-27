@@ -68,6 +68,6 @@ class CLICommand(object):
 
         if raise_error and self._process is not None and self._process.returncode != 0:
             LOG.warning('---------- ERROR ----------')
-            raise ValueError('Error code %s' % self._process.returncode)
+            raise OSError(self._process.returncode,'Error code %s' % self._process.returncode)
 
         return self._output

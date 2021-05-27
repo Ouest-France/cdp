@@ -163,15 +163,18 @@ class Context(object):
           self._cmd.run_secret_command("echo '%s' > ~/.docker/config.json" % ( json.dumps(self.auths)))
 
     ## Get option passed in command line or env variable if not set. Env variable is the upper param prefixed by CDP_ and dash replaced by underscore
-    def getParamOrEnv(self, param):
+    def getParamOrEnv(self, param, defaultValue = None):
         envvar = "CDP_%s" % param.upper().replace("-","_")
+        value = defaultValue
         try:
           commandlineParam = "--%s" % param
-          value = self._opt[commandlineParam]
-          if ((not self._opt[commandlineParam] or self.opt[commandlineParam] == '') and os.getenv(envvar, None) is not None):
-             value = os.getenv(envvar)
+          if self._opt[commandlineParam]:
+              value = self._opt[commandlineParam]
+          else: 
+            if (os.getenv(envvar, None) is not None):
+               value = os.getenv(envvar)        
         except KeyError: 
-            value = None
+            value = defaultValue
         return value
 
     def getRegistryReadOnlyUser(self,registry):
