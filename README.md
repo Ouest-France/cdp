@@ -41,11 +41,12 @@ Usage:
         [--delete-labels=<minutes>]
         [--namespace-project-branch-name | --namespace-project-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
+        [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--create-gitlab-secret]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
+        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-custom-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -70,7 +71,7 @@ Options:
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
     --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
     --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
-    --create-default-helm                                      Create default helm for simple project (One docker image) [DEPRECATED].
+    --create-default-helm                                      Create default helm for simple project (One docker image).
     --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
     --create-gitlab-secret-hook                                Create gitlab secret with hook
     --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
@@ -88,6 +89,7 @@ Options:
     --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
+    --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
     --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
@@ -106,6 +108,8 @@ Options:
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
+    --release-shortproject-name                                Force the release to be created with the shortname (first letters of word + id) of the Gitlab project
+    --release-project-name                                     Force the release to be created with the name of the Gitlab project
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
