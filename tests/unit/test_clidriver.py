@@ -2454,7 +2454,7 @@ dependencies:
             {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'validator-server', '--namespace-project-branch-name','--path=%s' % path, '--validate-configurations', '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'validator-server', '--namespace-project-branch-1name','--path=%s' % path, '--validate-configurations', '--sleep=%s' % sleep }, verif_cmd)
 
 
     def test_validator_validateconfigurations_ko(self):
