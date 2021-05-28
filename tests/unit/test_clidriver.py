@@ -2420,11 +2420,7 @@ dependencies:
         docker_host = 'unix:///var/run/docker.sock'
         self.fakeauths["auths"] = {}
 
-        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
-        namespace = namespace.replace('_', '-')[:63]
-        release = namespace[:53]
-
-        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, release, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
@@ -2458,15 +2454,11 @@ dependencies:
             {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver({ 'validator-server', '--path=%s' % path, '--validate-configurations', '--sleep=%s' % sleep }, verif_cmd)
+        self.__run_CLIDriver({ 'validator-server', '--namespace-project-branch-name','--path=%s' % path, '--validate-configurations', '--sleep=%s' % sleep }, verif_cmd)
 
 
     def test_validator_validateconfigurations_ko(self):
-        namespace = '%s%s-%s' % (TestCliDriver.ci_project_name_first_letter, TestCliDriver.ci_project_id, TestCliDriver.ci_commit_ref_slug)
-        namespace = namespace.replace('_', '-')[:63]
-        release = namespace[:53]
-
-        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, release, TestCliDriver.cdp_dns_subdomain, 'configurations')
+        url = '%s/validate/configurations?url=https://%s.%s/%s' % (TestCliDriver.cdp_bp_validator_host, TestCliDriver.ci_project_name, TestCliDriver.cdp_dns_subdomain, 'configurations')
 
         verif_cmd = [
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
