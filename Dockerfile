@@ -1,10 +1,10 @@
 FROM gcr.io/kaniko-project/executor:latest AS kaniko
-FROM openpolicyagent/conftest:v0.24.0 AS conftest
+FROM openpolicyagent/conftest:v0.25.0 AS conftest
 FROM alpine:3.13.5
 
-ARG VERSION_HADOLINT="v2.3.0"
+ARG VERSION_HADOLINT="v2.4.1"
 ARG VERSION_KUBECTL="v1.21.0"
-ARG VERSION_HELM="v3.5.4"
+ARG VERSION_HELM="v3.6.0"
 ARG VERSION_HELM2="v2.17.0"
 
 COPY . cdp/
