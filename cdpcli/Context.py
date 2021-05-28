@@ -122,7 +122,7 @@ class Context(object):
         if namespace is not None:
             return True if namespace == 'project-name' else False
         else:
-            return self._opt['--namespace-project-name']
+            return False if self._opt['--namespace-project-branch-name'] else True
 
     @property
     def registryRepositoryName(self):
