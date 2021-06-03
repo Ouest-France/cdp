@@ -1,122 +1,17 @@
 #!/usr/bin/env python3.6
 
 """
-Universal Command Line Environment for Continuous Delivery Pipeline on Gitlab-CI.
-Usage:
-    cdp build [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--command=<cmd>) [--simulate-merge-on=<branch_name>]
-        [--docker-image=<image_name>]  [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]         
-    cdp maven [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--goals=<goals-opts>|--deploy=<type>) [--simulate-merge-on=<branch_name>]
-        [--maven-release-plugin=<version>]
-        [--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>]
-        [--altDeploymentRepository=<repository_name>]
-        [--login-registry=<registry_name>]
-        [--docker-image-maven=<image_name_maven>|--docker-version=<version>] [--docker-image-git=<image_name_git>] [--volume-from=<host_type>]
-    cdp docker [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
-        [--use-docker | --use-docker-compose]
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
-        [--build-context=<path>]
-        [--build-arg=<arg> ...]
-        [--login-registry=<registry_name>]
-        [--docker-build-target=<target_name>] [--docker-image-aws=<image_name_aws>]
-    cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--put=<file> | --delete=<file>)
-        [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
-    cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
-        [--helm-version=<version>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1 | --image-tag=<tag>] 
-        [--image-prefix-tag=<tag>]
-        [(--create-gitlab-secret)]
-        [(--create-gitlab-secret-hook)]
-        [(--use-docker-compose)]
-        [--values=<files>]
-        [--delete-labels=<minutes>]
-        [--namespace-project-branch-name | --namespace-project-name]
-        [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
-        [--helm-migration=[true|false]]
-        [--chart-repo=<repo>] [--use-chart=<chart:branch>]
-        [--timeout=<timeout>]
-        [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-custom-name=<release_name>]
-        [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
-        [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
-        [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
-        [--volume-from=<host_type>]
-    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) 
-        [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>] [--docker-image-conftest=<image_name_conftest>] 
-    cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
-        (--validate-configurations)
-        [--path=<path>]
-        [--namespace-project-branch-name | --namespace-project-name]
-    cdp (-h | --help | --version)
-Options:
-    -h, --help                                                 Show this screen and exit.
-    -v, --verbose                                              Make more noise.
-    -q, --quiet                                                Make less noise.
-    -d, --dry-run                                              Simulate execution.
-    --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
-    --build-context=<path>                                     Specify the docker building context [default: .].
-    --build-arg=<arg>                                          Build args for docker
-    --command=<cmd>                                            Command to run in the docker image.
-    --chart-repo=<repo>                                        Path of the repository of default charts
-    --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
-    --conftest-repo=<repo:dir:branch>                          Gitlab project with generic policies for conftest [default: ]. CDP_CONFTEST_REPO is used if empty. none value overrides env var. See notes.
-    --conftest-namespaces=<namespaces>                         Namespaces (comma separated) for conftest [default: ]. CDP_CONFTEST_NAMESPACES is used if empty.
-    --create-default-helm                                      Create default helm for simple project (One docker image).
-    --create-gitlab-secret                                     Create a secret from gitlab env starting with CDP_SECRET_<Environnement>_ where <Environnement> is the gitlab env from the job ( or CI_ENVIRONNEMENT_NAME )
-    --create-gitlab-secret-hook                                Create gitlab secret with hook
-    --delete-labels=<minutes>                                  Add namespace labels (deletable=true deletionTimestamp=now + minutes) for external cleanup.
-    --delete=<file>                                            Delete file in artifactory.
-    --deploy-spec-dir=<dir>                                    k8s deployment files [default: charts].
-    --deploy=<type>                                            'release' or 'snapshot' - Maven command to deploy artifact.
-    --docker-image-aws=<image_name_aws>                        Docker image which execute git command [DEPRECATED].
-    --docker-image-git=<image_name_git>                        Docker image which execute git command [DEPRECATED].
-    --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [DEPRECATED].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [DEPRECATED].
-    --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [DEPRECATED].
-    --docker-image-conftest=<image_name_conftest>              Docker image which execute conftest command [DEPRECATED].
-    --docker-image=<image_name>                                Specify docker image name for build project [DEPRECATED].
-    --docker-build-target=<target_name>                        Specify target in multi stage build
-    --docker-version=<version>                                 Specify maven docker version. [DEPRECATED].
-    --goals=<goals-opts>                                       Goals and args to pass maven command.
-    --helm-version=<version>                                   Major version of Helm. [default: 3]
-    --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
-    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
-    --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
-    --image-tag-latest                                         Tag docker image with 'latest'  or use it.
-    --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
-    --image-tag=<tag>                                          Tag name
-    --image-prefix-tag=<tag>                                   Tag prefix for docker image.
-    --ingress-tlsSecretName=<secretName>                       Name of the tls secret for ingress 
-    --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
-    --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
-    --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
-    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
-    --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
-    --no-conftest                                              Do not run conftest validation tests.
-    --path=<path>                                              Path to validate [default: configurations].
-    --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
-    --release-project-branch-name                              Force the release to be created with the project branch name.
-    --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
-    --release-shortproject-name                                Force the release to be created with the shortname (first letters of word + id) of the Gitlab project
-    --release-project-name                                     Force the release to be created with the name of the Gitlab project
-    --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
-    --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
-    --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
-    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace (deprecated)
-    --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
-    --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
-    --use-docker                                               Use docker to build / push image [default].
-    --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
-    --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
-    --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
-    --validate-configurations                                  Validate configurations schema of BlockProvider.
-    --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
-    --volume-from=<host_type>                                  Volume type of sources - docker, k8s, local or docker volume description (dir:mount) [default: k8s]
+usage: cdp <command> [<args>...]
+
+The most commonly used git commands are:
+   k8s        Add file contents to the index
+   artifactory     List, create, or delete branches
+   checkout   Checkout a branch or paths to the working tree
+   clone      Clone a repository into a new directory
+   commit     Record changes to the repository
+   push       Update remote refs along with associated objects
+   remote     Manage set of tracked repositories
+See 'git help <command>' for more information on a specific command.
 """
 import base64
 import configparser
@@ -150,9 +45,9 @@ yaml = Yaml()
 yaml.preserve_quotes = True
 yaml.explicit_start = True
 
-def main():
 
-    opt = docopt(__doc__, sys.argv[1:], version=__version__)
+def main():
+    opt = CLIDriver.getOpts(sys.argv[1:])
 
     # Log management
     log_level = logging.INFO
@@ -181,6 +76,10 @@ class CLIDriver(object):
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
 
+            either = ['--release-project-branch-name', '--release-project-env-name','--release-project-name','--release-shortproject-name','--release-custom-name']
+            lst3 = [value for value in either if value in opt and opt[value] is True]
+            print(lst3)
+
             deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-conftest','docker-image','use-docker-compose'}
             for option in deprecated:
                if (self._context.getParamOrEnv(option)):
@@ -198,25 +97,19 @@ class CLIDriver(object):
 
     def main(self, args=None):
         try:
-            if self._context.opt['build']:
+            if self._context.opt.get('build',False):
                 self.__build()
-
-            if self._context.opt['maven']:
+            elif self._context.opt.get('maven',False):
                 self.__maven()
-
-            if self._context.opt['docker']:
-                self.__docker()
-
-            if self._context.opt['artifactory']:
+            elif self._context.opt.get('artifactory',False):
                 self.__artifactory()
-
-            if self._context.opt['k8s']:
+            elif self._context.opt.get('docker',False):
+                self.__docker()
+            elif self._context.opt.get('k8s',False):
                 self.__k8s()
-
-            if self._context.opt['conftest']:
+            elif self._context.opt.get('conftest',False):
                 self.__conftest()
-
-            if self._context.opt['validator-server']:
+            elif self._context.opt.get('validator-server',False):
                 self.__validator()
 
         finally:
@@ -958,3 +851,29 @@ class CLIDriver(object):
             except Exception as e:
                 LOG.error("Error when downloading %s - Pass - %s/%s" % (chart_repo, use_chart,str(e)))               
 
+    @staticmethod
+    def getOpts(arg):
+        args =  docopt(__doc__, argv=arg, version=__version__, options_first=True)
+        argv = [args['<command>']] + args['<args>']
+        if args['<command>'] == 'k8s':
+            from . import clidriver_k8s
+            opt= docopt(clidriver_k8s.__doc__, argv=argv)
+        elif args['<command>'] == 'artifactory':
+            from . import clidriver_artifactory
+            opt= docopt(clidriver_artifactory.__doc__, argv=argv)
+        elif args['<command>'] == 'build':
+            from . import clidriver_build
+            opt= docopt(clidriver_build.__doc__, argv=argv)
+        elif args['<command>'] == 'docker':
+            from . import clidriver_docker
+            opt= docopt(clidriver_docker.__doc__, argv=argv)
+        elif args['<command>'] == 'maven':
+            from . import clidriver_maven
+            opt= docopt(clidriver_maven.__doc__, argv=argv)
+        elif args['<command>'] == 'validator-server':
+            from . import clidriver_validator_server
+            opt= docopt(clidriver_validator_server.__doc__, argv=argv)
+        else:
+            exit("%r is not a git.py command. See 'git help'." % args['<command>'])    
+        return  opt
+    
