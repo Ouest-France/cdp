@@ -587,7 +587,7 @@ dependencies:
             {'cmd': command_name, 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kaniko},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver([ 'build', '--verbose', '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep ], verif_cmd)
+        self.__run_CLIDriver({ 'build', '--verbose', '--command=%s' % command_name, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
 
     def test_build_volumefromdocker(self):
         # Create FakeCommand
@@ -596,7 +596,7 @@ dependencies:
         verif_cmd = [
             {'cmd': command_name, 'volume_from' : 'docker', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image':  TestCliDriver.image_name_kaniko}
         ]
-        self.__run_CLIDriver([ 'build',  '--command=%s' % command_name, '--volume-from=docker' ], verif_cmd)
+        self.__run_CLIDriver({ 'build',  '--command=%s' % command_name, '--volume-from=docker' }, verif_cmd)
 
     def test_maven_goals_verbose_simulatemergeon_sleep(self):
         # Create FakeCommand
@@ -616,7 +616,7 @@ dependencies:
             {'cmd': 'mvn %s -s maven-settings.xml' % goals, 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver([ 'maven', '--verbose', '--goals=%s' % goals, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep ], verif_cmd)
+        self.__run_CLIDriver({ 'maven', '--verbose', '--goals=%s' % goals, '--simulate-merge-on=%s' % branch_name, '--sleep=%s' % sleep }, verif_cmd)
 
 
     def test_maven_deployrelease_mavenopts(self):
@@ -632,7 +632,7 @@ dependencies:
             {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s %s" %s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release, maven_opts, maven_opts), 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven}
         ]
 
-        self.__run_CLIDriver([ 'maven', '--deploy=release'],
+        self.__run_CLIDriver({ 'maven', '--deploy=release'},
             verif_cmd, env_vars = {'MAVEN_OPTS': maven_opts})
 
     def test_maven_deployrelease_customrepo(self):
@@ -648,7 +648,7 @@ dependencies:
             {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:2.5.3:prepare org.apache.maven.plugins:maven-release-plugin:2.5.3:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::http://repo.fr/test %s" %s -s maven-settings.xml' % (maven_opts,maven_opts) ,'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': '%s' % image_name_maven}
         ]
 
-        self.__run_CLIDriver([ 'maven', '--deploy=release' , '--altDeploymentRepository=test'],
+        self.__run_CLIDriver({ 'maven', '--deploy=release' , '--altDeploymentRepository=test'},
             verif_cmd, env_vars = {'MAVEN_OPTS': maven_opts})
 
 
@@ -667,7 +667,7 @@ dependencies:
             {'cmd': 'mvn --batch-mode org.apache.maven.plugins:maven-release-plugin:%s:prepare org.apache.maven.plugins:maven-release-plugin:%s:perform -Dresume=false -DautoVersionSubmodules=true -DdryRun=false -DscmCommentPrefix="[ci skip]" -Dproject.scm.id=git -DreleaseProfiles=release -Darguments="-DskipTests -DskipITs -Dproject.scm.id=git -DaltDeploymentRepository=release::default::%s/%s" -s maven-settings.xml' % (maven_release_version, maven_release_version, TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_release), 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image': 'maven:%s' % image_version}
         ]
 
-        self.__run_CLIDriver([ 'maven',  '--deploy=release', '--maven-release-plugin=%s' % maven_release_version], verif_cmd)
+        self.__run_CLIDriver({ 'maven',  '--deploy=release', '--maven-release-plugin=%s' % maven_release_version}, verif_cmd)
 
     def test_maven_deploysnapshot(self):
         # Create FakeCommand
@@ -679,7 +679,7 @@ dependencies:
             {'cmd': 'mvn deploy -DskipTests -DskipITs -DaltDeploymentRepository=snapshot::default::%s/%s -s maven-settings.xml' % (TestCliDriver.cdp_repository_url, TestCliDriver.cdp_repository_maven_snapshot), 'volume_from' : 'k8s', 'with_entrypoint' : False, 'output': 'unnecessary', 'docker_image' : 'maven:%s' % image_version}
         ]
 
-        self.__run_CLIDriver([ 'maven',  '--deploy=snapshot' ], verif_cmd)
+        self.__run_CLIDriver({ 'maven',  '--deploy=snapshot' }, verif_cmd)
 
     def test_docker_usedocker_imagetagbranchname_usegitlabregistry_sleep_docker_host(self):
         # Create FakeCommand
@@ -697,7 +697,7 @@ dependencies:
             {'cmd': TestCliDriver.kaniko_build % (TestCliDriver.ci_registry_image, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver([ 'docker', '--use-docker', '--use-gitlab-registry', '--login-registry=harbor', '--sleep=%s' % sleep ],
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-gitlab-registry', '--login-registry=harbor', '--sleep=%s' % sleep },
             verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
 
     def test_docker_usedocker_imagetagbranchname_useharborregistry_sleep_docker_host(self):
@@ -715,7 +715,7 @@ dependencies:
             {'cmd': TestCliDriver.kaniko_build % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, TestCliDriver.ci_commit_ref_slug), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver([ 'docker', '--use-docker', '--use-registry=harbor', '--sleep=%s' % sleep ],
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--sleep=%s' % sleep },
             verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host, 'CI_REGISTRY': TestCliDriver.ci_registry})
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry(self):
@@ -726,7 +726,7 @@ dependencies:
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': TestCliDriver.kaniko_full_build % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko}
         ]
-        self.__run_CLIDriver([ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' ], verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1' }, verif_cmd)
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry_with_buildargs(self):
         # Create FakeCommand
@@ -736,7 +736,7 @@ dependencies:
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': (TestCliDriver.kaniko_full_build + " --build-arg %s --build-arg %s") % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha,"param1=value1","param2=value2"), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko}
         ]
-        self.__run_CLIDriver([ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1', '--build-arg=param1=value1', '--build-arg=param2=value2' ], verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1', '--build-arg=param1=value1', '--build-arg=param2=value2' }, verif_cmd)
 
     def test_docker_usedocker_imagetagsha1_useharboregistryWithTagname(self):
         # Create FakeCommand
@@ -746,7 +746,7 @@ dependencies:
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': TestCliDriver.kaniko_build % (TestCliDriver.cdp_harbor_registry + "/" + TestCliDriver.ci_project_name + "/" + TestCliDriver.ci_project_name, "test"), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
         ]
-        self.__run_CLIDriver([ 'docker', '--use-docker', '--use-registry=harbor', '--image-tag=test' ], verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=harbor', '--image-tag=test' }, verif_cmd)
 
     def test_docker_usedocker_imagetagsha1_usecustomregistry_stage(self):
         # Create FakeCommand
@@ -756,7 +756,7 @@ dependencies:
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': (TestCliDriver.kaniko_full_build + " --target cdp") % (TestCliDriver.cdp_custom_registry, TestCliDriver.ci_project_path.lower() + "/cdp" , TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
         ]
-        self.__run_CLIDriver([ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1','--docker-build-target=cdp'], verif_cmd)
+        self.__run_CLIDriver({ 'docker', '--use-docker', '--use-registry=custom', '--image-tag-sha1','--docker-build-target=cdp'}, verif_cmd)
 
     def test_docker_imagetagsha1_useawsecr(self):
         # Create FakeCommand
@@ -770,7 +770,7 @@ dependencies:
             {'cmd': 'hadolint ./Dockerfile', 'output': 'unnecessary', 'verif_raise_error': False},
             {'cmd': TestCliDriver.kaniko_full_build % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha), 'output': 'unnecessary','docker_image': TestCliDriver.image_name_kaniko},
         ]
-        self.__run_CLIDriver([ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1' ], verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
+        self.__run_CLIDriver({ 'docker', '--use-registry=aws-ecr', '--image-tag-sha1' }, verif_cmd, env_vars = {'CDP_ECR_PATH': aws_host})
 
 
 
@@ -795,7 +795,7 @@ dependencies:
                     TestCliDriver.cdp_artifactory_token,
                     upload_file ), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver([ 'artifactory', '--put=%s' % upload_file, '--image-tag-sha1', '--image-tag-latest' ],
+        self.__run_CLIDriver({ 'artifactory', '--put=%s' % upload_file, '--image-tag-sha1', '--image-tag-latest' },
             verif_cmd, docker_host = docker_host, env_vars = {'DOCKER_HOST': docker_host})
 
     def test_artifactory_del(self):
@@ -809,7 +809,7 @@ dependencies:
                     upload_file,
                     TestCliDriver.cdp_artifactory_token), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver([ 'artifactory', '--delete=%s' % upload_file ], verif_cmd)
+        self.__run_CLIDriver({ 'artifactory', '--delete=%s' % upload_file }, verif_cmd)
 
     @patch('cdpcli.clidriver.gitlab.Gitlab')
     @patch('cdpcli.clidriver.os.makedirs')
@@ -879,7 +879,7 @@ dependencies:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values],
+            self.__run_CLIDriver({ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values},
                 verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST': docker_host, 'CI_ENVIRONMENT_NAME': env_name})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -958,7 +958,7 @@ dependencies:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--release-shortproject-name', '--values=%s' % values],
+            self.__run_CLIDriver({ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--release-shortproject-name', '--values=%s' % values},
                 verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST': docker_host, 'CI_ENVIRONMENT_NAME': env_name})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1045,7 +1045,7 @@ dependencies:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values],
+            self.__run_CLIDriver({ 'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values},
                 verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST': docker_host, 'CI_ENVIRONMENT_NAME': env_name,'CDP_NO_CONFTEST':'false'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1123,7 +1123,7 @@ dependencies:
                            date_delete.strftime(date_format),
                            namespace), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver(['k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values, '--docker-image-helm=%s' % TestCliDriver.image_name_helm2],
+            self.__run_CLIDriver({'k8s', '--use-registry=gitlab', '--namespace-project-branch-name', '--values=%s' % values, '--docker-image-helm=%s' % TestCliDriver.image_name_helm2},
                                  verif_cmd, docker_host=docker_host, env_vars={'DOCKER_HOST': docker_host, 'CI_ENVIRONMENT_NAME': env_name, 'MONITORING' : 'True'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1199,7 +1199,7 @@ dependencies:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values ], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1275,7 +1275,7 @@ dependencies:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values ], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
                 env_vars = {'CDP_INGRESS_TLSSECRETNAME': TestCliDriver.ingress_tlsSecretName, 'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1351,7 +1351,7 @@ dependencies:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--create-gitlab-secret', '--values=%s' % values], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-gitlab-registry', '--namespace-project-branch-name', '--create-gitlab-secret', '--values=%s' % values}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CI_ENVIRONMENT_NAME': 'staging','CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging, 'CDP_SECRET_STAGING_KEY': 'value 1'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1435,7 +1435,7 @@ dependencies:
                               namespace), 'volume_from': 'k8s', 'output': 'unnecessary',
                     'docker_image': TestCliDriver.image_name_kubectl},
             ]
-            self.__run_CLIDriver(['k8s', '--use-gitlab-registry', '--namespace-project-branch-name','--create-gitlab-secret-hook','--values=%s' % values], verif_cmd,
+            self.__run_CLIDriver({'k8s', '--use-gitlab-registry', '--namespace-project-branch-name','--create-gitlab-secret-hook','--values=%s' % values}, verif_cmd,
                 env_vars={'CI_RUNNER_TAGS': 'test, staging', 'CI_ENVIRONMENT_NAME': 'staging',
                           'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging,
                           'CDP_SECRET_STAGING_KEY': 'value 1'})
@@ -1516,7 +1516,7 @@ dependencies:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl},
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values ], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values }, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1583,7 +1583,7 @@ dependencies:
                         namespace)
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-custom-registry', '--namespace-project-branch-name', '--values=%s' % values}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1650,7 +1650,7 @@ dependencies:
                         namespace)
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name', '--values=%s' % values], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name', '--values=%s' % values}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1723,7 +1723,7 @@ dependencies:
                         namespace)
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name',  '--use-chart=default','--values=%s' % values], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name',  '--use-chart=default','--values=%s' % values}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
 
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
@@ -1798,7 +1798,7 @@ dependencies:
                         namespace)
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name',  '--use-chart=java','--values=%s' % values], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name',  '--use-chart=java','--values=%s' % values}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
 
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
@@ -1870,7 +1870,7 @@ dependencies:
                         namespace)
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver([ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name', '--image-prefix-tag=' + prefix,'--values=%s' % values], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--namespace-project-branch-name', '--image-prefix-tag=' + prefix,'--values=%s' % values}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -1948,7 +1948,7 @@ dependencies:
                         date_delete.strftime(date_format),
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_kubectl}
             ]
-            self.__run_CLIDriver([ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-branch-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes ], verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--verbose', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-branch-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--timeout=%s' % timeout, '--values=%s' % values, '--delete-labels=%s' % delete_minutes }, verif_cmd,
                 env_vars = {'CDP_ECR_PATH' : aws_host,'CI_RUNNER_TAGS': 'test, test2'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -2017,7 +2017,7 @@ dependencies:
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'sleep %s' % sleep_override, 'output': 'unnecessary'}
             ]
-            self.__run_CLIDriver([ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep],
+            self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--image-tag-sha1', '--use-registry=aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep},
                 verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name,'CDP_ECR_PATH' : aws_host, 'CI_RUNNER_TAGS': 'test', 'CDP_SLEEP': str(sleep_override)})
 
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
@@ -2088,7 +2088,7 @@ dependencies:
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3},
                 {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
             ]
-            self.__run_CLIDriver([ 'k8s', '--create-default-helm', '--internal-port=%s' % internal_port, '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep ],
+            self.__run_CLIDriver({ 'k8s', '--create-default-helm', '--internal-port=%s' % internal_port, '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--deploy-spec-dir=%s' % deploy_spec_dir, '--sleep=%s' % sleep },
                 verif_cmd, env_vars = { 'CI_ENVIRONMENT_NAME' : env_name, 'CI_RUNNER_TAGS': 'test','CDP_ECR_PATH' : aws_host})
 
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
@@ -2151,7 +2151,7 @@ dependencies:
                         namespace,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2}
             ]
-            self.__run_CLIDriver([ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name', '--tiller-namespace','--docker-image-helm=ouestfrance/cdp-helm:2.16.3' ],
+            self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name', '--tiller-namespace','--docker-image-helm=ouestfrance/cdp-helm:2.16.3' },
                 verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test', 'CI_ENVIRONMENT_NAME': 'staging','CDP_ECR_PATH' : aws_host })
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -2213,7 +2213,7 @@ dependencies:
                 {'cmd': '/cdp/scripts/cleanup.sh -n %s -r %s' % ( namespace, release ), 'output': 'unnecessarry'}
 
             ]
-            self.__run_CLIDriver([ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name', '--helm-migration=true','--tiller-namespace','--docker-image-helm=ouestfrance/cdp-helm:2.16.3' ],
+            self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-branch-name', '--helm-migration=true','--tiller-namespace','--docker-image-helm=ouestfrance/cdp-helm:2.16.3' },
                 verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test', 'CI_ENVIRONMENT_NAME': 'staging','CDP_ECR_PATH' : aws_host })
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -2277,7 +2277,7 @@ dependencies:
                             namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2}
                 ]
 
-                self.__run_CLIDriver([ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-env-name' ,'--docker-image-helm=ouestfrance/cdp-helm:2.16.3'],
+                self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-project-env-name' ,'--docker-image-helm=ouestfrance/cdp-helm:2.16.3'},
                     verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test', 'CI_ENVIRONMENT_NAME': 'review/test','CDP_ECR_PATH' : aws_host })
 
                 mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -2340,7 +2340,7 @@ dependencies:
                             namespace,
                             namespace), 'volume_from': 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2}
              ]
-            self.__run_CLIDriver(['k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-custom-name=test','--docker-image-helm=ouestfrance/cdp-helm:2.16.3'],
+            self.__run_CLIDriver({'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-custom-name=test','--docker-image-helm=ouestfrance/cdp-helm:2.16.3'},
                                   verif_cmd, env_vars={'CDP_IMAGE_PREFIX_TAG': prefix, 'CI_RUNNER_TAGS': 'test', 'CDP_ECR_PATH': aws_host, 'CI_ENVIRONMENT_NAME': 'review/test'})
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -2404,7 +2404,7 @@ dependencies:
                         namespace,
                         namespace), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm2}
             ]
-            self.__run_CLIDriver([ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-custom-name=test','--docker-image-helm=ouestfrance/cdp-helm:2.16.3' ],
+            self.__run_CLIDriver({ 'k8s', '--image-tag-sha1', '--use-aws-ecr', '--namespace-project-name', '--release-custom-name=test','--docker-image-helm=ouestfrance/cdp-helm:2.16.3' },
                 verif_cmd, env_vars = { 'CI_RUNNER_TAGS': 'test','CDP_ECR_PATH' : aws_host, 'CI_ENVIRONMENT_NAME': 'review/test' })
 
             mock_makedirs.assert_any_call('%s/templates' % final_deploy_spec_dir)
@@ -2426,7 +2426,7 @@ dependencies:
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
             {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver([ 'validator-server', '--validate-configurations' ], verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST' : docker_host})
+        self.__run_CLIDriver({ 'validator-server', '--validate-configurations' }, verif_cmd, docker_host = docker_host, env_vars = { 'DOCKER_HOST' : docker_host})
 
     def test_validator_verbose_namespaceprojectname_validateconfigurations(self):
 
@@ -2437,7 +2437,7 @@ dependencies:
             {'cmd': 'curl -s %s | jq .' % (url), 'output': 'unnecessary'},
             {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver([ 'validator-server', '--verbose', '--namespace-project-name', '--validate-configurations' ], verif_cmd)
+        self.__run_CLIDriver({ 'validator-server', '--verbose', '--namespace-project-name', '--validate-configurations' }, verif_cmd)
 
     def test_validator_path_validateconfigurations_sleep(self):
         path = 'blockconfigurations'
@@ -2454,7 +2454,7 @@ dependencies:
             {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary'},
             {'cmd': 'sleep %s' % sleep, 'output': 'unnecessary'}
         ]
-        self.__run_CLIDriver([ 'validator-server', '--namespace-project-branch-name','--path=%s' % path, '--validate-configurations', '--sleep=%s' % sleep ], verif_cmd)
+        self.__run_CLIDriver({ 'validator-server', '--namespace-project-branch-name','--path=%s' % path, '--validate-configurations', '--sleep=%s' % sleep }, verif_cmd)
 
 
     def test_validator_validateconfigurations_ko(self):
@@ -2465,7 +2465,7 @@ dependencies:
             {'cmd': 'curl -sf --output /dev/null %s' % (url), 'output': 'unnecessary', 'throw': ValueError('unnecessary')}
         ]
         try:
-            self.__run_CLIDriver([ 'validator-server', '--validate-configurations' ], verif_cmd)
+            self.__run_CLIDriver({ 'validator-server', '--validate-configurations' }, verif_cmd)
             raise ValueError('Previous command must return error.')
         except ValueError as e:
             # Ok beacause previous command return error.
@@ -2511,8 +2511,7 @@ dependencies:
 
 #            verif_cmd.insert(0, {'cmd': 'ip route | awk \'NR==1 {print $3}\'', 'output': [cdp_docker_host_internal]})
             cmd = FakeCommand(verif_cmd = verif_cmd)
-            opts = CLIDriver.getOpts(args)
-            cli = CLIDriver(cmd = cmd, opt = opts)
+            cli = CLIDriver(cmd = cmd, opt = docopt(__doc__, args))
 
             cli.main()
         except BaseException as e:
