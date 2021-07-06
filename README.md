@@ -23,7 +23,8 @@ Usage:
         [--use-docker | --use-docker-compose]
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
         [--build-context=<path>]
-        [--build-arg=<arg>]...
+        [--build-arg=<arg> ...]
+        [--build-file=<buildFile>]
         [--login-registry=<registry_name>]
         [--docker-build-target=<target_name>] [--docker-image-aws=<image_name_aws>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -34,19 +35,19 @@ Usage:
         [--helm-version=<version>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1 | --image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
+        [--build-file=<buildFile>]
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
         [(--use-docker-compose)]
         [--values=<files>]
         [--delete-labels=<minutes>]
-        [--namespace-project-branch-name | --namespace-project-name]
+        [--namespace-project-branch-name | --namespace-project-name | --namespace-name=<namespace_name>]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
-        [--create-gitlab-secret]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-custom-name=<release_name>]
+        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -56,7 +57,7 @@ Usage:
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--validate-configurations)
         [--path=<path>]
-        [--namespace-project-branch-name | --namespace-project-name]
+        [--namespace-project-branch-name ][ --namespace-project-name]
     cdp (-h | --help | --version)
 Options:
     -h, --help                                                 Show this screen and exit.
@@ -64,8 +65,9 @@ Options:
     -q, --quiet                                                Make less noise.
     -d, --dry-run                                              Simulate execution.
     --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
-    --build-context=<path>                                     Specify the docker building context [default: .].
     --build-arg=<arg>                                          Build args for docker
+    --build-context=<path>                                     Specify the docker building context [default: .].
+    --build-file=<buildFile>                                   Specify the file to build multiples images [default: cdp-build-file.yml].
     --command=<cmd>                                            Command to run in the docker image.
     --chart-repo=<repo>                                        Path of the repository of default charts
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
@@ -100,12 +102,13 @@ Options:
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
-    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
+    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [DEPRECATED].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
+    --namespace-name=<namespace_name>                          Use <namespace name> to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
+    --release-name=<release_name>                       Customize release name with namespace-name-<release_name>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --release-shortproject-name                                Force the release to be created with the shortname (first letters of word + id) of the Gitlab project
@@ -265,18 +268,26 @@ CDP_REGISTRY:        --use-registry=gitlab: env['CI_REGISTRY'] | --use-registry=
 CDP_TAG:             --image-tag-branch-name: env['CI_COMMIT_REF_NAME'] | --image-tag-latest: 'latest'| --image-tag-sha1:  env['CI_COMMIT_SHA']
 ```
 
-#### docker-compose.yml sample
+#### cdp-build-file.yml sample
+
+You can build multiple images in one command by creating a cdp-build-file.yml file in the root of your project. 
+This file follows the same description as the docker-compose.yml files
+
+CDP_REGISTRY and CDP_TAG environment variables are automatically set by CDP and refer to the path of the current built image and the tag issued from --image-tagx options.
 
 ```yaml
 version: '3'
 services:
   nginx:
     image: ${CDP_REGISTRY:-local}/my-nginx-project-name:${CDP_TAG:-latest}
-    ...
+    build:
+      context: ./distribution/nginx
+      dockerfile: Dockerfile
   php:
     image: ${CDP_REGISTRY:-local}/my-php-project-name:${CDP_TAG:-latest}
-    ...
-...
+    build:
+      context: ./distribution/php7-fpm
+      dockerfile: Dockerfile
 ```
 
 

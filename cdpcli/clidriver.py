@@ -19,6 +19,7 @@ Usage:
         [--image-tag-branch-name] [--image-tag-latest] [--image-tag-sha1] [--image-tag=<tag>]
         [--build-context=<path>]
         [--build-arg=<arg> ...]
+        [--build-file=<buildFile>]
         [--login-registry=<registry_name>]
         [--docker-build-target=<target_name>] [--docker-image-aws=<image_name_aws>]
     cdp artifactory [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
@@ -31,16 +32,17 @@ Usage:
         [--image-prefix-tag=<tag>]
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
-        [(--use-docker-compose)]
+        [(--use-docker-compose)] 
+        [--build-file=<buildFile>]
         [--values=<files>]
         [--delete-labels=<minutes>]
-        [--namespace-project-branch-name | --namespace-project-name]
+        [--namespace-project-name | --namespace-name=<namespace_name>] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-custom-name=<release_name>]
+        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -50,7 +52,7 @@ Usage:
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         (--validate-configurations)
         [--path=<path>]
-        [--namespace-project-branch-name | --namespace-project-name]
+        [--namespace-project-branch-name ][ --namespace-project-name]
     cdp (-h | --help | --version)
 Options:
     -h, --help                                                 Show this screen and exit.
@@ -58,8 +60,9 @@ Options:
     -q, --quiet                                                Make less noise.
     -d, --dry-run                                              Simulate execution.
     --altDeploymentRepository=<repository_name>                Use custom Maven Dpeloyement repository
-    --build-context=<path>                                     Specify the docker building context [default: .].
     --build-arg=<arg>                                          Build args for docker
+    --build-context=<path>                                     Specify the docker building context [default: .].
+    --build-file=<buildFile>                                   Specify the file to build multiples images [default: cdp-build-file.yml].
     --command=<cmd>                                            Command to run in the docker image.
     --chart-repo=<repo>                                        Path of the repository of default charts
     --use-chart=<chart:branch>                                 Name of the pre-defined chart to use. Format : name or name:branch
@@ -84,7 +87,7 @@ Options:
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
-    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
+    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout [DEPRECATED]
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -94,12 +97,13 @@ Options:
     --internal-port=<port>                                     Internal port used if --create-default-helm is activate [default: 8080]
     --login-registry=<registry_name>                           Login on specific registry for build image [default: none].
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
-    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [default].
+    --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [DEPRECATED].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
+    --namespace-name=<namespace_name>                          Use <namespace name> to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
+    --release-name=<release_name>                              Customize release name with namespace-name-<release_name>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --release-shortproject-name                                Force the release to be created with the shortname (first letters of word + id) of the Gitlab project
@@ -107,7 +111,7 @@ Options:
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
-    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace (deprecated)
+    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace [DEPRECATED]
     --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
@@ -141,6 +145,7 @@ from .conftestcommand import ConftestCommand
 from docopt import docopt, DocoptExit
 from .PropertiesParser import PropertiesParser
 from .Yaml import Yaml
+from envsubst import envsubst
 
 LOG = verboselogs.VerboseLogger('clidriver')
 LOG.addHandler(logging.StreamHandler())
@@ -181,10 +186,10 @@ class CLIDriver(object):
             self._context = Context(opt, cmd)
             LOG.verbose('Context : %s', self._context.__dict__)
 
-            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-conftest','docker-image','use-docker-compose'}
+            deprecated = {'docker-version','docker-image-aws','docker-image-git','docker-image-kubectl','docker-image-maven','docker-image-conftest','docker-image','use-docker-compose','namespace-project-branch-name'}
             for option in deprecated:
                if (self._context.getParamOrEnv(option)):
-                 LOG.warn("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
+                 LOG.warning("\x1b[31;1mWARN : Option %s is DEPRECATED and will not be used\x1b[0m",option)
 
             if self._context.getParamOrEnv("docker-image-helm") :
                  image_helm_version = self._context.getParamOrEnv("docker-image-helm")
@@ -195,6 +200,10 @@ class CLIDriver(object):
             if self._context.opt['--create-default-helm']:
                  LOG.warning("\x1b[31;1mWARN : Option -create-default-helm is DEPRECATED and is replaced by --use-chart=legacy\x1b[0m")
                  opt["--use-chart"] = "legacy"
+
+            if (not self._context.opt['--namespace-project-name'] and not self._context.opt['--namespace-name']):
+                opt["--namespace-project-name"] = True                      
+
 
     def main(self, args=None):
         try:
@@ -347,7 +356,11 @@ class CLIDriver(object):
            prefixs.append(prefix)
 
         if len(prefixs) > 0:
-            self.__addPrefixToTag(self.__getImageName(), tag, prefixs)
+            # Apply prefix to all built images
+            images = self.__getImagesToBuild(self.__getImageName(), tag)
+            for image in images:
+                imagePath = image["image"].rsplit(':', 1)[0]
+                self.__addPrefixToTag(imagePath, tag, prefixs)
             
         # Use release name instead of the namespace name for release
         release = self.__getRelease().replace('/', '-')
@@ -483,8 +496,6 @@ class CLIDriver(object):
         date_format = '%Y-%m-%dT%H%M%S'
         if self._context.opt['--delete-labels']:
             command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(self._context.opt['--delete-labels']))).strftime(date_format))
-        elif namespace[:53] == self.__getName(False)[:53]:
-            command = '%s --description deletionTimestamp=%sZ' % (command,(now + datetime.timedelta(minutes = int(240))).strftime(date_format))
 
         # Template charts for secret
         tmp_templating_file = '%s/all_resources.tmp' % final_deploy_spec_dir
@@ -566,12 +577,6 @@ class CLIDriver(object):
 
         # Install or Upgrade environnement
         helm_cmd.run(command)
-
-        # Add label registry sur les namespaces différents du nom du projet Gitlab (cas AWS)
-        if namespace[:53] == self.__getName(False)[:53]:
-            delta = int(self._context.opt['--delete-labels']) if self._context.opt['--delete-labels'] else 240
-            kubectl_cmd.run('label namespace %s deletable=true creationTimestamp=%sZ deletionTimestamp=%sZ --namespace=%s --overwrite'
-                % (namespace, now.strftime(date_format), (now + datetime.timedelta(minutes = int(delta))).strftime(date_format), namespace))
 
         # Tout s'est bien passé, on clean la release ou le namespace si dernière release
         if cleanupHelm2:
@@ -670,17 +675,20 @@ class CLIDriver(object):
         
     def __buildTagAndPushOnDockerRegistry(self, tag):
         kaniko_cmd = KanikoCommand(self._cmd, '', self._context.opt['--volume-from'], True)
-        os.environ['CDP_TAG'] = tag
+        image_tag = self.__getImageTag(self.__getImageName(), tag)
         if self._context.opt['--use-docker-compose']:
              raise ValueError('docker-compose is deprecated.')
         else:
+          images_to_build = self.__getImagesToBuild(self.__getImageName(), tag)
+          for image_to_build in images_to_build:
+            dockerfile = image_to_build["dockerfile"]
+            context = image_to_build["context"]
+            image_tag = image_to_build["image"]
             # Hadolint
-            self._cmd.run_command('hadolint %s/Dockerfile' % (self._context.opt['--build-context']), raise_error = False)
-
-            image_tag = self.__getImageTag(self.__getImageName(), tag)
+            self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error = False)
 
             # Tag docker image
-            docker_build_command = '--context %s --dockerfile %s/Dockerfile --destination %s' % (self._context.opt['--build-context'],self._context.opt['--build-context'],image_tag)
+            docker_build_command = '--context %s --dockerfile %s/%s --destination %s' % (context,context,dockerfile,image_tag)
             if self._context.opt['--docker-build-target']:
               docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and (self._context.opt['--use-custom-registry'] or self._context.opt['--use-registry'] == 'artifactory' or self._context.opt['--use-registry'] == 'custom'):
@@ -718,6 +726,22 @@ class CLIDriver(object):
         LOG.info('---------- Failed mode ----------')
         self._cmd.run_command('curl -sf --output /dev/null %s' % url_validator)
 
+    def __getImagesToBuild(self,image, tag):
+
+        os.environ['CDP_TAG'] = tag
+        os.environ['CDP_REGISTRY'] = image
+
+        # Default image if no build file
+        images_to_build = [ {"composant": "image", "dockerfile" : "Dockerfile","context": self._context.opt['--build-context'],"image": self.__getImageTag(image, tag)}]
+        if os.path.isfile(self._context.opt['--build-file']):
+           images_to_build = []
+           with open(self._context.opt['--build-file']) as chartyml:
+                 data = yaml.load(chartyml)
+                 for service in data["services"]:
+                     servicedef = data["services"][service]
+                     images_to_build.append({"composant": service, "dockerfile" : servicedef["build"]["dockerfile"],"context": servicedef["build"]["context"], "image": envsubst(servicedef["image"])})
+        return images_to_build
+
     def __getImageName(self):
         # Configure docker registry
         image_name = '%s/%s' % (self._context.registry, self._context.registryRepositoryName)
@@ -741,40 +765,33 @@ class CLIDriver(object):
         return os.environ['CI_COMMIT_SHA']
 
     def __getNamespace(self):
-        return self.__getName(self._context.is_namespace_project_name)[:63]
+        name = os.environ['CI_PROJECT_NAME']
+        if (self._context.opt['--namespace-name']):
+            name = self._context.opt['--namespace-name'] 
+        return name.replace('_', '-')[:63]
 
     # get release name based on given parameters
     def __getRelease(self):
         if self._context.opt['--release-project-branch-name']:
-            # https://github.com/kubernetes/helm/issues/1528
-            release = self.__getName(False)[:53]
+            projectFistLetterEachWord = self.__getShortNamespaceName()
+            release = '%s-%s' % (projectFistLetterEachWord, os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))
         elif self._context.opt['--release-project-env-name']:
-            release = self.__getEnvName()[:53]
-        elif self._context.opt['--release-custom-name']:
-            release =  (self.__getShortNamespaceName() +'-'+ self._context.opt['--release-custom-name'])[:53]
+            release = self.__getEnvName()
+        elif self._context.opt['--release-name']:
+            release =  (self.__getShortNamespaceName() +'-'+ self._context.opt['--release-name'])
         elif self._context.opt['--release-project-name']:
-            release = self.__getNamespace()[:53]
+            release = self.__getNamespace()
         elif self._context.opt['--release-shortproject-name']:
             release = self.__getShortNamespaceName()
         else:
             release = self.__getNamespace()[:53]
         # K8s ne supporte plus les . dans les noms de release
-        return release.replace(".","-")
+        return release.replace('_', '-').replace(".","-")
 
     def __getShortNamespaceName(self):
-        projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', os.environ['CI_PROJECT_NAME'])]) 
+        namespace = self._context.opt['--namespace-name'] if self._context.opt['--namespace-name'] else  os.environ['CI_PROJECT_NAME']
+        projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]',namespace)]) 
         return projectFistLetterEachWord + os.environ['CI_PROJECT_ID']
-
-    def __getName(self, condition):
-        # Get k8s namespace
-        if condition:
-            name = os.environ['CI_PROJECT_NAME']
-        else:
-            # Get first letter for each word
-            projectFistLetterEachWord = self.__getShortNamespaceName()
-            name = '%s-%s' % (projectFistLetterEachWord, os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))    # Get deployment host
-
-        return name.replace('_', '-')
 
     def __getEnvName(self):
         # Get k8s namespace

@@ -103,14 +103,6 @@ class Context(object):
         return os.environ['CI_PROJECT_PATH'].lower()
 
     @property
-    def is_namespace_project_name(self):
-        namespace =  os.getenv('CDP_NAMESPACE', None)
-        if namespace is not None:
-            return True if namespace == 'project-name' else False
-        else:
-            return False if self._opt['--namespace-project-branch-name'] else True
-
-    @property
     def registryRepositoryName(self):
         if self.opt['--use-registry']=="harbor":
            return '%s/%s' % (self.project_name, self.project_name)
