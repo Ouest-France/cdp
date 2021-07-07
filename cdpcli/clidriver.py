@@ -689,7 +689,7 @@ class CLIDriver(object):
             self._cmd.run_command('hadolint %s/%s' % (context, dockerfile), raise_error = False)
 
             # Tag docker image
-            docker_build_command = '--context %s --dockerfile %s/%s --destination %s' % (context,context,dockerfile,image_tag)
+            docker_build_command = '--context %s --dockerfile %s --destination %s' % (context,dockerfile,image_tag)
             if self._context.opt['--docker-build-target']:
               docker_build_command = '%s --target %s' % (docker_build_command, self._context.opt['--docker-build-target'])
             if 'CDP_ARTIFACTORY_TAG_RETENTION' in os.environ and (self._context.opt['--use-custom-registry'] or self._context.opt['--use-registry'] == 'artifactory' or self._context.opt['--use-registry'] == 'custom'):
