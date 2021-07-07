@@ -35,19 +35,19 @@ Usage:
         [--helm-version=<version>]
         [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1 | --image-tag=<tag>] 
         [--image-prefix-tag=<tag>]
-        [--build-file=<buildFile>]
         [(--create-gitlab-secret)]
         [(--create-gitlab-secret-hook)]
-        [(--use-docker-compose)]
+        [(--use-docker-compose)] 
+        [--build-file=<buildFile>]
         [--values=<files>]
         [--delete-labels=<minutes>]
-        [--namespace-project-branch-name | --namespace-project-name | --namespace-name=<namespace_name>]
+        [--namespace-project-name | --namespace-name=<namespace_name>] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-custom-name=<release_name>]
+        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-namespace-name | --release-custom-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -92,7 +92,7 @@ Options:
     --goals=<goals-opts>                                       Goals and args to pass maven command.
     --helm-version=<version>                                   Major version of Helm. [default: 3]
     --helm-migration=<true|false>                              Do helm 2 to Helm 3 migration
-    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout (deprecated)
+    --image-pull-secret                                        Add the imagePullSecret value to use the helm --wait option instead of patch and rollout [DEPRECATED]
     --image-tag-branch-name                                    Tag docker image with branch name or use it [default].
     --image-tag-latest                                         Tag docker image with 'latest'  or use it.
     --image-tag-sha1                                           Tag docker image with commit sha1  or use it.
@@ -109,6 +109,7 @@ Options:
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
     --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
+    --release-namespace-name                                   Force the release to be created with the namespace name. Same as  to --release-project-name if --namespace-name is not set. [default]
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --release-shortproject-name                                Force the release to be created with the shortname (first letters of word + id) of the Gitlab project
@@ -116,7 +117,7 @@ Options:
     --simulate-merge-on=<branch_name>                          Build docker image with the merge current branch on specify branch (no commit).
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
-    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace (deprecated)
+    --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace [DEPRECATED]
     --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
     --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
     --use-docker                                               Use docker to build / push image [default].
@@ -259,15 +260,6 @@ deploy_staging:
     url: https://$CI_PROJECT_NAME.$CDP_DNS_SUBDOMAIN
 ```
 
-### _Environment variables set by the CDP_
-
-When you use the `docker build --use-docker-compose` command, you may need information from the CDP context. Below, the environment variables made available by the CDP for use in the docker-compose.yml.
-
-```yaml
-CDP_REGISTRY:        --use-registry=gitlab: env['CI_REGISTRY'] | --use-registry=aws-ecr: result from 'aws ecr get-login ...' command | --use-registry=harbor: env['CDP_HARBOR_REGISTRY'] + '/' + env['CI_PROJECT_PATH'].lower()
-CDP_TAG:             --image-tag-branch-name: env['CI_COMMIT_REF_NAME'] | --image-tag-latest: 'latest'| --image-tag-sha1:  env['CI_COMMIT_SHA']
-```
-
 #### cdp-build-file.yml sample
 
 You can build multiple images in one command by creating a cdp-build-file.yml file in the root of your project. 
@@ -323,6 +315,10 @@ spec:
           ...
 ...
 ```
+
+### Helm2 to Helm3 automatic migration
+
+If helm-migration option or correlated environment variable is set to true, helm2 charts are automatically migrated to helm3 and used for deployment.
 
 ### Team label
 

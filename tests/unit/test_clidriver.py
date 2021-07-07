@@ -932,7 +932,7 @@ services:
         # Create FakeCommand
         namespace = TestCliDriver.ci_project_name
         namespace = namespace.replace('_', '-')[:63]
-        release = self.__getShortNamespaceName()
+        release = self.__getShortProjectName()
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
@@ -1724,7 +1724,7 @@ services:
         # Create FakeCommand
         namespace = "infrastructure-test-namespace"
         namespace = namespace.replace('_', '-')[:63]
-        release = namespace[:53]
+        release = TestCliDriver.ci_project_name[:53]
         staging_file = 'values.staging.yaml'
         int_file = 'values.int.yaml'
         values = ','.join([staging_file, int_file])
@@ -1772,7 +1772,7 @@ services:
                         namespace)
                         , 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm3}
             ]
-            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--namespace-name=%s' % namespace,  '--use-chart=default','--values=%s' % values}, verif_cmd,
+            self.__run_CLIDriver({ 'k8s', '--use-registry=harbor', '--release-project-name','--namespace-name=%s' % namespace,  '--use-chart=default','--values=%s' % values}, verif_cmd,
                 env_vars = {'CI_RUNNER_TAGS': 'test, staging', 'CDP_NAMESPACE': 'project-name', 'CDP_IMAGE_PULL_SECRET': 'true', 'CDP_DNS_SUBDOMAIN': TestCliDriver.cdp_dns_subdomain_staging })
 
             mock_isfile.assert_has_calls([call('%s/values.yaml' % deploy_spec_dir), call('%s/Chart.yaml' % deploy_spec_dir)])
@@ -2422,7 +2422,7 @@ services:
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         namespace = TestCliDriver.ci_project_name
-        release = '%s-%s'[:53] % (self.__getShortNamespaceName(), "test")
+        release = '%s-%s'[:53] % (self.__getShortProjectName(), "test")
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
         image_tag = "%s/%s:%s" % (aws_host, TestCliDriver.ci_project_path.lower(), TestCliDriver.ci_commit_sha)
@@ -2486,7 +2486,7 @@ services:
         # Create FakeCommand
         aws_host = 'ecr.amazonaws.com'
         namespace = TestCliDriver.ci_project_name
-        release = '%s-%s'[:53] % (self.__getShortNamespaceName(), "test")
+        release = '%s-%s'[:53] % (self.__getShortProjectName(), "test")
         deploy_spec_dir = 'charts'
         final_deploy_spec_dir = '%s_final' % deploy_spec_dir
 
@@ -2674,7 +2674,7 @@ services:
 
         return mock_projects, mock_environments, mock_env1, mock_env2
 
-    def __getShortNamespaceName(self):
+    def __getShortProjectName(self):
         projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]', os.environ['CI_PROJECT_NAME'])]) 
         return projectFistLetterEachWord + os.environ['CI_PROJECT_ID']
 

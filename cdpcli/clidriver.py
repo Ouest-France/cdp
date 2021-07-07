@@ -36,13 +36,13 @@ Usage:
         [--build-file=<buildFile>]
         [--values=<files>]
         [--delete-labels=<minutes>]
-        [--namespace-project-name | --namespace-name=<namespace_name>] [--namespace-project-branch-name]
+        [--namespace-project-name | --namespace-name=<namespace_name> ] [--namespace-project-branch-name]
         [--create-default-helm] [--internal-port=<port>] [--deploy-spec-dir=<dir>]
         [--helm-migration=[true|false]]
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-custom-name=<release_name>]
+        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-namespace-name | --release-custom-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -99,11 +99,12 @@ Options:
     --maven-release-plugin=<version>                           Specify maven-release-plugin version [default: 2.5.3].
     --namespace-project-branch-name                            Use project and branch name to create k8s namespace or choice environment host [DEPRECATED].
     --namespace-project-name                                   Use project name to create k8s namespace or choice environment host.
-    --namespace-name=<namespace_name>                          Use <namespace name> to create k8s namespace.
+    --namespace-name=<namespace_name>                          Use namespace_name to create k8s namespace.
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
-    --release-custom-name=<release_name>                              Customize release name with namespace-name-<release_name>
+    --release-custom-name=<release_name>                       Customize release name with namespace-name-<release_name>
+    --release-namespace-name                                   Force the release to be created with the namespace name. Same as --release-project-name if namespace-name option is not set. [default]
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --release-shortproject-name                                Force the release to be created with the shortname (first letters of word + id) of the Gitlab project
@@ -112,11 +113,11 @@ Options:
     --sleep=<seconds>                                          Time to sleep int the end (for debbuging) in seconds [default: 0].
     --timeout=<timeout>                                        Time in seconds to wait for any individual kubernetes operation [default: 600].
     --tiller-namespace                                         Force the tiller namespace to be the same as the pod namespace [DEPRECATED]
-    --use-aws-ecr                                              DEPRECATED - Use AWS ECR from k8s configuration for pull/push docker image.
-    --use-custom-registry                                      DEPRECATED - Use custom registry for pull/push docker image.
+    --use-aws-ecr                                              Use AWS ECR from k8s configuration for pull/push docker image. [DEPRECATED]
+    --use-custom-registry                                      Use custom registry for pull/push docker image. [DEPRECATED]
     --use-docker                                               Use docker to build / push image [default].
     --use-docker-compose                                       Use docker-compose to build / push image / retag container [DEPRECATED]
-    --use-gitlab-registry                                      DEPRECATED - Use gitlab registry for pull/push docker image [default].
+    --use-gitlab-registry                                      Use gitlab registry for pull/push docker image [default]. [DEPRECATED]
     --use-registry=<registry_name>                             Use registry for pull/push docker image (none, aws-ecr, gitlab, harbor or custom name for load specifics environments variables) [default: none].
     --validate-configurations                                  Validate configurations schema of BlockProvider.
     --values=<files>                                           Specify values in a YAML file (can specify multiple separate by comma). The priority will be given to the last (right-most) file specified.
@@ -773,23 +774,23 @@ class CLIDriver(object):
     # get release name based on given parameters
     def __getRelease(self):
         if self._context.opt['--release-project-branch-name']:
-            projectFistLetterEachWord = self.__getShortNamespaceName()
+            projectFistLetterEachWord = self.__getShortProjectName()
             release = '%s-%s' % (projectFistLetterEachWord, os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))
         elif self._context.opt['--release-project-env-name']:
             release = self.__getEnvName()
         elif self._context.opt['--release-custom-name']:
-            release =  (self.__getShortNamespaceName() +'-'+ self._context.opt['--release-custom-name'])
+            release =  (self.__getShortProjectName() +'-'+ self._context.opt['--release-custom-name'])
         elif self._context.opt['--release-project-name']:
-            release = self.__getNamespace()
+            release = os.environ['CI_PROJECT_NAME']
         elif self._context.opt['--release-shortproject-name']:
-            release = self.__getShortNamespaceName()
+            release = self.__getShortProjectName()
         else:
             release = self.__getNamespace()
         # K8s ne supporte plus les . dans les noms de release
         return release.replace('_', '-').replace(".","-")[:53]
 
-    def __getShortNamespaceName(self):
-        namespace = self._context.opt['--namespace-name'] if self._context.opt['--namespace-name'] else  os.environ['CI_PROJECT_NAME']
+    def __getShortProjectName(self):
+        namespace = os.environ['CI_PROJECT_NAME']
         projectFistLetterEachWord = ''.join([word if len(word) == 0 else word[0] for word in re.split('[^a-zA-Z0-9]',namespace)]) 
         return projectFistLetterEachWord + os.environ['CI_PROJECT_ID']
 
@@ -797,7 +798,7 @@ class CLIDriver(object):
         # Get k8s namespace
         if(self.__getEnvironmentName() is not None):
             # Get first letter for each word
-            projectFistLetterEachWord = self.__getShortNamespaceName()
+            projectFistLetterEachWord = self.__getShortProjectName()
             name = '%s-env-%s' % (projectFistLetterEachWord, self.__getEnvironmentName().replace('/', '-'))    # Get deployment host
         elif(self.__getEnvironmentName() is None):
             LOG.err('can not use environnement release option because environment is not defined in gitlab job.')
