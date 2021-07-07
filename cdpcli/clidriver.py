@@ -42,7 +42,7 @@ Usage:
         [--chart-repo=<repo>] [--use-chart=<chart:branch>]
         [--timeout=<timeout>]
         [--tiller-namespace]
-        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-name=<release_name>]
+        [--release-project-branch-name | --release-project-env-name | --release-project-name | --release-shortproject-name | --release-custom-name=<release_name>]
         [--image-pull-secret] [--ingress-tlsSecretName=<secretName>]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
@@ -103,7 +103,7 @@ Options:
     --no-conftest                                              Do not run conftest validation tests.
     --path=<path>                                              Path to validate [default: configurations].
     --put=<file>                                               Put file to artifactory.
-    --release-name=<release_name>                              Customize release name with namespace-name-<release_name>
+    --release-custom-name=<release_name>                              Customize release name with namespace-name-<release_name>
     --release-project-branch-name                              Force the release to be created with the project branch name.
     --release-project-env-name                                 Force the release to be created with the job env name.define in gitlab
     --release-shortproject-name                                Force the release to be created with the shortname (first letters of word + id) of the Gitlab project
@@ -777,8 +777,8 @@ class CLIDriver(object):
             release = '%s-%s' % (projectFistLetterEachWord, os.getenv('CI_COMMIT_REF_SLUG', os.environ['CI_COMMIT_REF_NAME']))
         elif self._context.opt['--release-project-env-name']:
             release = self.__getEnvName()
-        elif self._context.opt['--release-name']:
-            release =  (self.__getShortNamespaceName() +'-'+ self._context.opt['--release-name'])
+        elif self._context.opt['--release-custom-name']:
+            release =  (self.__getShortNamespaceName() +'-'+ self._context.opt['--release-custom-name'])
         elif self._context.opt['--release-project-name']:
             release = self.__getNamespace()
         elif self._context.opt['--release-shortproject-name']:
