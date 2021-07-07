@@ -784,9 +784,9 @@ class CLIDriver(object):
         elif self._context.opt['--release-shortproject-name']:
             release = self.__getShortNamespaceName()
         else:
-            release = self.__getNamespace()[:53]
+            release = self.__getNamespace()
         # K8s ne supporte plus les . dans les noms de release
-        return release.replace('_', '-').replace(".","-")
+        return release.replace('_', '-').replace(".","-")[:53]
 
     def __getShortNamespaceName(self):
         namespace = self._context.opt['--namespace-name'] if self._context.opt['--namespace-name'] else  os.environ['CI_PROJECT_NAME']
