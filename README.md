@@ -38,7 +38,7 @@ Usage:
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         [--image-prefix-tag=<tag>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
@@ -55,7 +55,7 @@ Usage:
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
         [--image-pull-secret]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
-    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>] 
+    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>]
         [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -84,7 +84,7 @@ Options:
     --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.16.198].
     --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.24.1].
     --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.17.0-alpine].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.17.0].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.21.5].
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image-vault=<image_name_git>                      Docker image which execute vault command [default: vault:1.13.0].
@@ -320,7 +320,7 @@ spec:
 
 ### Team label
 
-If your gitlab project contains a tag formed as "team=my _team_name", the CDP will automatically report this tag in the Kubernetes object labels. This is designed to work with [Kube-resource-report](https://github.com/hjacobs/kube-resource-report) tool. 
+If your gitlab project contains a tag formed as "team=my _team_name", the CDP will automatically report this tag in the Kubernetes object labels. This is designed to work with [Kube-resource-report](https://github.com/hjacobs/kube-resource-report) tool.
 
 ### Monitoring Label
 
@@ -329,9 +329,9 @@ CDP allows you to add labels on the pods(from deployement and statefulset) to id
 monitoring: [true|false]
 owner-escalation: [true|false]
 ```
-To do this it uses two envrionnement variable "CDP_MONITORING" and "CDP_ALERTING"  
-CDP_MONITORING: [TRUE|FALSE] : Enable or disable monitoring (Use to set "monitoring")  
-CDP_ALERTING: [TRUE|FALSE] : Enable or disable alerting (Use to set "owner-scalation")  
+To do this it uses two envrionnement variable "CDP_MONITORING" and "CDP_ALERTING"
+CDP_MONITORING: [TRUE|FALSE] : Enable or disable monitoring (Use to set "monitoring")
+CDP_ALERTING: [TRUE|FALSE] : Enable or disable alerting (Use to set "owner-scalation")
 
 ### conftest charts validation
 
@@ -365,7 +365,7 @@ project
    |   |-templates
    |   |-policy
    |   |-data
-   ... 
+   ...
 ```
 
 ### _Gitlab secret usage sample_

@@ -170,7 +170,7 @@ class TestCliDriver(unittest.TestCase):
     image_name_git = 'ouestfrance/cdp-git:2.24.1'
     image_name_sonar_scanner = 'ouestfrance/cdp-sonar-scanner:3.1.0'
     image_name_aws = 'ouestfrance/cdp-aws:1.16.198'
-    image_name_kubectl = 'ouestfrance/cdp-kubectl:1.17.0'
+    image_name_kubectl = 'ouestfrance/cdp-kubectl:1.21.5'
     image_name_helm = 'ouestfrance/cdp-helm:3.2.4'
     image_name_helm2 = 'ouestfrance/cdp-helm:2.16.3'
     image_name_conftest = 'instrumenta/conftest:v0.18.2'
@@ -1005,7 +1005,7 @@ status:
                         int_file,
                         namespace,
                         final_deploy_spec_dir), 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_helm},
-                {'cmd': cmdcurl, 'output': 'unnecessary'},                
+                {'cmd': cmdcurl, 'output': 'unnecessary'},
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_conftest, 'output': 'unnecessary'},
                 {'cmd': 'test --policy policy --data data all_resources.yaml', 'volume_from' : 'k8s', 'output': 'unnecessary', 'docker_image': TestCliDriver.image_name_conftest,'workingDir':chartdir},
                 {'cmd': 'upgrade %s %s --timeout 600s --history-max 20 -i --namespace=%s --create-namespace --wait --atomic --description deletionTimestamp=%s'
@@ -1733,7 +1733,7 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_kubectl, 'output': 'unnecessary'},
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm2, 'output': 'unnecessary'},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % ( 
+                    % (
                         deploy_spec_dir,
                         namespace,
                         release,
@@ -1792,7 +1792,7 @@ status:
                     {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm2, 'output': 'unnecessary'},
                     {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                     {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                        % ( 
+                        % (
                             deploy_spec_dir,
                             namespace,
                             release,
@@ -2062,7 +2062,7 @@ status:
                 {'cmd': 'docker pull %s' % TestCliDriver.image_name_helm2, 'output': 'unnecessary'},
                 {'cmd': 'get pod --namespace %s -l name="tiller" -o json --ignore-not-found=false' % (namespace), 'volume_from' : 'k8s', 'output': [ TestCliDriver.tiller_found ], 'docker_image': TestCliDriver.image_name_kubectl},
                 {'cmd': 'template %s --set namespace=%s --set ingress.host=%s.%s --set ingress.subdomain=%s --set image.commit.sha=sha-%s --set image.registry=%s --set image.repository=%s --set image.tag=%s --set image.pullPolicy=IfNotPresent --name=%s --namespace=%s > %s/all_resources.tmp'
-                    % ( 
+                    % (
                         deploy_spec_dir,
                         namespace,
                         release,
@@ -2204,7 +2204,7 @@ status:
             finally:
                 for key,val in env_vars.items():
                     del os.environ[key]
- 
+
     def __get_gitlab_mock(self, mock_Gitlab, mock_env2_name = 'test2',tag_list = []):
         mock_env1 = Mock()
         mock_env1.name = 'test'
