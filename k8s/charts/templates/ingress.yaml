@@ -1,6 +1,6 @@
 {{- $serviceName := include "project.name" . -}}
 {{- $servicePort := .Values.service.externalPort -}}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ template "project.name" . }}
@@ -15,10 +15,13 @@ metadata:
 {{- end }}
 spec:
   rules:
-    - host: {{ .Values.ingress.host }}
-      http:
-        paths:
-          - path: /
-            backend:
-              serviceName: {{ $serviceName }}
-              servicePort: {{ $servicePort }}
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $serviceName }}
+            port:
+              number: {{ $servicePort }}
