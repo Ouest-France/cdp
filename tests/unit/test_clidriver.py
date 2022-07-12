@@ -451,7 +451,10 @@ metadata:
     chart: helloworld-0.1.0
     release: release-name
     heritage: Tiller
+    app.kubernetes.io/managed-by: Helm
   annotations:
+    meta.helm.sh/release-name: release-name
+    meta.helm.sh/release-namespace: release-name
 spec:
   rules:
     - host: hello-world.example.com
