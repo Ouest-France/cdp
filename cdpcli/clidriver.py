@@ -33,7 +33,7 @@ Usage:
         (--put=<file> | --delete=<file>)
     cdp k8s [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--docker-image-kubectl=<image_name_kubectl>] [--docker-image-helm=<image_name_helm>] [--docker-image-aws=<image_name_aws>] [--docker-image-conftest=<image_name_conftest>]
-        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1] 
+        [--image-tag-branch-name | --image-tag-latest | --image-tag-sha1]
         [--image-prefix-tag=<tag>]
         (--use-gitlab-registry | --use-aws-ecr | --use-custom-registry | --use-registry=<registry_name>)
         [(--create-gitlab-secret)]
@@ -50,7 +50,7 @@ Usage:
         [--release-project-branch-name | --release-project-env-name | --release-custom-name=<release_name>]
         [--image-pull-secret]
         [--conftest-repo=<repo:dir:branch>] [--no-conftest] [--conftest-namespaces=<namespaces>]
-    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>] 
+    cdp conftest [(-v | --verbose | -q | --quiet)] (--deploy-spec-dir=<dir>) [--docker-image-conftest=<image_name_conftest>]
         [--conftest-repo=<gitlab repo>] [--no-conftest] [--volume-from=<host_type>] [--conftest-namespaces=<namespaces>]
     cdp validator-server [(-v | --verbose | -q | --quiet)] [(-d | --dry-run)] [--sleep=<seconds>]
         [--path=<path>]
@@ -79,7 +79,7 @@ Options:
     --docker-image-aws=<image_name_aws>                        Docker image which execute git command [default: ouestfrance/cdp-aws:1.16.198].
     --docker-image-git=<image_name_git>                        Docker image which execute git command [default: ouestfrance/cdp-git:2.24.1].
     --docker-image-helm=<image_name_helm>                      Docker image which execute helm command [default: ouestfrance/cdp-helm:2.17.0-alpine].
-    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.17.0].
+    --docker-image-kubectl=<image_name_kubectl>                Docker image which execute kubectl command [default: ouestfrance/cdp-kubectl:1.21.5].
     --docker-image-maven=<image_name_maven>                    Docker image which execute mvn command [default: maven:3.5.3-jdk-8].
     --docker-image-sonar-scanner=<image_name_sonar_scanner>    Docker image which execute sonar-scanner command [default: ouestfrance/cdp-sonar-scanner:3.1.0].
     --docker-image-vault=<image_name_git>                      Docker image which execute vault command [default: vault:1.13.0].
@@ -358,7 +358,7 @@ class CLIDriver(object):
     def __k8s(self):
         kubectl_cmd = DockerCommand(self._cmd, self._context.opt['--docker-image-kubectl'], self._context.opt['--volume-from'], True)
         helm_cmd = DockerCommand(self._cmd, self._context.getParamOrEnv('docker-image-helm'), self._context.opt['--volume-from'], True)
-        
+
         if self._context.opt['--image-tag-latest']:
             tag =  self.__getTagLatest()
             pullPolicy = 'Always'
@@ -388,7 +388,7 @@ class CLIDriver(object):
                       self.__buildTagAndPushOnDockerRegistryWithPrefix(image_repo)
                   except Exception as e:
                     LOG.error(str(e))
-                
+
         else:
           tag = self.__getTagBranchName()
           pullPolicy = 'Always'
@@ -487,9 +487,9 @@ class CLIDriver(object):
 
         command = '%s -i' % command
         command = '%s --namespace=%s' % (command, namespace)
-        
+
         if self._context.opt['--docker-image-helm'].startswith('3',21):
-        
+
             try:
                 kubectl_cmd.run('get namespace %s' % (namespace))
             except Exception as e:
@@ -498,7 +498,7 @@ class CLIDriver(object):
 
         else:
           command = '%s --force' % command
-        
+
         command = '%s --wait' % command
         command = '%s --atomic' % command
 
@@ -515,7 +515,7 @@ class CLIDriver(object):
           template_command = 'template %s %s' % (release, self._context.opt['--deploy-spec-dir'])
         else:
           template_command = 'template %s' % (self._context.opt['--deploy-spec-dir'])
-        
+
         template_command = '%s %s' % (template_command, set_command)
 
         if self._context.opt['--values']:
@@ -569,7 +569,7 @@ class CLIDriver(object):
 
         if (os.path.isdir('%s/data' % self._context.opt['--deploy-spec-dir'])):
             shutil.copytree('%s/data' % self._context.opt['--deploy-spec-dir'], '%s/data' % conftest_temp_dir)
-        
+
         if (os.path.isdir('%s/policy' % self._context.opt['--deploy-spec-dir'])):
             shutil.copytree('%s/policy' % self._context.opt['--deploy-spec-dir'], '%s/policy' % conftest_temp_dir)
 
@@ -697,7 +697,7 @@ class CLIDriver(object):
 
             # Push docker image
             self._cmd.run_command('docker push %s' % (image_tag))
-            
+
     def __conftest(self):
         dir = self._context.opt['--deploy-spec-dir']
         files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir,f))]
@@ -866,9 +866,9 @@ class CLIDriver(object):
         return ( os.getenv("CDP_REGISTRY_LABEL"))
 
     '''
-    Lancement des tests conftest. 
+    Lancement des tests conftest.
       <chartdir> : répertoire de définition des charts du projet. Peut contenir les répertoires policy et data contenant
-                  restpectivement les policies à appliquer et les éventuelles valeurs spécifiques       
+                  restpectivement les policies à appliquer et les éventuelles valeurs spécifiques
       <charts>   : Tableau des charts à controller
     '''
     def __runConftest(self, chartdir, charts, withWorkingDir=True):
@@ -876,10 +876,10 @@ class CLIDriver(object):
         if (no_conftest is True or no_conftest == "true"):
             return
 
-       
+
         conftest_repo = self._context.getParamOrEnv('conftest-repo')
         if (conftest_repo != "" and conftest_repo != "none" ):
-            try: 
+            try:
                repo = conftest_repo.split(":")
                repo_name = repo[0].replace("/","%2F")
                repo_sha= ""
@@ -895,7 +895,7 @@ class CLIDriver(object):
                cmd = 'curl -H "PRIVATE-TOKEN: %s" -skL %s/api/v4/projects/%s/repository/archive.tar.gz%s | tar zx --wildcards --strip %s -C %s %s' % (os.environ['CDP_GITLAB_API_TOKEN'], os.environ['CDP_GITLAB_API_URL'], repo_name,repo_sha, strip, chartdir, repo_dir)
                self._cmd.run_secret_command(cmd.strip())
             except Exception as e:
-                LOG.error("Error when downloading %s - Pass - %s" % (conftest_repo,str(e)))               
+                LOG.error("Error when downloading %s - Pass - %s" % (conftest_repo,str(e)))
 
         if (not os.path.isdir("%s/policy" % chartdir)):
             LOG.info('conftest : No policy found in %s - pass' % chartdir)
