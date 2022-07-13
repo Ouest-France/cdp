@@ -541,7 +541,7 @@ class CLIDriver(object):
                     # Ajout du label deletable sur tous les objets si la release est temporaire
                     if "metadata" in doc and "labels" in doc['metadata']:
                        doc['metadata']['labels']['deletable'] = "true" if self._context.opt['--delete-labels'] else "false"
-
+                    doc = CLIDriver.addIngressHelmLabelsAndAnnotations(doc, self.__getRelease(), self.__getNamespace())
                     final_docs.append(doc)
                     if self.__get_team() != "empty_team":
                         doc= CLIDriver.addTeamLabel(doc,self.__get_team())
@@ -651,6 +651,16 @@ class CLIDriver(object):
              doc['metadata']['labels']['team'] = team
              if 'template' in doc['spec'].keys():
                 doc['spec']['template']['metadata']['labels']['team'] = team
+        return doc
+
+    @staticmethod
+    def addIngressHelmLabelsAndAnnotations(doc,release,namespace):
+        if doc['kind'] == 'Ingress' :
+            if "metadata" in doc and "labels" in doc['metadata']:
+                doc['metadata']['labels']['app.kubernetes.io/managed-by'] = 'Helm'
+            if "metadata" in doc and "annotations" in doc['metadata']:
+                doc['metadata']['annotations']['meta.helm.sh/release-name'] = release
+                doc['metadata']['annotations']['meta.helm.sh/release-namespace'] = namespace
         return doc
 
     def __buildTagAndPushOnDockerRegistryWithPrefix(self, image_repo):
