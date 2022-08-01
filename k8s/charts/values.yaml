@@ -21,3 +21,6 @@ resources:
   requests:
     cpu: 0.3
     memory: 512Mi
+## to override ingressClassName uncommented this lines (default value "nginx")
+#ingress:
+#  ingressClassName: nginx-internal
